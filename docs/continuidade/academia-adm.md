@@ -47,3 +47,12 @@ Backend de mídia privada recuperado do pacote de streaming, preservado em `serv
 Próximo passo: concluir os fluxos do ADM, revisar contratos e testar Auth/RLS em homologação isolada; validar mídia privada e upload; só integrar à produção mediante pedido. Não substituir o serviço conectado pela implementação local.
 
 Testes: `npm ci --prefix apps/academia`; `npm --prefix apps/academia test`. Build estático: `npm run build:academia` na raiz.
+## Ciclo — uso do Mux e botão Adicionar aula
+
+Ciclo atual: o vídeo da aula é informado por link do player Mux ou Playback ID; removido o seletor de arquivo de vídeo da prévia. A publicação exige Playback válido em cada aula. O Mux continua sendo o player/hospedagem. Foto da capa continua com seletor de imagem; anexos de apoio (PDF, imagens e documentos) continuam disponíveis apenas nesta prévia/local do navegador.
+
+O botão “Adicionar aula” não fica mais desativado quando ainda não há curso selecionado nem quando o curso é de aula única. Sem curso, tenta salvar os dados válidos em edição e abre a aula; se o curso não estiver válido, mostra orientação e retorna às informações. Em curso de aula única já preenchido, informa como mudar para série de aulas.
+
+Validação local: `npm test --prefix apps/academia` (inclui 42 casos do backend preparado e DOM emulado), `npm run build:academia`, `npm run check` (42 scripts) e `git diff --check`; todos passaram. O DOM emulado cobre link Mux, feedback/ação do botão, seletor de anexo de apoio e capa. Não houve QA visual real, integração com upload Mux, alteração de banco, main ou produção.
+
+A integração em `develop` e a verificação da preview aguardam o envio deste ciclo. Próximo passo: confirmar que o deploy de homologação carrega o commit e revisar o fluxo na própria preview.

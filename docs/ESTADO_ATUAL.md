@@ -21,3 +21,5 @@ Academia estável mantém Mux, autenticação existente e dados no mesmo backend
 Nenhum SQL, conta, permissão de banco ou dado real foi alterado na organização. Os endereços anteriores continuam preservados até transição validada.
 
 O registro da publicação central e os commits remotos devem ser consultados em `CONTINUIDADE_CENTRAL.md`. Arquivos de configuração preparados não são, sozinhos, evidência de deploy.
+
+Ciclo ADM em andamento: vídeo de aula por link/Playback ID Mux, botão Adicionar aula com orientação e anexos de apoio mantidos no sandbox local. Testes e build passaram; integração/deploy desta revisão em develop ainda pendentes. Nenhuma mudança em main ou produção. Detalhes em `continuidade/academia-adm.md`.

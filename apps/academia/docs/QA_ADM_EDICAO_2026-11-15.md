@@ -29,3 +29,10 @@ Feature enviada e integrada em develop no commit f22ebb91de39d26a8ebd1d18bdb77bc
 ## NÃO TESTADO
 
 Navegador real, layout visual ou aparelhos físicos neste ciclo. Aviso nativo de fechamento em navegadores móveis. Contas reais, backend conectado, uploads e reprodução privada ponta a ponta. Os testes do backend preparado não significam que ele está implantado. Nenhum SQL, conta real ou permissão foi alterado. Main e produção preservadas.
+
+
+## Atualização do fluxo de aula e Mux
+
+O formulário de aula solicita link do player Mux ou Playback ID; vídeos locais não são anexados. Cada aula precisa de um vídeo Mux válido para publicar. Foto de capa e materiais de apoio continuam anexáveis na prévia. “Adicionar aula” fica acessível e informa/encaminha o usuário quando o curso ainda não foi salvo ou está no formato aula única.
+
+Regressões atualizadas e aprovadas em DOM emulado: link Mux, erro de link externo, botão sem curso selecionado, restrição de aula única, arquivo de apoio e capa. Build Academia, suíte do módulo, check e diff check aprovados. Ainda sem inspeção visual no navegador ou integração de upload no Mux.
