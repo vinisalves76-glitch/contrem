@@ -14,6 +14,14 @@ Arquivos: `apps/academia/src/assets/admin-manager.js`, `admin-manager.css`, `app
 
 Próximo passo: avaliar a capa no navegador do proprietário e, depois, avançar o fluxo do ADM para integração real de imagens apenas quando esse ciclo for autorizado. Esta entrega permanece restrita à prévia e ao sandbox local.
 
+## Ciclo — anexos de aula e restauração da fonte completa
+
+O proprietário apontou que também precisava anexar vídeos e conteúdo de apoio. A versão anterior publicada em `b42f5946db8b68b76e9d6f78341a0d8e3693cd35` continha `index.html` truncado; foi restaurado da base íntegra antes deste ciclo e a funcionalidade da capa foi reaplicada. A fonte local voltou a 56 KB e termina com o documento HTML completo.
+
+Novo fluxo de prévia: MP4/WebM de até 500 MB por aula; PDF, imagens JPG/PNG/WebP e documentos DOC/XLS/PPT (incluindo variantes OOXML) ou TXT de até 50 MB. Os arquivos são guardados em IndexedDB no navegador da prévia, enquanto o catálogo local guarda somente metadados. O vídeo anexado reproduz na sala do aluno da prévia e o material fica acessível pela aula. A foto de capa permanece selecionável no cadastro do curso. Estes anexos não são enviados à conta Mux nem ficam compartilhados entre aparelhos.
+
+Arquivos: `apps/academia/src/assets/admin-preview-media.js`, `admin-manager.js`, `admin-manager.css`, `apps/academia/src/index.html`, `apps/academia/src/sw.js`, `apps/academia/tests/qa-admin-dom.cjs`. Testes executados: suíte da Academia, build central, check e diff check; todos passaram após adicionar os testes de upload local. Main e produção não foram alteradas. Próximo passo é publicar uma única atualização em `develop`, conferir o build-info e entregar a preview; o uploader Mux real depende de conectar a conta e as chaves pelo ambiente seguro do servidor.
+
 Estrutura conferida diretamente no GitHub e na Vercel. Fonte canônica: `vinisalves76-glitch/contrem`. Desenvolvimento em `feature/academia-adm`; homologação compartilhada em `develop`. Não continuar a partir do checkout/ZIP anterior isolado nem publicar no antigo projeto de Academia por conveniência. O endereço de teste atual é https://contrem-git-develop-vinicius-alves-projects-fdea38e8.vercel.app/academia/.
 
 Base desta rodada: 3023bbed9a8bbe4cce5b34ccd59ac91942c1606b. Commit de implementação: 92f765d2478b8dc67580b0b1ca88c31ab6bd6cab. Arquivos alterados: admin-manager.js/.css, sw.js e tests/qa-admin-dom.cjs dentro de apps/academia. Acrescentado apps/academia/docs/QA_ADM_EDICAO_2026-11-15.md.

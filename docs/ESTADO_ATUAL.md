@@ -4,6 +4,8 @@ Atualização da frente ADM: fluxo de edições pendentes corrigido na feature/a
 
 Em 15/11/2026: foto de capa anexada ao curso implementada e integrada em `develop` no commit `b42f5946db8b68b76e9d6f78341a0d8e3693cd35`; preview Vercel `dpl_EW1DHM8MuGofSE34XVfevcTM8kKX` READY. Build central, testes da Academia e check de sintaxe passaram. O fluxo continua no sandbox; `main` e produção seguem preservadas. Detalhes em `continuidade/academia-adm.md`.
 
+Correção em andamento: fonte `index.html` restaurada após truncamento identificado na preview anterior; fluxo de anexos de vídeo e material de apoio está em teste na branch `feature/academia-adm`. Não considerar o deploy anterior como preview atual após a próxima integração.
+
 GitHub confirmado: https://github.com/vinisalves76-glitch/contrem (criado pelo proprietário).
 Vercel confirmada: projeto `contrem`, ID `prj_W6DhrOxmIe0QreKEV0WPSFLqHhco`, já vinculado a esse repositório.
 Destino principal solicitado: https://contrem.vercel.app/.
