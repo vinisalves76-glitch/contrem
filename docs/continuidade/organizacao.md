@@ -1,11 +1,9 @@
-# Organização CONTREM
+# Organização CONTREM — continuidade atual
 
-Pedido de 15/11/2026: reunir todos os trabalhos em um código-fonte, organizar por setores e sincronizar GitHub/Vercel. As fontes foram recuperadas sem alterar o sistema anterior.
+GitHub e Vercel foram conectados pelo proprietário e confirmados pela API. O repositório central é https://github.com/vinisalves76-glitch/contrem.
 
-O código estável da Academia fica em `main`. A homologação inclui o ADM novo e os protótipos de tecnologia/guia. Instruções históricas de repositórios separados foram substituídas pela decisão atual; as aplicações continuam isoladas.
+O projeto Vercel principal é contrem, ID prj_W6DhrOxmIe0QreKEV0WPSFLqHhco. Root Directory vazio, build npm run build, saída dist. Todos os módulos usam caminhos no mesmo domínio; consultar ../VERCEL.md.
 
-Próximo passo externo: criar o repositório privado `contrem` na conta confirmada, enviar branches e conectar os projetos Vercel existentes. A criação exige login do proprietário no navegador disponível. Não imprimir nem pedir tokens em chat.
+As pendências anteriores de criação do repositório foram resolvidas. Main preserva a Academia estável; develop e branches de frente contêm ADM, ContremTec e guia demonstrativos. Não substituir main pelo sandbox.
 
-A autenticação segura foi apresentada e não foi concluída. Nenhum repositório remoto foi criado. Depois que o proprietário fornecer o repositório privado vazio, usar a conexão GitHub para enviar os objetos/branches e verificar os commits. Para conectar projetos Vercel existentes, o recurso disponível de criação Git não serve: ele não reconecta projetos já existentes sem vínculo. Usar a configuração Git dos projetos existentes, com a raiz por aplicação, mantendo os deployments e a proteção atuais. Não criar projetos duplicados para simular a conexão.
-
-Verificação local concluída: checks de sintaxe/configuração, testes existentes de ADM/DOM/migração, 42 testes do backend preparado, check ContremTec e quatro builds. Não houve novo QA visual completo nem execução de banco. Consulte `../QA_ORGANIZACAO.md`.
+Consultar ../CONTINUIDADE_CENTRAL.md para commits, deployments, verificações e limites. Cada chat deve usar git fetch e a fonte remota atual, editando apenas a sua frente. Não usar repositórios antigos de Sites como se estivessem sincronizados automaticamente.

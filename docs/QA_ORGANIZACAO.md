@@ -1,3 +1,9 @@
+## Atualização: sincronização concluída
+
+As pendências de GitHub registradas abaixo pertencem à entrega anterior. O repositório foi criado pelo proprietário, as branches foram enviadas e a Vercel gerou builds a partir do GitHub. O estado atual, os commits e os testes da publicação central estão em CONTINUIDADE_CENTRAL.md.
+
+---
+
 # Verificação da organização — 15/11/2026
 
 ## PASSOU

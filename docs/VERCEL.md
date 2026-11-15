@@ -17,7 +17,7 @@ O vínculo GitHub foi confirmado pela API da Vercel em 15/11/2026.
 
 `main` contém a Academia estável; módulos em desenvolvimento têm apresentação de preparação na base pública. `develop` contém o ADM sandbox e os protótipos completos. O build de produção recusa a configuração de ADM local. A unificação não conecta bancos ou unifica permissões.
 
-Previews usam o projeto e a proteção existentes. Depois de uma build validada, o alias `contrem-preview.vercel.app` deve apontar para `develop`. Um alias não cria builds adicionais; agrupar as mudanças antes do push. Nunca tratar a demonstração de ADM/ContremTec como autenticação corporativa.
+Previews usam o projeto e a proteção existentes. Depois de uma build validada, o alias fixo `contrem-git-develop-vinicius-alves-projects-fdea38e8.vercel.app` acompanha `develop`. Um alias não cria builds adicionais; agrupar as mudanças antes do push. Nunca tratar a demonstração de ADM/ContremTec como autenticação corporativa.
 
 `contrem-academia.vercel.app` e os Sites privados anteriores continuam preservados como origens de transição; não apagar nem redirecionar antes de validar o uso no domínio central. Dados locais pertencem à origem antiga e não migram automaticamente. Contas existentes continuam no mesmo backend da Academia.
 

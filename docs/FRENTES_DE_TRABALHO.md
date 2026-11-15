@@ -11,3 +11,7 @@
 `develop` é a integração de homologação. Mudanças simultâneas no mesmo módulo exigem comparar commits, não copiar uma pasta antiga. Cada branch só existe remotamente depois do push confirmado; consultar `docs/ESTADO_ATUAL.md`.
 
 As pastas `server/` e `database/` da Academia são preparação de integração e não são publicadas pelo build estático.
+
+## Remoto confirmado
+
+As branches main, develop, feature/academia-adm, feature/contremtec e feature/guia-equipamentos existem no GitHub CONTREM. O fluxo do domínio central está em docs/VERCEL.md. A organização de infraestrutura usa branches chore quando necessário, sem um novo projeto Vercel.
