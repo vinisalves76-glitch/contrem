@@ -15,3 +15,16 @@ O login corporativo continua desativado. A entrada é **Explorar demonstração*
 Executar checks de sintaxe e isolamento da ContremTec, build com `VERCEL_ENV=production` e testes centrais de rotas/cache. Conferir ausência de alterações na Academia e no institucional por Git. Validar a fonte da release em preview antes da publicação solicitada e conferir a rota pública no navegador ao concluir.
 
 O resultado final, o commit e o deployment são registrados no histórico de execução. Nenhum estado READY deve ser interpretado como validação de backend corporativo.
+
+## Resultado confirmado
+
+- Publicado em produção: https://contrem.vercel.app/contremtec/.
+- Guia vinculado: https://contrem.vercel.app/contremtec/guia/.
+- Deployment: `dpl_8mmUPopw84defEhECBxxBMYPSQEP`, READY, target production.
+- Commit executável publicado: `10b7be213d5b905525c25a63b3428172ff2251d4`.
+- Alias público confirmado na Vercel, sem erro de domínio.
+- Antes da publicação: check de sintaxe/configuração, check ContremTec, build com VERCEL_ENV=production e quatro testes centrais passaram. Comparação Git confirmou que os executáveis da Academia e do institucional foram preservados.
+- No domínio público: entrada por Explorar demonstração, painel inicial e abertura do editor de relatório verificadas. Link do guia abriu corretamente, com imagens e pontos interativos; troca SY750H → SKT110H confirmada.
+- Não testados neste ciclo: autenticação corporativa (desativada), servidor/API, banco real, dispositivos físicos e gravação de novos relatórios no navegador. A publicação disponibiliza a versão demonstrativa atual.
+
+Este registro final é documental e não muda os arquivos executáveis já publicados. O novo ADM da Academia continua fora da produção.
