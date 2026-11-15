@@ -22,6 +22,10 @@ Fonte canônica em https://github.com/vinisalves76-glitch/contrem. Projeto de ho
 
 `npm run check`: configuração e sintaxe, 41 scripts. `npm run build`: montagem central. `npm run test:central`: quatro testes de caminhos, assets, caches e exclusão de fontes internas da distribuição. `git diff --check`: sem problemas.
 
+## Publicação de homologação confirmada
+
+Feature enviada e integrada em develop no commit f22ebb91de39d26a8ebd1d18bdb77bcfde77f6f1. Vercel: dpl_Ec9sBHndh8GXuQx2Csxwdie59bHJ, READY, target null. Endereço: https://contrem-git-develop-vinicius-alves-projects-fdea38e8.vercel.app/academia/. Verificação autenticada: HTTP 200 em build-info.json, /academia/ e no JS alterado; commit, branch e modo de homologação confirmados, conteúdo JS idêntico ao testado. Status Vercel do commit no GitHub: success. Não houve segunda publicação para esta finalização documental.
+
 ## NÃO TESTADO
 
 Navegador real, layout visual ou aparelhos físicos neste ciclo. Aviso nativo de fechamento em navegadores móveis. Contas reais, backend conectado, uploads e reprodução privada ponta a ponta. Os testes do backend preparado não significam que ele está implantado. Nenhum SQL, conta real ou permissão foi alterado. Main e produção preservadas.

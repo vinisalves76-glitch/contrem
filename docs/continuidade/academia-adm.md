@@ -2,6 +2,10 @@
 
 ## Ciclo de 15/11/2026 — continuidade no GitHub central
 
+Entrega confirmada: feature integrada por fast-forward em develop no commit f22ebb91de39d26a8ebd1d18bdb77bcfde77f6f1. A Vercel criou automaticamente uma única preview dpl_Ec9sBHndh8GXuQx2Csxwdie59bHJ, READY, target null. O alias fixo de develop respondeu HTTP 200 em build-info.json e /academia/. Build-info confirmou o commit acima, branch develop e modo homologacao. O JS publicado respondeu 200 e é idêntico ao arquivo testado. A produção dpl_8mmUPopw84defEhECBxxBMYPSQEP continuou com os aliases públicos; main não foi alterada.
+
+Esta finalização documental fica na feature após o deploy, sem um segundo build só para registrar o deployment. O código executável da feature é o da preview. Não alegar QA visual: somente verificações HTTP e testes automáticos/DOM emulado foram realizados.
+
 Estrutura conferida diretamente no GitHub e na Vercel. Fonte canônica: `vinisalves76-glitch/contrem`. Desenvolvimento em `feature/academia-adm`; homologação compartilhada em `develop`. Não continuar a partir do checkout/ZIP anterior isolado nem publicar no antigo projeto de Academia por conveniência. O endereço de teste atual é https://contrem-git-develop-vinicius-alves-projects-fdea38e8.vercel.app/academia/.
 
 Base desta rodada: 3023bbed9a8bbe4cce5b34ccd59ac91942c1606b. Commit de implementação: 92f765d2478b8dc67580b0b1ca88c31ab6bd6cab. Arquivos alterados: admin-manager.js/.css, sw.js e tests/qa-admin-dom.cjs dentro de apps/academia. Acrescentado apps/academia/docs/QA_ADM_EDICAO_2026-11-15.md.
