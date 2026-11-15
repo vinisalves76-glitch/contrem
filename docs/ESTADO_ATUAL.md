@@ -1,5 +1,7 @@
 # CONTREM — organização central, 15/11/2026
 
+Atualização da frente ADM: fluxo de edições pendentes corrigido na feature/academia-adm, para integração em develop e preview pelo projeto central contrem. Testes do módulo e da distribuição central passaram; QA visual real segue pendente. Main e produção não foram alteradas por este ciclo. Detalhes e commit de implementação em `continuidade/academia-adm.md` e `../apps/academia/docs/QA_ADM_EDICAO_2026-11-15.md`. O código de produção da Academia continua separado do ADM local.
+
 GitHub confirmado: https://github.com/vinisalves76-glitch/contrem (criado pelo proprietário).
 Vercel confirmada: projeto `contrem`, ID `prj_W6DhrOxmIe0QreKEV0WPSFLqHhco`, já vinculado a esse repositório.
 Destino principal solicitado: https://contrem.vercel.app/.
