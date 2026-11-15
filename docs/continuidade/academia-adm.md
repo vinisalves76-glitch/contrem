@@ -6,6 +6,14 @@ Entrega confirmada: feature integrada por fast-forward em develop no commit f22e
 
 Esta finalização documental fica na feature após o deploy, sem um segundo build só para registrar o deployment. O código executável da feature é o da preview. Não alegar QA visual: somente verificações HTTP e testes automáticos/DOM emulado foram realizados.
 
+## Ciclo — foto de capa anexada no ADM
+
+Em andamento na `feature/academia-adm`, derivada da homologação. O campo de URL foi substituído por seletor de arquivo JPG/PNG/WebP, prévia removível e redução no navegador (imagem final limitada a 700 KB). A capa persiste no rascunho local, aparece no cartão de curso do ADM e na área do aluno; ao editar, a capa existente é preservada. A validação de catálogo permite somente data URLs de imagem Base64 até 1 MB. Cache da Academia versionado para atualizar a prévia sem intervenção do aluno.
+
+Arquivos: `apps/academia/src/assets/admin-manager.js`, `admin-manager.css`, `apps/academia/src/index.html`, `apps/academia/src/sw.js`, `apps/academia/tests/qa-admin-dom.cjs`. Testes: `npm test --prefix apps/academia`, `npm run build:academia`, `npm run check`; todos passaram. O primeiro teste falhou por dependência `linkedom` ausente no checkout; após `npm ci --prefix apps/academia`, a suíte passou. Ainda não houve QA visual em navegador real nem integração com armazenamento remoto de imagens. Nenhum arquivo de produção ou `main` foi alterado.
+
+Próximo passo deste ciclo: enviar a feature ao GitHub, integrar fast-forward em `develop`, aguardar uma única preview Vercel e verificar o conteúdo publicado antes de entregar o link de homologação.
+
 Estrutura conferida diretamente no GitHub e na Vercel. Fonte canônica: `vinisalves76-glitch/contrem`. Desenvolvimento em `feature/academia-adm`; homologação compartilhada em `develop`. Não continuar a partir do checkout/ZIP anterior isolado nem publicar no antigo projeto de Academia por conveniência. O endereço de teste atual é https://contrem-git-develop-vinicius-alves-projects-fdea38e8.vercel.app/academia/.
 
 Base desta rodada: 3023bbed9a8bbe4cce5b34ccd59ac91942c1606b. Commit de implementação: 92f765d2478b8dc67580b0b1ca88c31ab6bd6cab. Arquivos alterados: admin-manager.js/.css, sw.js e tests/qa-admin-dom.cjs dentro de apps/academia. Acrescentado apps/academia/docs/QA_ADM_EDICAO_2026-11-15.md.

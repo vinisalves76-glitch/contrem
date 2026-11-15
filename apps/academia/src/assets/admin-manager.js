@@ -4,10 +4,10 @@
  const byId=id=>document.getElementById(id);
  const isAdmin=()=>window.AcademySession?.role==='admin';
  const makeId=prefix=>prefix+'-'+crypto.randomUUID();
- let filter='',statusFilter='all',tab='details',courseBaseline=null,lessonBaseline=null;
- const courseFields=['courseName','courseCategory','courseDescription','courseHours','coursePhoto','courseFormat'];
+ let filter='',statusFilter='all',tab='details',courseBaseline=null,lessonBaseline=null,selectedPhoto='';
+ const courseFields=['courseName','courseCategory','courseDescription','courseHours','courseFormat'];
  const lessonFields=['lessonName','lessonUrl','lessonDescription','lessonMaterialTitle','lessonMaterialUrl','lessonMinutes'];
- const fingerprint=fields=>JSON.stringify(fields.map(id=>byId(id).value));
+ const fingerprint=fields=>JSON.stringify({values:fields.map(id=>byId(id).value),photo:fields===courseFields?selectedPhoto:null});
  function pendingEdits(){
   return {
    course:isAdmin()&&courseBaseline!==null&&fingerprint(courseFields)!==courseBaseline,
@@ -55,6 +55,8 @@
  byId('adminFeedback').insertAdjacentHTML('beforebegin','<p id="adminEditStatus" class="adm-edit-status" role="status" aria-live="polite"></p>');
  // Keep original IDs and handlers; arrange the existing forms around the authoring flow.
  byId('courseIcon').parentElement.hidden=true;
+ const photoField=byId('coursePhoto').parentElement;
+ photoField.innerHTML='<label for="coursePhotoFile">Foto de capa</label><input id="coursePhotoFile" type="file" accept="image/jpeg,image/png,image/webp"><small class="muted">Escolha uma foto JPG, PNG ou WebP. A imagem será ajustada para a capa do curso.</small><div class="adm-cover-preview" id="admCoverPreview" hidden><img id="coursePhotoPreview" alt="Prévia da foto de capa"><button type="button" id="removeCoursePhoto" class="outline">Remover foto</button></div>';
  byId('courseName').maxLength=150;byId('courseCategory').maxLength=100;byId('courseDescription').maxLength=4000;
  byId('courseHours').min='0.25';byId('courseHours').step='0.25';
  byId('courseHours').parentElement.insertAdjacentHTML('afterend','<div class="field"><label for="courseFormat">Formato do curso</label><select id="courseFormat"><option value="series">Série de aulas</option><option value="single">Aula única</option></select><small class="muted">Aula única para um conteúdo direto; série para uma sequência de aulas.</small></div>');
@@ -95,7 +97,7 @@
  function renderLibrary(){
   byId('admStats').innerHTML=[['Cursos',courses.length],['Rascunhos',courses.filter(c=>c.status!=='published').length],['Publicados na prévia',courses.filter(c=>c.status==='published').length],['Aulas',courses.reduce((n,c)=>n+c.lessons.length,0)]].map(([label,n])=>'<div><small>'+label+'</small><strong>'+n+'</strong></div>').join('');
   const list=courses.filter(c=>(statusFilter==='all'||(c.status||'draft')===statusFilter)&&(c.name+' '+(c.category||'')).toLocaleLowerCase('pt-BR').includes(filter));
-  byId('adminCourses').innerHTML=list.length?list.map(c=>'<article class="adm-course-card '+(current()?.id===c.id?'editing':'')+'"><div class="row"><span class="adm-badge '+(c.status==='published'?'published':'')+'">'+(c.status==='published'?'Publicado':'Rascunho')+'</span><small>'+ (typeOf(c)==='single'?'Aula única':'Série de aulas')+'</small></div><h3>'+esc(c.name)+'</h3><p>'+esc(c.category||'Sem categoria')+' · '+c.lessons.length+' aula(s) · '+Number(c.hours||8)+'h</p><div class="adm-card-actions"><button type="button" class="outline" data-course-edit="'+esc(c.id)+'">Gerenciar curso →</button><button type="button" class="outline" data-course-copy="'+esc(c.id)+'" aria-label="Duplicar '+esc(c.name)+'">Duplicar</button><button type="button" class="danger" data-course-delete="'+esc(c.id)+'">Excluir</button></div></article>').join(''):'<div class="adm-empty"><b>'+ (courses.length?'Nenhum resultado.':'Seu primeiro curso começa aqui.')+'</b><span>'+ (courses.length?'Ajuste a busca ou o filtro.':'Clique em Novo curso e organize seu treinamento.')+'</span></div>';
+  byId('adminCourses').innerHTML=list.length?list.map(c=>'<article class="adm-course-card '+(current()?.id===c.id?'editing':'')+'">'+(c.photo?'<img class="adm-course-thumb" src="'+esc(c.photo)+'" alt="">':'')+'<div class="row"><span class="adm-badge '+(c.status==='published'?'published':'')+'">'+(c.status==='published'?'Publicado':'Rascunho')+'</span><small>'+ (typeOf(c)==='single'?'Aula única':'Série de aulas')+'</small></div><h3>'+esc(c.name)+'</h3><p>'+esc(c.category||'Sem categoria')+' · '+c.lessons.length+' aula(s) · '+Number(c.hours||8)+'h</p><div class="adm-card-actions"><button type="button" class="outline" data-course-edit="'+esc(c.id)+'">Gerenciar curso →</button><button type="button" class="outline" data-course-copy="'+esc(c.id)+'" aria-label="Duplicar '+esc(c.name)+'">Duplicar</button><button type="button" class="danger" data-course-delete="'+esc(c.id)+'">Excluir</button></div></article>').join(''):'<div class="adm-empty"><b>'+ (courses.length?'Nenhum resultado.':'Seu primeiro curso começa aqui.')+'</b><span>'+ (courses.length?'Ajuste a busca ou o filtro.':'Clique em Novo curso e organize seu treinamento.')+'</span></div>';
   renderEditor();
  }
  const oldRefresh=refresh;refresh=function(){
@@ -112,13 +114,13 @@
   if(!discardChecked&&!confirmDiscard())return false;
   selectedCourse=c;byId('editId').value=c.id;byId('courseName').value=c.name;byId('courseCategory').value=c.category||'';
   byId('courseDescription').value=c.description||'';byId('courseHours').value=c.hours||8;
-  byId('coursePhoto').value=c.photo||'';byId('courseIcon').value=c.icon||'⚙️';byId('courseFormat').value=typeOf(c);
+  selectedPhoto=c.photo||'';showCoverPreview(selectedPhoto);byId('coursePhotoFile').value='';byId('courseIcon').value=c.icon||'⚙️';byId('courseFormat').value=typeOf(c);
   byId('formTitle').textContent='Editar curso';lessonForm.classList.add('hidden');resetLessonForm();renderQuestionAdmin();notice('');savedBaseline();chooseTab(section);renderLibrary();return true;
  }
  editCourse=id=>openEditor(id);
  selectLessons=id=>openEditor(id,'lessons');
  const oldReset=resetForm;resetForm=function(){
-  oldReset();byId('courseFormat').value='series';selectedCourse=null;lessonForm.classList.add('hidden');byId('lessonMinutes').value='';notice('');savedBaseline();chooseTab('details');renderLibrary();
+  oldReset();byId('courseFormat').value='series';selectedPhoto='';showCoverPreview('');byId('coursePhotoFile').value='';selectedCourse=null;lessonForm.classList.add('hidden');byId('lessonMinutes').value='';notice('');savedBaseline();chooseTab('details');renderLibrary();
  };
  function newCourse(){if(isAdmin()&&confirmDiscard()){resetForm();byId('courseName').focus();}}
  byId('resetForm').onclick=newCourse;byId('newAdminCourse').onclick=newCourse;
@@ -127,9 +129,8 @@
   if(pendingEdits().lesson){notice('Salve a aula em edição ou cancele suas alterações antes de salvar as informações do curso.',true);chooseTab('lessons');return;}
   const c=current(),format=byId('courseFormat').value;
   if(format==='single'&&c?.lessons.length>1){notice('Este curso já tem várias aulas. Mantenha série de aulas ou remova as aulas extras antes de mudar o formato.',true);return;}
-  const photo=byId('coursePhoto').value.trim(),name=byId('courseName').value.trim();
+  const photo=selectedPhoto,name=byId('courseName').value.trim();
   if(!name){notice('Informe o nome do curso.',true);return;}
-  if(photo&&!safeHttps(photo)){notice('Informe um link HTTPS válido para a capa.',true);return;}
   const hours=Number(byId('courseHours').value);
   if(!Number.isFinite(hours)||hours<0.25||hours>500||!Number.isInteger(hours*4)){notice('Informe uma carga horária de 0,25 a 500 horas, em intervalos de 0,25.',true);return;}
   const data={name,category:byId('courseCategory').value.trim(),description:byId('courseDescription').value.trim(),hours:Number(byId('courseHours').value),photo,icon:'⚙️',format,status:'draft'};
@@ -137,6 +138,31 @@
   if(c)Object.assign(c,data);else courses.push({id,...data,lessons:[]});
   save();openEditor(id,'lessons',true);refresh();notice('Informações salvas como rascunho. Adicione as aulas e revise antes de publicar.');
  };
+ function showCoverPreview(source){
+  const preview=byId('admCoverPreview'),image=byId('coursePhotoPreview');
+  preview.hidden=!source;
+  if(source)image.src=source;else image.removeAttribute('src');
+ }
+ function fileAsDataUrl(blob){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=()=>reject(new Error('Não foi possível ler a foto.'));reader.readAsDataURL(blob);});}
+ async function prepareCover(file){
+  if(!file)return '';
+  if(!['image/jpeg','image/png','image/webp'].includes(file.type))throw new Error('Escolha uma imagem JPG, PNG ou WebP.');
+  if(file.size>12*1024*1024)throw new Error('A foto deve ter até 12 MB.');
+  const bitmap=await createImageBitmap(file),scale=Math.min(1,1400/bitmap.width,1000/bitmap.height),canvas=document.createElement('canvas');
+  canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+  const context=canvas.getContext('2d');if(!context){bitmap.close?.();throw new Error('Este navegador não conseguiu preparar a foto.');}
+  context.drawImage(bitmap,0,0,canvas.width,canvas.height);bitmap.close?.();
+  let quality=.84,blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',quality));
+  while(blob&&blob.size>700*1024&&quality>.5){quality-=.1;blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',quality));}
+  if(!blob||blob.size>700*1024)throw new Error('Não foi possível reduzir a foto para o tamanho permitido. Escolha uma imagem menor.');
+  return fileAsDataUrl(blob);
+ }
+ byId('coursePhotoFile').addEventListener('change',async event=>{
+  const file=event.target.files?.[0];if(!file)return;
+  try{selectedPhoto=await prepareCover(file);showCoverPreview(selectedPhoto);notice('Foto de capa carregada. Salve as informações para guardar no curso.');updateEditStatus();}
+  catch(error){event.target.value='';notice(error.message,true);}
+ });
+ byId('removeCoursePhoto').onclick=()=>{selectedPhoto='';byId('coursePhotoFile').value='';showCoverPreview('');updateEditStatus();};
  const oldResetLesson=resetLessonForm;resetLessonForm=function(){oldResetLesson();byId('lessonMinutes').value='';savedBaseline('lesson');};
  byId('newAdminLesson').onclick=()=>{
   const c=current();if(!isAdmin()||!c||typeOf(c)==='single'&&c.lessons.length)return;
