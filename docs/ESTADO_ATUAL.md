@@ -6,7 +6,7 @@ Destino principal solicitado: https://contrem.vercel.app/.
 
 Um código-fonte, um build central e caminhos independentes para institucional, Academia, ContremTec e guia. Consulte `VERCEL.md` e `FRENTES_DE_TRABALHO.md`.
 
-`main`: base estável, Academia conectada e site. `develop`: ADM fictício/local, ContremTec demonstrativa e guia revisão 2. Módulos em desenvolvimento não são publicados como produto corporativo na base estável.
+`main`: base estável da Academia e do site, mais a ContremTec demonstrativa com guia revisão 2, cuja publicação foi solicitada pelo proprietário em 15/11/2026. `develop`: novo ADM fictício/local e evolução dos demais módulos. A ContremTec publicada mantém os limites de demonstração; não representa backend corporativo concluído.
 
 ## Limites preservados
 
