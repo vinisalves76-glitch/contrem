@@ -3,6 +3,10 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
+    "test": "node tests/qa-admin-preview.cjs && node tests/qa-admin-dom.cjs && node tests/qa-video-migration.cjs && node --test tests/playback.test.mjs tests/mux-provider.test.mjs",
     "build": "node scripts/build.mjs"
+  },
+  "devDependencies": {
+    "linkedom": "0.18.12"
   }
 }

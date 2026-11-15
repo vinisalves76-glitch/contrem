@@ -1,9 +1,11 @@
-# CONTREM Academia — aplicação
+# CONTREM Academia — homologação ADM
 
-Leia `../../../00_LEIA_PRIMEIRO.md`, `../../../AGENTS.md`, `../AGENTS.md` e `../../../docs/ESTADO_ATUAL.md`.
+Leia `../../../00_LEIA_PRIMEIRO.md`, `../../../AGENTS.md`, `../AGENTS.md`, `../CONTINUIDADE_ADM.md` e `../../../docs/continuidade/academia-adm.md`.
 
-A decisão de 15/11/2026 reúne os módulos em um repositório CONTREM. A Academia continua independente em operação, dados e permissões. O histórico em `docs/` descreve ciclos anteriores e não proíbe o monorepositório autorizado.
+Esta branch contém o sandbox local de ADM importado da preview de 14/11/2026. A configuração `{preview:true}` interrompe a inicialização do cliente remoto. Catálogo, alunos e acessos fictícios ficam no navegador. Não são contas Auth reais; a entrada ADM é demonstrativa. Não promover esta build para produção.
 
-`main` preserva a fonte de produção Mux. `develop` contém o ADM local, sem conexão com dados reais. Não reintroduzir YouTube, alterar caches legados, migrar dados ou promover a demonstração local para autenticação real.
+O monorepositório CONTREM está autorizado desde 15/11/2026. Instruções históricas de repositórios separados são substituídas; preservar isolamento operacional e de dados. Fonte de produção preservada em `main`.
 
-Alterações de autenticação, cursos e mídia exigem ler `docs/FLUXO_ADM_ALUNO_2026-11-12.md`. Para o ADM novo, ler `../CONTINUIDADE_ADM.md` na homologação. Não criar usuários reais de teste.
+Cursos de aula única ou série, validação de publicação, rascunhos, reordenação, alunos e acessos devem continuar cobertos pelos testes existentes. Vídeos Mux; não reintroduzir YouTube. Não alterar os identificadores de backup e armazenamento.
+
+Backend privado preparado em `../server/`; SQL histórico em `../database/`. Não conectado/publicado neste ciclo. Não aplicar SQL nem criar contas reais para teste.

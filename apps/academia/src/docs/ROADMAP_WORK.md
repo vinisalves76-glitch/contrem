@@ -1,3 +1,17 @@
+## Ciclo ADM — prévia isolada de 14/11/2026
+
+Escopo atual solicitado: desenvolver somente a administração, fora da main e sem produção. Branch local `feature/adm-cursos-preview`; base preservada em `snapshot-producao`. Não há remoto GitHub da Academia confirmado. Não confundir com relatoriopro. O projeto Vercel existente e o alias de preview serão reutilizados.
+
+Esta versão é um sandbox de fluxo: `cloud-config.js` contém apenas `{preview:true}`. A inicialização do cliente Supabase é interrompida antes de qualquer sessão ou chamada remota. Catálogo, alunos fictícios, liberações e progresso ficam no navegador, em namespace `contrem-adm-preview-*`. Os logins criados aqui funcionam somente na mesma origem/navegador. Não são contas Auth reais; o botão ADM é entrada demonstrativa, sem autenticação de produção. Não promover esta build diretamente para produção.
+
+Implementado: construtor em informações/aulas/revisão; formato aula única ou série; salvar rascunho com vídeo pendente; validação para publicar; ordenar/editar/remover aulas; duplicar curso; busca e filtro por situação; visualização da sala; cadastro de aluno fictício, acesso por curso, ativação/desativação e login de teste. A publicação na prévia libera apenas cursos com status published e matrícula atribuída. Senhas de teste são derivadas com PBKDF2, nunca gravadas como texto puro. O sandbox é demonstrativo e editável pelo próprio navegador, não um limite de segurança.
+
+Sequência para validar: Abrir painel ADM de teste → criar curso → escolher formato → salvar informações → adicionar aula(s) → revisão → publicar na prévia → Alunos → criar login fictício → marcar curso → sair → entrar com o aluno nesta mesma prévia. Use apenas dados fictícios.
+
+Integração final pendente: conectar o construtor ao Auth/RLS real em ambiente de homologação isolado; validar novas regras de status e formato no servidor, filtragem segura do catálogo e revisão do contrato JSON; concluir mídias signed/Mux privadas e upload; executar QA autenticado com o proprietário; somente publicar quando solicitado. Não substituir as políticas e a função de alunos de produção pelo serviço local da prévia.
+
+---
+
 ## Entrega da integração — 12/11/2026
 
 Banco real: migration 20261112223552_contrem_academy_initial aplicada. Preview conectada: https://contrem-academia-preview.vercel.app/ · dpl_HwDFRTBFZgnArGXQEBWeZLLoRyHy · READY · target null. HTML, scripts de integração, SDK e SW retornaram HTTP 200 em fetch autenticado; SW release b00c7a770516. A preview pode pedir login Vercel antes do login da Academia.

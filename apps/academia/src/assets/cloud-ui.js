@@ -1,20 +1,21 @@
 (() => {
  'use strict';
  const config=window.CONTREM_ACADEMY_CONFIG;
+ window.AcademySession=null;
  const status=document.getElementById('cloudStatus'),bar=document.getElementById('cloudBar');
  const form=document.getElementById('cloudLoginForm'),loginStatus=document.getElementById('cloudLoginStatus');
  const keys=['va-academia-catalog-v1','va-academia-progress-v1','va-academia-certificates-v1','va-academia-profile-v1','va-academia-activity-v1'];
  let mode='demo',identity=null,service=null,client=null,catalogRevision=0,stateRevision=0;
  let catalogSaved='',stateSaved='',dirtyCatalog=false,dirtyState=false,conflicted=false,timer=null,saving=null,epoch=0;
  const demoAdminNotice=document.querySelector('#adminView > .notice').textContent;
- const pendingKey=id=>'contrem-academia:'+id+':pending';
+ const pendingKey=id=>(config?.preview?'contrem-adm-preview-pending:':'contrem-academia:')+id+':pending';
  const copy=value=>JSON.parse(JSON.stringify(value));
  const stateJSON=value=>JSON.stringify({profile:value.profile,progress:value.progress,certificates:value.certificates,activity:value.activity});
  function readPending(){try{return JSON.parse(localStorage.getItem(pendingKey(identity.user.id)))||null;}catch{return null;}}
  function snapshot(){return {courses:copy(courses),progress:copy(progress),certificates:copy(certificates),profile:copy(profile),activity:copy(activity)};}
  function savePending(){if(!identity||conflicted)return;localStorage.setItem(pendingKey(identity.user.id),JSON.stringify({...snapshot(),catalogRevision,stateRevision,dirtyCatalog,dirtyState}));}
  function clearPending(){if(identity)localStorage.removeItem(pendingKey(identity.user.id));}
- function message(text,error=false){status.textContent=text;bar.classList.toggle('sync-error',error);}
+ function message(text,error=false){status.textContent=config?.preview?text.replaceAll('na sua conta','neste navegador de teste').replace('Conta conectada. Dados carregados.','Prévia isolada. Dados de teste carregados.'):text;bar.classList.toggle('sync-error',error);}
  function validateCourses(value){validateBackup({app:'VA Academia',schemaVersion:4,courses:value,progress:{}});}
  function permissions(){
   const demoNote=document.querySelector('.demo-course-note');if(demoNote)demoNote.hidden=!courses.some(c=>c.id==='demo-mecanica');
@@ -48,7 +49,7 @@
  }
  async function enterCloud(data){
   validateCourses(data.catalog.courses);
-  epoch++;identity=data;mode='cloud';conflicted=false;dirtyCatalog=false;dirtyState=false;
+  epoch++;identity=data;mode='cloud';window.AcademySession={role:data.member.role,preview:!!config?.preview};conflicted=false;dirtyCatalog=false;dirtyState=false;
   catalogRevision=data.catalog.revision;stateRevision=data.state.revision;
   catalogSaved=JSON.stringify(data.catalog.courses);stateSaved=stateJSON(data.state);
   academyStorage.setScope(data.user.id);
@@ -108,7 +109,7 @@
   savePending();scheduleSync();
  });
  function resetToDemo(){
-  epoch++;clearTimeout(timer);mode='demo';identity=null;conflicted=false;dirtyState=false;dirtyCatalog=false;
+  epoch++;clearTimeout(timer);mode='demo';window.AcademySession=null;identity=null;conflicted=false;dirtyState=false;dirtyCatalog=false;
   academyStorage.setScope(null);bar.hidden=true;
   courses=read(KEY,demo);progress=read(PK,{});certificates=read(CK,[]);profile=read(PROFILE_KEY,{fullName:'',email:'',company:'',role:''});activity=read(ACTIVITY_KEY,{});
   selectedCourse=null;studentName=profile.fullName||'Aluno demonstração';document.getElementById('hello').textContent=studentName;
@@ -128,11 +129,12 @@
   if(!navigator.onLine)return 'Sem conexão. As alterações estão guardadas neste aparelho; conecte-se e tente novamente.';
   if(error.code==='invalid_credentials')return 'Não foi possível entrar. Confira seu e-mail e sua senha.';
   if(error.message?.includes('desativado')||error.message?.includes('ainda não foi liberado'))return error.message;
+  if(config?.preview)return error.message||'Não foi possível concluir a operação na prévia.';
   return 'Não foi possível concluir a operação. Seus dados locais foram preservados. Verifique a conexão e tente novamente.';
  }
  async function loadStudentRoster(){
   const roster=document.getElementById('studentRoster');if(mode!=='cloud'||identity?.member.role!=='admin')return;
-  try{const data=await service.listStudents(),rows=data.members||[],grants=data.grants||[];roster.innerHTML=rows.length?rows.map(m=>'<div class="student-roster-row"><b>'+esc(m.display_name)+'</b> · '+(m.active?'Ativo':'Inativo')+' <button type="button" class="outline" data-member="'+esc(m.id)+'" data-active="'+(!m.active)+'">'+(m.active?'Desativar':'Reativar')+'</button><div class="access-course-list">'+(courses.length?courses.map(c=>'<label><input type="checkbox" data-member="'+esc(m.id)+'" data-course="'+esc(c.id)+'" '+(grants.some(g=>g.member_id===m.id&&g.course_id===c.id)?'checked':'')+' '+(!m.active?'disabled':'')+'> '+esc(c.name)+'</label>').join(''):'Cadastre um treinamento para liberar acesso.')+'</div></div>').join(''):'Nenhum aluno cadastrado.';}catch{roster.textContent='Não foi possível carregar os alunos.';}
+  try{const data=await service.listStudents(),rows=data.members||[],grants=data.grants||[];roster.innerHTML=rows.length?rows.map(m=>'<div class="student-roster-row"><b>'+esc(m.display_name)+'</b><small class="roster-email">'+esc(m.email||'')+'</small> · '+(m.active?'Ativo':'Inativo')+' <button type="button" class="outline" data-member="'+esc(m.id)+'" data-active="'+(!m.active)+'">'+(m.active?'Desativar':'Reativar')+'</button><div class="access-course-list">'+(courses.length?courses.map(c=>'<label><input type="checkbox" data-member="'+esc(m.id)+'" data-course="'+esc(c.id)+'" '+(grants.some(g=>g.member_id===m.id&&g.course_id===c.id)?'checked':'')+' '+(!m.active?'disabled':'')+'> '+esc(c.name)+(config?.preview&&c.status!=='published'?' · rascunho':'')+'</label>').join(''):'Cadastre um treinamento para liberar acesso.')+'</div></div>').join(''):'Nenhum aluno cadastrado.';}catch{roster.textContent='Não foi possível carregar os alunos.';}
  }
  document.getElementById('studentRoster').addEventListener('change',async event=>{
   const el=event.target;if(!el.matches('[data-course]')||mode!=='cloud')return;
@@ -200,6 +202,13 @@
   finally{submit.disabled=false;}
  };
  window.addEventListener('online',()=>{if(mode==='cloud')scheduleSync();});
+ if(config?.preview){
+  if(!window.AcademyAdminPreviewService){loginStatus.textContent='A prévia não carregou. Recarregue a página.';return;}
+  service=window.AcademyAdminPreviewService.create();
+  document.getElementById('previewAdminEntry').onclick=async()=>{try{await enterCloud(await service.startAdmin());}catch(error){loginStatus.textContent=errorText(error);}};
+  service.restore().then(data=>data&&enterCloud(data)).catch(error=>{loginStatus.textContent=errorText(error);});
+  return;
+ }
  if(!config||!window.supabase||!window.AcademyCloudService){loginStatus.textContent='A conexão da conta não carregou. Você pode usar a demonstração local.';form.querySelector('button').disabled=true;return;}
  client=window.supabase.createClient(config.url,config.publishableKey,{auth:{storageKey:'contrem-academia-auth-v1',persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
  service=window.AcademyCloudService.create(client);

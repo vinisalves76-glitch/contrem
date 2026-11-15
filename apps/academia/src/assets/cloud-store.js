@@ -2,7 +2,7 @@
 (() => {
  let scope=null,muted=0;
  const listeners=new Set();
- const scoped=key=>scope?'contrem-academia:'+scope+':'+key:key;
+ const scoped=key=>'contrem-adm-preview-v1:'+(scope?'contrem-academia:'+scope+':'+key:key);
  window.academyStorage={
   getItem:key=>localStorage.getItem(scoped(key)),
   setItem(key,value){localStorage.setItem(scoped(key),value);if(!muted)listeners.forEach(fn=>fn(key));},

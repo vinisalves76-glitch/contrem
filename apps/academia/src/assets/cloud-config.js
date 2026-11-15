@@ -1,1 +1,2 @@
-window.CONTREM_ACADEMY_CONFIG = {"url":"https://vwvesygsudhbaqmayhsz.supabase.co","publishableKey":"sb_publishable_IcydrqH9qr8WqVpVdfPwoA_sWz1ehMw","sdkVersion":"2.119.0"};
+// PREVIEW ONLY: never initialize the production Supabase client from this build.
+window.CONTREM_ACADEMY_CONFIG = {preview:true};
