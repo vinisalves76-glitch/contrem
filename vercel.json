@@ -1,6 +1,51 @@
 {
   "version": 2,
+  "framework": null,
+  "buildCommand": "npm run build",
+  "installCommand": "node --version",
+  "outputDirectory": "dist",
+  "cleanUrls": false,
   "git": {
-    "deploymentEnabled": false
-  }
+    "deploymentEnabled": {
+      "**": false,
+      "develop": true
+    }
+  },
+  "redirects": [
+    {
+      "source": "/academia",
+      "destination": "/academia/",
+      "permanent": false
+    },
+    {
+      "source": "/contremtec",
+      "destination": "/contremtec/",
+      "permanent": false
+    },
+    {
+      "source": "/contremtec/guia",
+      "destination": "/contremtec/guia/",
+      "permanent": false
+    }
+  ],
+  "headers": [
+    {
+      "source": "/:path*/sw.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/build-info.json",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    }
+  ]
 }

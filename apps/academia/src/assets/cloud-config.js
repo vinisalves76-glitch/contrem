@@ -1,0 +1,1 @@
+window.CONTREM_ACADEMY_CONFIG = {"url":"https://vwvesygsudhbaqmayhsz.supabase.co","publishableKey":"sb_publishable_IcydrqH9qr8WqVpVdfPwoA_sWz1ehMw","sdkVersion":"2.119.0"};

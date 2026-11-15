@@ -1,0 +1,18 @@
+{
+  "name": "contrem",
+  "private": true,
+  "version": "0.1.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "check": "node scripts/check.mjs",
+    "test": "node scripts/test.mjs",
+    "build": "node scripts/build-central.mjs",
+    "build:institucional": "npm --prefix apps/institucional run build",
+    "build:academia": "npm --prefix apps/academia run build",
+    "build:tec": "npm --prefix apps/tec run build",
+    "build:guia": "npm --prefix apps/guia run build",
+    "test:central": "node --test tests/central.test.mjs"
+  }
+}
