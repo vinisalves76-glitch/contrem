@@ -1,0 +1,4 @@
+# Piloto de subagentes Codex: valido apenas quando essa branch for aberta no Codex.
+[agents]
+enabled = true
+max_concurrent_threads_per_session = 3

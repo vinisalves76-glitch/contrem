@@ -28,3 +28,15 @@ O pedido do proprietário em 15/11/2026 autoriza um único código-fonte CONTREM
 ## Publicação central
 
 O único projeto principal da Vercel é `contrem`. Root Directory vazio, `npm run build`, saída `dist`. Não configurar raiz por aplicativo nem publicar fontes internas. Leia docs/VERCEL.md.
+
+## Coordenação entre agentes (piloto)
+
+Este processo complementa — e **não substitui** — as regras anteriores deste AGENTS.md, os AGENTS.md dos módulos e `docs/FRENTES_DE_TRABALHO.md`.
+
+- O agente principal do Codex é o **coordenador**, que planeja, delimita o módulo e delega tarefas.
+- Use `desenvolvedor` para alterações delimitadas; depois, `testes` e `seguranca` devem revisar de modo independente o diff final. Revisores não editam código de produto.
+- Em caso de REPROVADO ou INCONCLUSIVO, indique os riscos, retorne para correção e repita a revisão necessária. Nenhum agente aprova o próprio código.
+- Para a primeira execução, realizar o teste **somente leitura** de `docs/AGENTES_PILOTO.md`.
+- Não alterar `main` nem fazer merge, push, deploy, mudanças no Supabase/Mux ou migrations durante o piloto. Mudanças futuras dependem da autorização e fluxo normal do projeto.
+- O coordenador encerra com evidências: arquivos, testes de fato executados, relatórios dos revisores, pendências e impacto. CI ou Preview READY não comprovam funcionamento de subagentes.
+- A ativação está restrita à branch piloto até aprovação expressa do proprietário.
