@@ -60,17 +60,7 @@
   if(hasPendingEdits()){notice('Salve as alterações em edição antes de criar os cursos de teste.',true);return;}
   const playback=videoId(byId('testMuxUrl').value);
   if(!playback){notice('Informe um link público do Mux ou Playback ID válido para testar o vídeo.',true);return;}
-  const definitions=[
-   {id:'qa-academia-single-v1',name:'TESTE · Primeiro acesso',format:'single',hours:0.25,lessons:[['Conhecendo a sala de aula','Reproduza o vídeo, pause e retome. Marque esta aula como concluída e responda à prova abaixo.']]},
-   {id:'qa-academia-series-v1',name:'TESTE · Jornada completa',format:'series',hours:0.75,lessons:[['Navegação entre aulas','Reproduza o vídeo e use Próxima aula. Confira se o título e a seleção acompanham a navegação.'],['Progresso e retorno','Marque esta aula como concluída. Saia, entre novamente e confira se o progresso permanece.'],['Prova e certificado','Conclua todas as aulas, responda à prova e confira os certificados demonstrativos de participação e aprovação.']]}
-  ];
-  const questionData=[
-   ['Como registrar uma aula concluída?',['Fechar a aba','Marcar como concluída','Sair da conta','Recarregar a página'],1],
-   ['Qual botão abre a aula seguinte?',['Próxima aula','Sair','Salvar perfil','Meus certificados'],0],
-   ['Qual é a nota mínima desta prova de teste?',['25%','50%','100%','75%'],3],
-   ['O que exige o certificado de aprovação?',['Somente entrar','Somente assistir uma aula','Concluir todas as aulas e ser aprovado na prova','Somente preencher o perfil'],2]
-  ];
-  const additions=definitions.filter(d=>!courses.some(c=>c.id===d.id)).map(d=>({...d,category:'Validação do sistema',description:'Conteúdo fictício para testar a plataforma. O vídeo Mux informado é repetido nas aulas; não constitui treinamento técnico.',icon:'🧪',status:'published',passScore:75,lessons:d.lessons.map(([name,description],i)=>({id:d.id+'-lesson-'+(i+1),name,description,minutes:15,url:'https://player.mux.com/'+playback,materialTitle:'',materialUrl:''})),questions:questionData.map(([text,choices,correct],i)=>({id:d.id+'-q-'+i,text,choices:[...choices],correct}))}));
+  const additions=window.AcademyAdminPreviewService.buildTestCourses(playback).filter(d=>!courses.some(c=>c.id===d.id));
   if(!additions.length){notice('Os dois cursos de teste já existem. Você pode editá-los na lista.');return;}
   courses.push(...additions);save();refresh();
   notice(additions.length+' curso(s) de teste criado(s). Em Alunos, libere o acesso para um login fictício.');

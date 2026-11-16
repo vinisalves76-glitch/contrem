@@ -16,6 +16,21 @@
   const bits=await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',iterations:210000,salt:new TextEncoder().encode(salt)},key,256);
   return Array.from(new Uint8Array(bits),v=>v.toString(16).padStart(2,'0')).join('');
  }
+ // Public sample used by the existing playback tests; repeated for workflow demonstration.
+ const SAMPLE_PLAYBACK='hXZZcG4J01eIXscxjSGGKtkfkQjbttFu1P01raXQinZ500';
+ function buildTestCourses(playback=SAMPLE_PLAYBACK){
+  const definitions=[
+   {id:'qa-academia-single-v1',name:'TESTE · Primeiro acesso',format:'single',hours:0.25,lessons:[['Conhecendo a sala de aula','Reproduza o vídeo, pause e retome. Marque esta aula como concluída e responda à prova abaixo.']]},
+   {id:'qa-academia-series-v1',name:'TESTE · Jornada completa',format:'series',hours:0.75,lessons:[['Navegação entre aulas','Reproduza o vídeo e use Próxima aula. Confira se o título e a seleção acompanham a navegação.'],['Progresso e retorno','Marque esta aula como concluída. Saia, entre novamente e confira se o progresso permanece.'],['Prova e certificado','Conclua todas as aulas, responda à prova e confira os certificados demonstrativos de participação e aprovação.']]}
+  ];
+  const questionData=[
+   ['Como registrar uma aula concluída?',['Fechar a aba','Marcar como concluída','Sair da conta','Recarregar a página'],1],
+   ['Qual botão abre a aula seguinte?',['Próxima aula','Sair','Salvar perfil','Meus certificados'],0],
+   ['Qual é a nota mínima desta prova de teste?',['25%','50%','100%','75%'],3],
+   ['O que exige o certificado de aprovação?',['Somente entrar','Somente assistir uma aula','Concluir todas as aulas e ser aprovado na prova','Somente preencher o perfil'],2]
+  ];
+  return definitions.map(d=>({...d,category:'Validação do sistema',description:'Conteúdo fictício para testar a plataforma. Vídeo público de exemplo Mux repetido nas aulas; não constitui treinamento técnico validado.',icon:'🧪',status:'published',passScore:75,lessons:d.lessons.map(([name,description],i)=>({id:d.id+'-lesson-'+(i+1),name,description,minutes:15,url:'https://player.mux.com/'+playback,materialTitle:'',materialUrl:''})),questions:questionData.map(([text,choices,correct],i)=>({id:d.id+'-q-'+i,text,choices:[...choices],correct}))}));
+ }
  function create(){
   let current=null;
   function admin(){if(current!==ADMIN)throw Error('Acesso restrito ao administrador da prévia.');}
@@ -37,8 +52,9 @@
    async startAdmin(){return data(ADMIN);},
    async startTestStudent(){
     // Explicit entry into a fictitious local account; never calls production Auth.
-    if(!load().catalog.courses.some(c=>TEST_COURSES.has(c.id)&&c.status==='published'))throw Error('Ainda não há cursos de teste publicados neste navegador. Abra o painel ADM e use “Criar aulas e provas de teste”; depois volte aqui.');
     const salt=crypto.randomUUID(),passwordHash=await digest(crypto.randomUUID(),salt),db=load();
+    const additions=buildTestCourses().filter(c=>!db.catalog.courses.some(existing=>existing.id===c.id));
+    if(additions.length){db.catalog.courses.push(...additions);db.catalog.revision+=1;}
     let student=db.students.find(s=>s.id===TEST_STUDENT);
     if(!student){student={id:TEST_STUDENT,name:'Aluno de teste',email:'aluno-teste@academia.example.invalid',active:true,courses:[],salt,passwordHash};db.students.push(student);}
     student.active=true;
@@ -85,5 +101,5 @@
    }
   };
  }
- window.AcademyAdminPreviewService={create};
+ window.AcademyAdminPreviewService={create,buildTestCourses};
 })();
