@@ -56,10 +56,13 @@ const flush=()=>click('syncNow');
  set('lessonUrl',mux);await submit('lessonForm');
  const savedLessons=JSON.stringify(run('courses[0].lessons'));
  const assertInvalidLesson=async({name='Inspeção inicial',url=mux,materialUrl='',minutes=''},message)=>{
+  // Validate the existing lesson; a single-lesson course must not create a second one.
+  run('editLesson(courses[0].id,0)');
   set('lessonName',name);set('lessonUrl',url);set('lessonMaterialUrl',materialUrl);set('lessonMinutes',minutes);
   await submit('lessonForm');
   assert.match($('adminFeedback').textContent,message);
   assert.equal(JSON.stringify(run('courses[0].lessons')),savedLessons,'invalid lesson input must not add or alter any saved lesson');
+  await click('cancelLessonEdit');
  };
  await assertInvalidLesson({name:'   '},/título da aula/);
  await assertInvalidLesson({materialUrl:'http://example.invalid/manual.pdf'},/HTTPS válido/);
