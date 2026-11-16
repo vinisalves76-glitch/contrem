@@ -205,6 +205,20 @@
  if(config?.preview){
   if(!window.AcademyAdminPreviewService){loginStatus.textContent='A prévia não carregou. Recarregue a página.';return;}
   service=window.AcademyAdminPreviewService.create();
+  const testAccess=document.createElement('div');testAccess.className='preview-login-note';
+  testAccess.innerHTML='<b>ÁREA DO ALUNO · CONTA DE TESTE</b><p>Entre como Aluno de teste pelo botão abaixo, sem e-mail ou senha. Os dois cursos de teste publicados neste navegador serão liberados automaticamente. Seu progresso, provas e certificados ficam salvos aqui.</p><button type="button" id="previewStudentEntry" class="outline">Entrar como aluno de teste →</button><p>Primeiro acesso? Abra o painel ADM, use “Criar aulas e provas de teste” e informe um vídeo Mux. Depois saia e entre pelo botão do aluno. Para voltar ao ADM, clique em Sair.</p><p id="previewStudentStatus" role="status" aria-live="polite"></p>';
+  form.before(testAccess);
+  document.getElementById('previewStudentEntry').onclick=async()=>{
+   const button=document.getElementById('previewStudentEntry'),status=document.getElementById('previewStudentStatus');
+   button.disabled=true;status.textContent='Preparando o aluno de teste…';
+   try{
+    const data=await service.startTestStudent();
+    if(!data.catalog.courses.length){await service.signOut();status.textContent='Ainda não há cursos de teste publicados neste navegador. Abra o painel ADM e use “Criar aulas e provas de teste”; depois volte aqui.';return;}
+    await enterCloud(data);status.textContent='';
+   }catch(error){status.textContent=errorText(error);}
+   finally{button.disabled=false;}
+  };
+
   document.getElementById('previewAdminEntry').onclick=async()=>{try{await enterCloud(await service.startAdmin());}catch(error){loginStatus.textContent=errorText(error);}};
   service.restore().then(data=>data&&enterCloud(data)).catch(error=>{loginStatus.textContent=errorText(error);});
   return;

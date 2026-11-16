@@ -3,6 +3,8 @@
  'use strict';
  const DB='contrem-adm-preview-db-v1', SESSION='contrem-adm-preview-session-v1';
  const ADMIN='00000000-0000-4000-8000-000000000001';
+ const TEST_STUDENT='00000000-0000-4000-8000-000000000002';
+ const TEST_COURSES=new Set(['qa-academia-single-v1','qa-academia-series-v1']);
  const copy=x=>JSON.parse(JSON.stringify(x));
  const load=()=>JSON.parse(localStorage.getItem(DB)||'null')||{catalog:{courses:[],revision:0},students:[],states:{}};
  const commit=db=>localStorage.setItem(DB,JSON.stringify(db));
@@ -33,6 +35,16 @@
   }
   return {
    async startAdmin(){return data(ADMIN);},
+   async startTestStudent(){
+    // Explicit entry into a fictitious local account; never calls production Auth.
+    if(!load().catalog.courses.some(c=>TEST_COURSES.has(c.id)&&c.status==='published'))throw Error('Ainda não há cursos de teste publicados neste navegador. Abra o painel ADM e use “Criar aulas e provas de teste”; depois volte aqui.');
+    const salt=crypto.randomUUID(),passwordHash=await digest(crypto.randomUUID(),salt),db=load();
+    let student=db.students.find(s=>s.id===TEST_STUDENT);
+    if(!student){student={id:TEST_STUDENT,name:'Aluno de teste',email:'aluno-teste@academia.example.invalid',active:true,courses:[],salt,passwordHash};db.students.push(student);}
+    student.active=true;
+    student.courses=db.catalog.courses.filter(c=>TEST_COURSES.has(c.id)&&c.status==='published').map(c=>c.id);
+    commit(db);return data(TEST_STUDENT);
+   },
    async signIn(email,password){
     const student=load().students.find(s=>s.email===emailOf(email));
     if(!student||await digest(password,student.salt)!==student.passwordHash){const e=new Error('Confira o e-mail e a senha de teste.');e.code='invalid_credentials';throw e;}
