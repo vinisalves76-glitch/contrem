@@ -63,7 +63,7 @@ Este processo complementa — e **não substitui** — as regras anteriores dest
 - O agente principal do Codex é o **coordenador**, que planeja, delimita o módulo e delega tarefas.
 - Use `desenvolvedor` para alterações delimitadas; depois, `testes` e `seguranca` devem revisar de modo independente o diff final. Revisores não editam código de produto.
 - Em caso de REPROVADO ou INCONCLUSIVO, indique os riscos, retorne para correção e repita a revisão necessária. Nenhum agente aprova o próprio código.
-- Para a primeira execução, realizar o teste **somente leitura** de `docs/AGENTES_PILOTO.md`.
-- Não alterar `main` nem fazer merge, deploy, mudanças no Supabase/Mux ou migrations durante o piloto. Commits e push **somente na branch piloto**, após autorização do proprietário e conferência do diff; mudanças futuras dependem do fluxo normal do projeto.
+- O primeiro teste **somente leitura** de `docs/AGENTES_PILOTO.md` foi concluído. Na `develop`, as tarefas reais seguem o fluxo de branches e a revisão independente; não confundir o roteiro histórico do piloto com bloqueio permanente à implementação.
+- Nunca publicar em `main`, realizar merge para produção, fazer deploy de produção ou alterar Supabase/Mux/migrations sem autorização específica. Na `develop`, o fluxo passa a ser `feature/*` ou `fix/*` → testes + revisão de segurança → Pull Request → integração homologada. Commits e push devem ocorrer apenas na branch de trabalho autorizada, após revisão do diff.
 - O coordenador encerra com evidências: arquivos, testes de fato executados, relatórios dos revisores, pendências e impacto. CI ou Preview READY não comprovam funcionamento de subagentes.
-- A ativação está restrita à branch piloto até aprovação expressa do proprietário.
+- O proprietário autorizou a integração à `develop` em 16/11/2026 após piloto e CI aprovados. Essa autorização não inclui `main`, publicação em produção, mudanças de RLS/SQL, nem credenciais reais.
