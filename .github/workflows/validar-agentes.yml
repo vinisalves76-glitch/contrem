@@ -1,0 +1,28 @@
+name: Validar agentes piloto (somente arquivos)
+on:
+  push:
+    branches: [chore/agentes-piloto]
+    paths:
+      - '.codex/**'
+      - 'AGENTS.md'
+      - 'docs/AGENTES_PILOTO.md'
+      - 'tests/validar_agentes.py'
+      - '.github/workflows/validar-agentes.yml'
+  pull_request:
+    paths:
+      - '.codex/**'
+      - 'AGENTS.md'
+      - 'docs/AGENTES_PILOTO.md'
+      - 'tests/validar_agentes.py'
+      - '.github/workflows/validar-agentes.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Validar configurações e políticas (nenhum subagente é executado)
+        run: python3 tests/validar_agentes.py

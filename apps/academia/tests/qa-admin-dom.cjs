@@ -54,6 +54,22 @@ const flush=()=>click('syncNow');
  set('lessonUrl','https://youtube.com/watch?v=abcdefghijk');await submit('lessonForm');
  assert.match($('adminFeedback').textContent,/Mux/);
  set('lessonUrl',mux);await submit('lessonForm');
+ const savedLessons=JSON.stringify(run('courses[0].lessons'));
+ const assertInvalidLesson=async({name='Inspeção inicial',url=mux,materialUrl='',minutes=''},message)=>{
+  // Validate the existing lesson; a single-lesson course must not create a second one.
+  run('editLesson(courses[0].id,0)');
+  set('lessonName',name);set('lessonUrl',url);set('lessonMaterialUrl',materialUrl);set('lessonMinutes',minutes);
+  await submit('lessonForm');
+  assert.match($('adminFeedback').textContent,message);
+  assert.equal(JSON.stringify(run('courses[0].lessons')),savedLessons,'invalid lesson input must not add or alter any saved lesson');
+  await click('cancelLessonEdit');
+ };
+ await assertInvalidLesson({name:'   '},/título da aula/);
+ await assertInvalidLesson({materialUrl:'http://example.invalid/manual.pdf'},/HTTPS válido/);
+ await assertInvalidLesson({minutes:'0'},/1 a 10\.000 minutos inteiros/);
+ await assertInvalidLesson({minutes:'10001'},/1 a 10\.000 minutos inteiros/);
+ await assertInvalidLesson({minutes:'1.5'},/minutos inteiros/);
+ set('lessonName','Inspeção inicial');set('lessonUrl',mux);set('lessonMaterialUrl','');set('lessonMinutes','');
  assert.equal($('newAdminLesson').disabled,false,'button remains available and explains the single-course constraint');
  await click('newAdminLesson');assert.match($('adminFeedback').textContent,/aula única/);
  tab('review');assert.equal($('adminPublish').disabled,false);await click('adminPublish');await flush();
