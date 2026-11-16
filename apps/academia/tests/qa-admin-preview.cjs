@@ -42,9 +42,15 @@ vm.runInContext(fs.readFileSync('src/assets/admin-preview-service.js','utf8'),co
  assert.equal((await service.reload()).catalog.courses.length,0);
  await service.startAdmin();await service.setStudentActive(student.id,false);
  await assert.rejects(service.signIn('qa@example.invalid','ApenasTeste123!'),/desativado/);
- await assert.rejects(service.startTestStudent(),/Ainda não há cursos/);
+ const ready=await service.startTestStudent();
+ assert.equal(ready.member.role,'student');
+ assert.deepEqual(Array.from(ready.catalog.courses,c=>c.lessons.length),[1,3]);
+ assert.ok(ready.catalog.courses.every(c=>c.questions.length===4&&c.passScore===75&&c.status==='published'));
+ const seededRevision=ready.catalog.revision;
+ const seededAgain=await service.startTestStudent();assert.equal(seededAgain.catalog.revision,seededRevision);
+ await assert.rejects(service.listStudents(),/restrito/);
  await service.startAdmin();
- const testSingle={...single,id:'qa-academia-single-v1'};
+ const testSingle={...single,id:'qa-academia-single-v1',questions:[{text:'Edição preservada',choices:['A','B','C','D'],correct:2}]};
  const testDraft={...series,id:'qa-academia-series-v1',status:'draft'};
  const current=await service.reload();await service.writeCatalog([draft,single,series,testSingle,testDraft],current.catalog.revision);
  const testLearner=await service.startTestStudent();
@@ -52,6 +58,9 @@ vm.runInContext(fs.readFileSync('src/assets/admin-preview-service.js','utf8'),co
  await service.writeState({profile:{fullName:'Teste preservado'},progress:{'qa-academia-single-v1':['aula-1']},certificates:[],activity:{}},0);
  await service.signOut();const repeatedTest=await service.startTestStudent();
  assert.equal(repeatedTest.user.id,testLearner.user.id);
+ assert.equal(repeatedTest.catalog.revision,testLearner.catalog.revision);
+ assert.equal(repeatedTest.catalog.courses[0].questions[0].text,'Edição preservada');
+ assert.equal(JSON.parse(memory.get('contrem-adm-preview-db-v1')).catalog.courses.find(c=>c.id==='qa-academia-series-v1').status,'draft');
  assert.equal(repeatedTest.state.profile.fullName,'Teste preservado');
  assert.deepEqual(Array.from(repeatedTest.state.progress['qa-academia-single-v1']),['aula-1']);
  assert.equal(JSON.parse(memory.get('contrem-adm-preview-db-v1')).students.filter(s=>s.id===testLearner.user.id).length,1);
