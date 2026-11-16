@@ -56,3 +56,17 @@ O botão “Adicionar aula” não fica mais desativado quando ainda não há cu
 Validação local: `npm test --prefix apps/academia` (inclui 42 casos do backend preparado e DOM emulado), `npm run build:academia`, `npm run check` (42 scripts) e `git diff --check`; todos passaram. O DOM emulado cobre link Mux, feedback/ação do botão, seletor de anexo de apoio e capa. Não houve QA visual real, integração com upload Mux, alteração de banco, main ou produção.
 
 A primeira integração em `develop` confirmou o HTML e os scripts novos na preview. A versão do cache do service worker foi incrementada para esta revisão; ela será incluída no commit final do ciclo. Próximo passo: confirmar o deploy com esse cache atualizado e revisar o fluxo na própria preview.
+
+## Ciclo de 16/11/2026 — concorrência nos anexos locais
+
+Branch de revisão: `fix/academia-upload-concorrencia`, criada do HEAD remoto de `develop` `57b1175c56d0715384e9115332c25ca450f1fdef`. O commit desta entrega será identificado pelo histórico desta branch e pelo Pull Request para `develop`; integração depende de aprovação do proprietário.
+
+Defeito confirmado pelo teste de regressão executado contra a fonte original: uma capa iniciada no curso A terminava após abrir B e preenchia a capa de B (`late cover must not enter another course`). Correção mínima em `apps/academia/src/assets/admin-manager.js`: identidade de operação por seletor, com referência de sessão/curso e aula; invalidação ao trocar/resetar/cancelar/remover ou sair/recarregar; resultados e erros obsoletos ignorados; última seleção vence. Materiais obsoletos recém-gravados são removidos pelo próprio ID, sem remover o anexo atual. Processamento conta como edição pendente e impede salvar/publicar prematuramente.
+
+Regressões em `apps/academia/tests/qa-admin-dom.cjs` usam promises controladas e DOM emulado. A variável opcional `ADMIN_MANAGER_SOURCE` permite comparar a fonte base sem sobrescrever código compartilhado. O teste falha na base e passa com a correção. Testes independentes e revisão de segurança dos agentes foram realizados; a aprovação é restrita ao sandbox local.
+
+Fontes modificadas neste ciclo: os dois arquivos acima e registros `docs/continuidade/academia-adm.md` e `docs/ESTADO_ATUAL.md`. Nenhuma mudança em Auth, Supabase, SQL/RLS, Mux, configuração de publicação ou outras aplicações. Nenhum merge ou deploy autorizado. O service worker permanece network-first, sem alteração de identificadores/cache.
+
+Limites: não houve QA visual real nem validação em dispositivos físicos. Preparação de imagem/armazenamento em andamento não é fisicamente abortada; seu resultado obsoleto não é associado ao editor. Falha na limpeza local é ignorada e pode deixar arquivo órfão no IndexedDB. Sandbox continua sem autorização corporativa e sem sincronização entre aparelhos. Próximo passo: revisão do PR e validação visual pelo proprietário antes de qualquer integração autorizada.
+
+Verificações finais executadas no Codex Cloud: `npm run check` (42 scripts), `npm test` (preview, DOM com regressões, migração, 42/42 casos Node e check Tec), `npm run build`, `npm run test:central` (4/4) e `git diff --check`: todas aprovadas. Dependências de teste instaladas com `npm ci --prefix apps/academia --ignore-scripts` e cache temporário em `work/`; nenhum serviço real foi conectado. Revisores `testes` e `seguranca`: APROVADO no escopo sandbox.

@@ -23,3 +23,5 @@ Nenhum SQL, conta, permissão de banco ou dado real foi alterado na organizaçã
 O registro da publicação central e os commits remotos devem ser consultados em `CONTINUIDADE_CENTRAL.md`. Arquivos de configuração preparados não são, sozinhos, evidência de deploy.
 
 Ciclo ADM em andamento: vídeo de aula por link/Playback ID Mux, botão Adicionar aula com orientação e anexos de apoio mantidos no sandbox local. Testes e build passaram; integração/deploy desta revisão em develop ainda pendentes. Nenhuma mudança em main ou produção. Detalhes em `continuidade/academia-adm.md`.
+
+Ciclo de 16/11/2026 em revisão: `fix/academia-upload-concorrencia`, baseada em `develop` `57b1175c56d0715384e9115332c25ca450f1fdef`, corrige resultados assíncronos de capa/material aplicados após mudança de editor no ADM local. Inclui regressões com promises controladas; detalhes e limites em `continuidade/academia-adm.md`. Integração depende de aprovação; este ciclo não altera main, Supabase ou publicação.
