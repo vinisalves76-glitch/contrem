@@ -51,6 +51,31 @@
  grid.className='admin adm-workspace';
  grid.innerHTML='<aside class="panel adm-library"><div class="row"><h2>Seus cursos</h2><button class="primary" id="newAdminCourse" type="button">+ Novo curso</button></div><label class="sr-only" for="adminCourseSearch">Buscar curso</label><input id="adminCourseSearch" type="search" placeholder="Buscar por curso ou categoria"><label class="sr-only" for="adminStatusFilter">Filtrar cursos</label><select id="adminStatusFilter"><option value="all">Todos os cursos</option><option value="draft">Rascunhos</option><option value="published">Publicados na prévia</option></select><div id="adminCourses"></div></aside><section class="panel adm-editor"><div class="adm-editor-head"><div><small class="tag">CONSTRUTOR DE CURSOS</small><h2 id="formTitle">Novo curso</h2></div><span id="editingStatus" class="adm-badge">Novo rascunho</span></div><div class="adm-steps" role="tablist" aria-label="Etapas do curso"><button type="button" data-admin-tab="details" role="tab">1. Informações</button><button type="button" data-admin-tab="lessons" role="tab">2. Aulas</button><button type="button" data-admin-tab="review" role="tab">3. Revisão</button></div><div id="admDetails" role="tabpanel"></div><div id="admLessons" role="tabpanel" hidden><div class="row"><div><h3>Conteúdo do curso</h3><p id="lessonHint" class="muted">Salve o curso para adicionar aulas.</p></div><button type="button" id="newAdminLesson" class="outline">+ Adicionar aula</button></div><ol id="adminLessonOrder" class="adm-lesson-order"></ol></div><div id="admReview" role="tabpanel" hidden><div id="adminReviewContent"></div><div class="adm-review-actions"><button type="button" id="adminPublish" class="primary">Publicar na prévia</button><button type="button" id="adminUnpublish" class="outline">Voltar a rascunho</button></div></div><p id="adminFeedback" role="status" aria-live="polite"></p></section>';
  byId('admDetails').append(courseForm);
+ const testSetup=document.createElement('details');
+ testSetup.className='panel';
+ testSetup.innerHTML='<summary>Criar aulas e provas de teste</summary><p>Cria dois cursos publicados nesta prévia: uma aula única e uma série com três aulas, com avaliações de quatro questões e nota mínima de 75%. O mesmo vídeo será usado nas quatro aulas.</p><label for="testMuxUrl">Link ou Playback ID público do Mux para o teste</label><input id="testMuxUrl" placeholder="https://player.mux.com/SEU_PLAYBACK_ID"><button type="button" class="outline" id="createTestCourses">Criar cursos de teste</button><p>Depois, em Alunos, crie um login fictício e libere os dois cursos. Os dados ficam neste navegador.</p>';
+ grid.before(testSetup);
+ byId('createTestCourses').onclick=()=>{
+  if(!isAdmin()||!window.AcademySession?.preview)return;
+  if(hasPendingEdits()){notice('Salve as alterações em edição antes de criar os cursos de teste.',true);return;}
+  const playback=videoId(byId('testMuxUrl').value);
+  if(!playback){notice('Informe um link público do Mux ou Playback ID válido para testar o vídeo.',true);return;}
+  const definitions=[
+   {id:'qa-academia-single-v1',name:'TESTE · Primeiro acesso',format:'single',hours:0.25,lessons:[['Conhecendo a sala de aula','Reproduza o vídeo, pause e retome. Marque esta aula como concluída e responda à prova abaixo.']]},
+   {id:'qa-academia-series-v1',name:'TESTE · Jornada completa',format:'series',hours:0.75,lessons:[['Navegação entre aulas','Reproduza o vídeo e use Próxima aula. Confira se o título e a seleção acompanham a navegação.'],['Progresso e retorno','Marque esta aula como concluída. Saia, entre novamente e confira se o progresso permanece.'],['Prova e certificado','Conclua todas as aulas, responda à prova e confira os certificados demonstrativos de participação e aprovação.']]}
+  ];
+  const questionData=[
+   ['Como registrar uma aula concluída?',['Fechar a aba','Marcar como concluída','Sair da conta','Recarregar a página'],1],
+   ['Qual botão abre a aula seguinte?',['Próxima aula','Sair','Salvar perfil','Meus certificados'],0],
+   ['Qual é a nota mínima desta prova de teste?',['25%','50%','100%','75%'],3],
+   ['O que exige o certificado de aprovação?',['Somente entrar','Somente assistir uma aula','Concluir todas as aulas e ser aprovado na prova','Somente preencher o perfil'],2]
+  ];
+  const additions=definitions.filter(d=>!courses.some(c=>c.id===d.id)).map(d=>({...d,category:'Validação do sistema',description:'Conteúdo fictício para testar a plataforma. O vídeo Mux informado é repetido nas aulas; não constitui treinamento técnico.',icon:'🧪',status:'published',passScore:75,lessons:d.lessons.map(([name,description],i)=>({id:d.id+'-lesson-'+(i+1),name,description,minutes:15,url:'https://player.mux.com/'+playback,materialTitle:'',materialUrl:''})),questions:questionData.map(([text,choices,correct],i)=>({id:d.id+'-q-'+i,text,choices:[...choices],correct}))}));
+  if(!additions.length){notice('Os dois cursos de teste já existem. Você pode editá-los na lista.');return;}
+  courses.push(...additions);save();refresh();
+  notice(additions.length+' curso(s) de teste criado(s). Em Alunos, libere o acesso para um login fictício.');
+ };
+
  byId('admLessons').append(lessonForm,assessment);
  byId('adminFeedback').insertAdjacentHTML('beforebegin','<p id="adminEditStatus" class="adm-edit-status" role="status" aria-live="polite"></p>');
  // Keep original IDs and handlers; arrange the existing forms around the authoring flow.

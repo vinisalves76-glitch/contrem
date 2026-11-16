@@ -162,6 +162,37 @@ const flush=()=>click('syncNow');
  set('cloudEmail','fluxo@example.invalid');set('cloudPassword','SomenteTeste123!');await submit('cloudLoginForm');
  assert.equal(run('progress[courses[0].id].length'),1);
  await click('exit');
+ // Test fixtures use the same authoring, enrollment and learner persistence paths.
+ await click('previewAdminEntry');
+ await click('createTestCourses');assert.match($('adminFeedback').textContent,/Mux/);
+ const before=run('courses.length');set('testMuxUrl',mux);await click('createTestCourses');await flush();
+ assert.equal(run('courses.length'),before+2);
+ await click('createTestCourses');assert.equal(run('courses.length'),before+2,'fixture creation must be idempotent');
+ const fixture='qa-academia-series-v1';
+ assert.equal(run('courses.find(c=>c.id==="'+fixture+'").lessons.length'),3);
+ assert.equal(run('courses.find(c=>c.id==="qa-academia-single-v1").lessons.length'),1);
+ $('studentsTab').dispatchEvent(new dom.Event('click',{bubbles:true}));
+ await new Promise(resolve=>setTimeout(resolve,0));
+ const fixtureGrant=document.querySelector('[data-course="'+fixture+'"]');assert.ok(fixtureGrant);
+ fixtureGrant.checked=true;fixtureGrant.dispatchEvent(new dom.Event('change',{bubbles:true}));
+ await new Promise(resolve=>setTimeout(resolve,0));await click('exit');
+ set('cloudEmail','fluxo@example.invalid');set('cloudPassword','SomenteTeste123!');await submit('cloudLoginForm');
+ run('openCourse("'+fixture+'")');
+ for(let i=0;i<3;i++){run('chooseLesson('+i+')');$('markDone').onclick();}
+ const answer=async values=>{
+  values.forEach((v,i)=>{document.querySelectorAll('input[name="answer-'+i+'"]').forEach(el=>el.removeAttribute('checked'));document.querySelector('input[name="answer-'+i+'"][value="'+v+'"]').setAttribute('checked','');});
+  await submit('takeAssessment');await flush();
+ };
+ await answer([0,1,0,0]);assert.equal(run('getAttempts(selectedCourse.id)[0].passed'),false);
+ await answer([1,0,3,0]);assert.equal(run('getAttempts(selectedCourse.id)[1].score'),75);
+ assert.equal(run('getAttempts(selectedCourse.id)[1].passed'),true,'passing threshold must be inclusive');
+ run('printCertificate=()=>{};issueCertificate("participation");issueCertificate("approval")');await flush();
+ assert.equal(run('certificates.filter(c=>c.courseId==="'+fixture+'").length'),2);
+ await click('exit');set('cloudEmail','fluxo@example.invalid');set('cloudPassword','SomenteTeste123!');await submit('cloudLoginForm');
+ assert.equal(run('progress["'+fixture+'"].length'),3);
+ assert.equal(run('getAttempts("'+fixture+'").length'),2);
+ assert.equal(run('certificates.filter(c=>c.courseId==="'+fixture+'").length'),2);
+ await click('exit');
  const ids=Array.from(document.querySelectorAll('[id]'),el=>el.id);
  assert.equal(new Set(ids).size,ids.length,'duplicate DOM ids');
  assert.ok([...memory.keys()].every(k=>k.startsWith('contrem-adm-preview')),'production storage changed');
