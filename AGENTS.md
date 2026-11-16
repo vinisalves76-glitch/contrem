@@ -29,6 +29,33 @@ O pedido do proprietário em 15/11/2026 autoriza um único código-fonte CONTREM
 
 O único projeto principal da Vercel é `contrem`. Root Directory vazio, `npm run build`, saída `dist`. Não configurar raiz por aplicativo nem publicar fontes internas. Leia docs/VERCEL.md.
 
+
+## Sincronização obrigatória entre ChatGPT, Codex local e GitHub (anti-retrocesso)
+
+**Fonte canônica:** o GitHub `vinisalves76-glitch/contrem`, na **branch apropriada ao módulo e à tarefa**. O Codex no VS Code trabalha sobre um clone **local** e não recebe automaticamente os commits enviados por outros chats ou ferramentas. Um chat ChatGPT com acesso ao GitHub trabalha no remoto, mas **não** atualiza a pasta local do usuário. Nenhum agente deve supor que duas cópias estão sincronizadas.
+
+### Ao começar toda tarefa
+
+1. Identificar **repositório, módulo, branch, HEAD local e HEAD remoto**, e ler as instruções atuais (`AGENTS.md`, `00_LEIA_PRIMEIRO.md`, documentos de estado/frente, `AGENTS.md` do módulo). Informar se a leitura foi local ou remota.
+2. **Codex/VS Code local:** antes de analisar ou editar código, verificar `git status --short --branch` e `git branch --show-current`; conferir `git remote -v` e executar `git fetch origin` quando permitido. Comparar o HEAD local com `origin/<branch>` (por exemplo `git log --oneline --left-right HEAD...origin/<branch>`). A simples existência de `origin` não significa que a pasta está atualizada.
+3. Se a árvore estiver **limpa** e a branch local estiver atrás, executar `git pull --ff-only origin <branch>` antes de trabalhar; se houver **divergência, erro de fetch, modificações locais ou conflito**, **parar e informar**. Não presumir versão atual, nem sobrescrever, perder ou descartar trabalho do usuário.
+4. **ChatGPT/integração GitHub:** obter novamente os arquivos da branch remota e comparar commits antes de qualquer escrita; usar a SHA atual para proteger atualizações. Não editar diretamente `main`. Antes de comunicar a entrega, informar branch, commit, arquivos alterados e se foi necessário sincronizar o VS Code.
+5. Se outro chat, Codex ou agente publicar alterações durante a tarefa, revalidar a base remota **antes do push ou PR**. Não fazer push de código baseado em uma revisão ultrapassada nem substituir pastas completas por cópias antigas. Resolver mudanças concorrentes por arquivo, preservando funcionalidades e registrando conflitos.
+
+### Proteção de trabalho local e branch
+
+- **Nunca** executar automaticamente `git reset --hard`, `git clean -fd`, `git push --force`, descartar mudanças, sobrescrever arquivos alterados, apagar branch, fazer stash ou rebase destrutivo para contornar divergência. Solicitar orientação quando houver risco de perda.
+- Não misturar commits de `main`, `develop` ou branches de outras frentes. Em tarefas comuns, criar `feature/*` ou `fix/*` atualizada a partir de `develop`; `chore/agentes-piloto` é exceção temporária para validação dos agentes.
+- O envio ao GitHub exige commit/push **na branch correta**, revisão do diff e autorização dentro do fluxo. **Push não é deploy; deploy READY não é aprovação funcional.** A Vercel utiliza as regras de `docs/VERCEL.md` e a homologação em `develop` deve manter a Preview existente.
+- Caso o computador não tenha Node.js/npm ou o ambiente do Codex bloqueie escrita em `.git/FETCH_HEAD`, **não alegar que sincronizou ou executou testes locais**. Solicitar `git fetch` / `git pull --ff-only` no terminal normal do VS Code quando seguro; executar testes pelo GitHub Actions após push autorizado e analisar os logs.
+- Ao concluir tarefa remota, sempre avisar que o clone local **não foi atualizado automaticamente** e fornecer o comando seguro `git pull --ff-only origin <branch>` (somente quando a árvore local estiver limpa e sem divergência).
+- Se alterações tocarem o mesmo módulo em chats distintos, consultar `docs/FRENTES_DE_TRABALHO.md` e os commits mais recentes, coordenar qual branch é a fonte da mudança e registrar o resultado nos documentos de continuidade.
+
+### Qualidade e limites
+
+- Desenvolvedor implementa; `testes` e `seguranca` revisam de forma independente; achados relevantes retornam para correção. Executar CI, builds e testes adequados, e declarar limites de cobertura (sandbox ADM não equivale a backend de produção).
+- **Regras escritas não fazem sincronização automática, não substituem branch protection e não garantem que qualquer chat carregará este arquivo.** Em toda nova conversa ChatGPT sobre CONTREM, abrir o repositório conectado e ler este `AGENTS.md` e o contexto da frente antes de alterar código.
+
 ## Coordenação entre agentes (piloto)
 
 Este processo complementa — e **não substitui** — as regras anteriores deste AGENTS.md, os AGENTS.md dos módulos e `docs/FRENTES_DE_TRABALHO.md`.
@@ -37,6 +64,6 @@ Este processo complementa — e **não substitui** — as regras anteriores dest
 - Use `desenvolvedor` para alterações delimitadas; depois, `testes` e `seguranca` devem revisar de modo independente o diff final. Revisores não editam código de produto.
 - Em caso de REPROVADO ou INCONCLUSIVO, indique os riscos, retorne para correção e repita a revisão necessária. Nenhum agente aprova o próprio código.
 - Para a primeira execução, realizar o teste **somente leitura** de `docs/AGENTES_PILOTO.md`.
-- Não alterar `main` nem fazer merge, push, deploy, mudanças no Supabase/Mux ou migrations durante o piloto. Mudanças futuras dependem da autorização e fluxo normal do projeto.
+- Não alterar `main` nem fazer merge, deploy, mudanças no Supabase/Mux ou migrations durante o piloto. Commits e push **somente na branch piloto**, após autorização do proprietário e conferência do diff; mudanças futuras dependem do fluxo normal do projeto.
 - O coordenador encerra com evidências: arquivos, testes de fato executados, relatórios dos revisores, pendências e impacto. CI ou Preview READY não comprovam funcionamento de subagentes.
 - A ativação está restrita à branch piloto até aprovação expressa do proprietário.
