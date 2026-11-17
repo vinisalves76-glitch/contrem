@@ -113,6 +113,30 @@ const flush=()=>click('syncNow');
  assert.equal(prevented,false,'saved editor must not show an unload warning');
  await click('newAdminCourse');set('courseName','Hidráulica');set('courseDescription','Série de aulas de teste.');set('courseFormat','series');await submit('courseForm');
  const series=run('courses[1].id');
+ // Common materials can be saved before any lesson/video exists.
+ tab('lessons');await click('openCourseMaterials');
+ assert.equal($('courseMaterialsForm').hidden,false);assert.match($('supportScopeLabel').textContent,/Curso completo/);
+ const commonPdf=new (require('node:buffer').File)(['apostila'],'apostila-motores.pdf',{type:'application/pdf'});
+ const courseApi=context.AcademyPreviewMedia,saveCourseFile=courseApi.save;let finishCourseUpload;
+ courseApi.save=()=>new Promise(resolve=>{finishCourseUpload=resolve;});
+ Object.defineProperty($('lessonMaterialFile'),'files',{value:[commonPdf],configurable:true});$('lessonMaterialFile').dispatchEvent(new dom.Event('change',{bubbles:true}));
+ await click('newAdminLesson');assert.equal($('courseMaterialsForm').hidden,false,'upload blocks switching scope');
+ finishCourseUpload(await saveCourseFile(commonPdf,'support'));await new Promise(resolve=>setTimeout(resolve,0));courseApi.save=saveCourseFile;
+ set('lessonMaterialTitle','Manual geral de motores');set('lessonMaterialUrl','https://example.invalid/motores');await click('addSupportLink');
+ await submit('courseMaterialsForm');await flush();
+ assert.equal(run('courses[1].lessons.length'),0);assert.equal(run('courses[1].previewMaterials.length'),1);assert.equal(run('courses[1].supportLinks.length'),1);
+ run('validateBackup({app:"VA Academia",schemaVersion:4,courses,progress:{}})');
+ assert.throws(()=>run('validateBackup({app:"VA Academia",schemaVersion:4,courses:[{...courses[1],supportLinks:[{title:"Inválido",url:"javascript:alert(1)"}]}],progress:{}})'),/Links de apoio inválidos/);
+ run('validateBackup({app:"VA Academia",schemaVersion:4,courses:[{...courses[1],previewMaterials:[{...courses[1].previewMaterials[0],name:"a".repeat(240)+".pdf"}]}],progress:{}})');
+ await click('cancelCourseMaterials');await click('openCourseMaterials');
+ assert.match($('lessonMaterialAttachment').textContent,/apostila-motores/);assert.equal(document.querySelectorAll('[data-remove-support-link]').length,1);
+ const originalCommonId=run('courses[1].previewMaterials[0].id');document.querySelector('[data-remove-material="0"]').onclick();await submit('courseMaterialsForm');
+ assert.equal(run('courses[1].previewMaterials.length'),0);assert.equal(mediaMemory.has(originalCommonId),true,'removal must not delete shared course blobs');
+ Object.defineProperty($('lessonMaterialFile'),'files',{value:[commonPdf],configurable:true});$('lessonMaterialFile').dispatchEvent(new dom.Event('change',{bubbles:true}));await new Promise(resolve=>setTimeout(resolve,0));
+
+ set('lessonMaterialTitle','Remover do curso');set('lessonMaterialUrl','https://example.invalid/remover');await click('addSupportLink');document.querySelector('[data-remove-support-link="1"]').onclick();
+ await submit('courseMaterialsForm');assert.equal(run('courses[1].supportLinks.length'),1);await click('cancelCourseMaterials');
+
  for(const title of ['Primeira aula','Segunda aula']){
   await click('newAdminLesson');set('lessonName',title);
   if(title==='Primeira aula'){
@@ -136,15 +160,16 @@ const flush=()=>click('syncNow');
  run('openCourse(courses[1].id);chooseLesson(1)');await new Promise(resolve=>setTimeout(resolve,0));
  assert.equal($('player').hidden,false,'video playback remains on the Mux hosted player');
  assert.match($('lessonMaterial').textContent,/manual-aula\.pdf/,'attached support file must open from the lesson');
- assert.equal($('lessonMaterial').querySelectorAll('a[download]').length,2);
- assert.equal($('lessonMaterial').querySelector('a[download]').download,'manual-aula.pdf');
+ assert.equal($('lessonMaterial').querySelectorAll('[data-material-scope="lesson"] a[download]').length,2);
+ assert.equal($('lessonMaterial').querySelector('[data-material-scope="lesson"] a[download]').download,'manual-aula.pdf');
  // Materials must be reachable directly from the lesson list, with no hidden ancestor.
- run('show("adminView")');tab('lessons');const materialAction=document.querySelector('[data-lesson-materials="1"]');assert.ok(materialAction);
+ run('show("adminView")');tab('lessons');await click('openCourseMaterials');set('lessonMaterialTitle','Rascunho curso');allowDiscard=false;document.querySelector('[data-lesson-materials="1"]').dispatchEvent(new dom.Event('click',{bubbles:true}));assert.equal($('courseMaterialsForm').hidden,false);assert.equal($('lessonMaterialTitle').value,'Rascunho curso');allowDiscard=true;await click('clearSupportLink');const materialAction=document.querySelector('[data-lesson-materials="1"]');assert.ok(materialAction);
  materialAction.dispatchEvent(new dom.Event('click',{bubbles:true}));
  for(const id of ['lessonSupportSection','lessonMaterialFile','addSupportLink']){
   for(let node=$(id);node;node=node.parentElement){assert.equal(Boolean(node.hidden),false,id+' hidden ancestor '+node.id);assert.equal(node.classList.contains('hidden'),false,id+' hidden class ancestor '+node.id);}
  }
  assert.equal($('lessonSupportHeading').textContent,'Materiais de apoio');
+ assert.equal($('lessonSupportSection').closest('form').id,'lessonForm');assert.equal($('courseMaterialsForm').hidden,true);assert.equal($('supportScopeLabel').textContent,'Somente esta aula');
  assert.equal($('attachSupportFiles').textContent,'+ Anexar arquivos');
  const youtube='https://www.youtube.com/watch?v=teste123';
  set('lessonMaterialTitle','Vídeo de apoio no YouTube');set('lessonMaterialUrl',youtube);
@@ -247,9 +272,14 @@ const flush=()=>click('syncNow');
  await new Promise(resolve=>setTimeout(resolve,0));await click('exit');
  set('cloudEmail','fluxo@example.invalid');set('cloudPassword','SomenteTeste123!');await submit('cloudLoginForm');
  run('openCourse("'+series+'");chooseLesson(1)');await new Promise(resolve=>setTimeout(resolve,0));
- assert.equal(context.AcademySession.role,'student');assert.equal($('lessonMaterial').querySelectorAll('a[download]').length,2);
- const supportLink=$('lessonMaterial').querySelector('[data-support-link]');assert.ok(supportLink);assert.equal(supportLink.href,youtube);assert.equal(supportLink.target,'_blank');assert.equal(supportLink.rel,'noopener noreferrer');
- assert.equal($('lessonMaterial').querySelector('a[download]').download,'manual-aula.pdf');
+ assert.equal(context.AcademySession.role,'student');assert.equal($('lessonMaterial').querySelectorAll('[data-material-scope="lesson"] a[download]').length,2);
+ const supportLink=$('lessonMaterial').querySelector('[data-material-scope="lesson"] [data-support-link]');assert.ok(supportLink);assert.equal(supportLink.href,youtube);assert.equal(supportLink.target,'_blank');assert.equal(supportLink.rel,'noopener noreferrer');
+ assert.equal($('lessonMaterial').querySelector('[data-material-scope="course"] a[download]').download,'apostila-motores.pdf');
+ run('chooseLesson(0)');await new Promise(resolve=>setTimeout(resolve,0));
+ assert.equal($('lessonMaterial').querySelector('[data-material-scope="course"] a[download]').download,'apostila-motores.pdf');
+ assert.equal($('lessonMaterial').querySelectorAll('[data-material-scope="lesson"] a[download]').length,0,'specific file must not appear in another lesson');
+
+
  await click('exit');
  // Test fixtures use the same authoring, enrollment and learner persistence paths.
  await click('previewAdminEntry');

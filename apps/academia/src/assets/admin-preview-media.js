@@ -67,27 +67,29 @@
  function clearDownloads(){generation++;urls.forEach(release);urls=[];document.querySelector('[data-preview-materials]')?.remove();}
  const lessonNow=()=>selectedCourse?.lessons?.[selectedLesson]||null;
  async function renderAttachments(){
-  clearDownloads();const expected=generation,lesson=lessonNow(),materials=materialsFor(lesson),links=supportLinksFor(lesson);
-  $('lessonMaterial').textContent='';$('lessonMaterial').hidden=!materials.length&&!links.length;
-  if(!materials.length&&!links.length)return;
+  clearDownloads();const expected=generation,course=selectedCourse,lesson=lessonNow();
+  $('lessonMaterial').textContent='';$('lessonMaterial').hidden=!course;
+  if(!course)return;
   const holder=document.createElement('div');holder.dataset.previewMaterials='true';
-  const title=document.createElement('h3');title.textContent='Materiais de apoio';holder.append(title);
   const note=document.createElement('p');note.className='muted';note.textContent='Baixe os arquivos ou abra os links externos. Os anexos desta prévia ficam salvos somente neste navegador.';holder.append(note);
-  const list=document.createElement('ul');holder.append(list);
-  $('lessonMaterial').append(holder);$('lessonMaterial').hidden=false;
-  links.forEach(material=>{const row=document.createElement('li'),link=document.createElement('a');link.className='buttonLink outline';link.dataset.supportLink='true';link.href=material.url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Abrir link: '+material.title;row.append(link);list.append(row);});
-
-  await Promise.all(materials.map(async material=>{
-   // Insert placeholders first so asynchronous reads preserve the author's order.
-   const row=document.createElement('li');row.textContent=safeName(material.name)+' · Carregando…';list.append(row);
-   let file;
-   try{file=await get(material.id);}catch{file=null;}
-   if(expected!==generation||lessonNow()!==lesson){release(file?.url);return;}
-   row.textContent='';
-   if(!file){row.textContent=safeName(material.name)+' · Arquivo indisponível neste navegador. Solicite o anexo ao administrador desta prévia.';return;}
-   urls.push(file.url);
-   const link=document.createElement('a');link.dataset.previewMaterial='true';link.className='buttonLink outline';link.href=file.url;link.download=file.name;link.textContent='Baixar '+file.name+' ('+(file.size/1024/1024).toFixed(1)+' MB)';row.append(link);
-  }));
+  $('lessonMaterial').append(holder);
+  async function renderGroup(source,label,scope){
+   const materials=materialsFor(source),links=supportLinksFor(source),group=document.createElement('section');group.dataset.materialScope=scope;
+   const title=document.createElement('h3');title.textContent=label;group.append(title);holder.append(group);
+   const list=document.createElement('ul');group.append(list);
+   if(!materials.length&&!links.length){const empty=document.createElement('p');empty.className='muted';empty.textContent='Nenhum material de apoio cadastrado.';group.append(empty);return;}
+   links.forEach(material=>{const row=document.createElement('li'),link=document.createElement('a');link.className='buttonLink outline';link.dataset.supportLink='true';link.href=material.url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Abrir link: '+material.title;row.append(link);list.append(row);});
+   await Promise.all(materials.map(async material=>{
+    const row=document.createElement('li');row.textContent=safeName(material.name)+' · Carregando…';list.append(row);
+    let file;try{file=await get(material.id);}catch{file=null;}
+    if(expected!==generation||selectedCourse!==course||lessonNow()!==lesson){release(file?.url);return;}
+    row.textContent='';
+    if(!file){row.textContent=safeName(material.name)+' · Arquivo indisponível neste navegador. Solicite o anexo ao administrador desta prévia.';return;}
+    urls.push(file.url);
+    const link=document.createElement('a');link.dataset.previewMaterial='true';link.className='buttonLink outline';link.href=file.url;link.download=file.name;link.textContent='Baixar '+file.name+' ('+(file.size/1024/1024).toFixed(1)+' MB)';row.append(link);
+   }));
+  }
+  await Promise.all([renderGroup(course,'Materiais do curso completo','course'),renderGroup(lesson,'Materiais desta aula','lesson')]);
  }
  const baseRender=renderClass;renderClass=function(){baseRender();renderAttachments();};
  const baseShow=show;show=function(id){if(id!=='classView')clearDownloads();return baseShow(id);};
