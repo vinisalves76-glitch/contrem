@@ -117,14 +117,16 @@ const flush=()=>click('syncNow');
   await click('newAdminLesson');set('lessonName',title);
   if(title==='Primeira aula'){
    set('lessonUrl','https://player.mux.com/'+mux);
-   const pdf=new Blob(['manual'],{type:'application/pdf'});Object.defineProperty(pdf,'name',{value:'manual-aula.pdf'});
-   Object.defineProperty($('lessonMaterialFile'),'files',{value:[pdf],configurable:true});$('lessonMaterialFile').dispatchEvent(new dom.Event('change',{bubbles:true}));
+   const pdf=new (require('node:buffer').File)(['manual'],'manual-aula.pdf',{type:'application/pdf'});
+   const slides=new (require('node:buffer').File)(['slides'],'slides.pptx',{type:'application/vnd.openxmlformats-officedocument.presentationml.presentation'});
+   Object.defineProperty($('lessonMaterialFile'),'files',{value:[pdf,slides],configurable:true});$('lessonMaterialFile').dispatchEvent(new dom.Event('change',{bubbles:true}));
    await new Promise(resolve=>setTimeout(resolve,0));assert.match($('lessonMaterialAttachment').textContent,/manual-aula\.pdf/);
   }else set('lessonUrl',mux);
   await submit('lessonForm');
  }
  assert.match(run('courses[1].lessons[0].url'),/player\.mux\.com/,'lesson video must use the Mux player link');
- assert.equal(run('courses[1].lessons[0].previewMaterial.name'),'manual-aula.pdf');
+ assert.equal(run('courses[1].lessons[0].previewMaterials[0].name'),'manual-aula.pdf');
+ assert.equal(run('courses[1].lessons[0].previewMaterials.length'),2);
  const move=document.querySelector('[data-move="1:-1"]');move.dispatchEvent(new dom.Event('click',{bubbles:true}));
  assert.equal(run('courses[1].lessons[0].name'),'Segunda aula');
  tab('details');set('courseFormat','single');await submit('courseForm');
@@ -134,6 +136,40 @@ const flush=()=>click('syncNow');
  run('openCourse(courses[1].id);chooseLesson(1)');await new Promise(resolve=>setTimeout(resolve,0));
  assert.equal($('player').hidden,false,'video playback remains on the Mux hosted player');
  assert.match($('lessonMaterial').textContent,/manual-aula\.pdf/,'attached support file must open from the lesson');
+ assert.equal($('lessonMaterial').querySelectorAll('a[download]').length,2);
+ assert.equal($('lessonMaterial').querySelector('a[download]').download,'manual-aula.pdf');
+ // Editor removal is metadata-only: shared blobs used by copied courses must remain.
+ run('editLesson(courses[1].id,1)');
+ assert.equal(document.querySelectorAll('[data-remove-material]').length,2);
+ document.querySelector('[data-remove-material="1"]').onclick();
+ await submit('lessonForm');
+ assert.equal(run('courses[1].lessons[1].previewMaterials.length'),1);
+ assert.ok(Array.from(mediaMemory.values()).some(record=>record.name==='slides.pptx'),'removing one link must not delete shared blobs');
+ // Legacy records survive editing even if IndexedDB/API is unavailable.
+ run('courses[1].lessons[1].previewMaterial=courses[1].lessons[1].previewMaterials[0];delete courses[1].lessons[1].previewMaterials');
+ const mediaApi=context.AcademyPreviewMedia;context.AcademyPreviewMedia=undefined;
+ run('editLesson(courses[1].id,1)');await submit('lessonForm');context.AcademyPreviewMedia=mediaApi;
+ assert.equal(run('courses[1].lessons[1].previewMaterials[0].name'),'manual-aula.pdf');
+ assert.equal(run('"previewMaterial" in courses[1].lessons[1]'),false);
+ // During an upload, switching lessons, saving, and exiting must wait.
+ run('editLesson(courses[1].id,1)');const editedId=$('editLessonId').value;
+ const originalSave=mediaApi.save;let finishUpload;
+ mediaApi.save=()=>new Promise(resolve=>{finishUpload=resolve;});
+ const photo=new (require('node:buffer').File)(['photo'],'foto.png',{type:'image/png'});
+ Object.defineProperty($('lessonMaterialFile'),'files',{value:[photo],configurable:true});$('lessonMaterialFile').dispatchEvent(new dom.Event('change',{bubbles:true}));
+ assert.equal($('saveLesson').disabled,true);
+ run('editLesson(courses[1].id,0)');assert.equal($('editLessonId').value,editedId);
+ await submit('lessonForm');assert.equal(run('courses[1].lessons[1].previewMaterials.length'),1);
+ await click('exit');assert.equal(context.AcademySession.role,'admin');
+ finishUpload(await originalSave(photo,'support'));await new Promise(resolve=>setTimeout(resolve,0));mediaApi.save=originalSave;
+ assert.equal($('saveLesson').disabled,false);await submit('lessonForm');
+ assert.equal(run('courses[1].lessons[1].previewMaterials.length'),2);
+ // Count limit is checked before any writes and doesn't change the current attachments.
+ run('editLesson(courses[1].id,1)');const beforeBlobs=mediaMemory.size;
+ Object.defineProperty($('lessonMaterialFile'),'files',{value:Array(19).fill(photo),configurable:true});$('lessonMaterialFile').dispatchEvent(new dom.Event('change',{bubbles:true}));
+ assert.match($('adminFeedback').textContent,/até 20/);assert.equal(mediaMemory.size,beforeBlobs);
+ await click('cancelLessonEdit');
+ tab('review');await click('adminPublish');await flush();
  const duplicated=document.querySelector('[data-course-copy="'+series+'"]');duplicated.dispatchEvent(new dom.Event('click',{bubbles:true}));
  assert.equal(run('courses.length'),3);assert.equal(run('courses[2].status'),'draft');
  assert.notEqual(run('courses[2].lessons[0].id'),run('courses[1].lessons[0].id'));
@@ -181,6 +217,16 @@ const flush=()=>click('syncNow');
  $('markDone').onclick();await flush();await click('exit');
  set('cloudEmail','fluxo@example.invalid');set('cloudPassword','SomenteTeste123!');await submit('cloudLoginForm');
  assert.equal(run('progress[courses[0].id].length'),1);
+ await click('exit');
+ // A real sandbox learner receives the uploaded files after leaving/re-entering.
+ await click('previewAdminEntry');$('studentsTab').dispatchEvent(new dom.Event('click',{bubbles:true}));await new Promise(resolve=>setTimeout(resolve,0));
+ const materialsRow=Array.from(document.querySelectorAll('.student-roster-row')).find(row=>row.querySelector('.roster-email').textContent==='fluxo@example.invalid');
+ const materialsGrant=materialsRow.querySelector('[data-course="'+series+'"]');materialsGrant.checked=true;materialsGrant.dispatchEvent(new dom.Event('change',{bubbles:true}));
+ await new Promise(resolve=>setTimeout(resolve,0));await click('exit');
+ set('cloudEmail','fluxo@example.invalid');set('cloudPassword','SomenteTeste123!');await submit('cloudLoginForm');
+ run('openCourse("'+series+'");chooseLesson(1)');await new Promise(resolve=>setTimeout(resolve,0));
+ assert.equal(context.AcademySession.role,'student');assert.equal($('lessonMaterial').querySelectorAll('a[download]').length,2);
+ assert.equal($('lessonMaterial').querySelector('a[download]').download,'manual-aula.pdf');
  await click('exit');
  // Test fixtures use the same authoring, enrollment and learner persistence paths.
  await click('previewAdminEntry');
