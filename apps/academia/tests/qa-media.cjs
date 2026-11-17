@@ -42,6 +42,11 @@ const file=(name,type='application/octet-stream',size)=>{const value=new File(['
  delayReads=false;records.delete(pdf.id);context.renderClass();await wait();assert.match(document.getElementById('lessonMaterial').textContent,/indisponível neste navegador/);
  assert.equal(media.materialsFor({previewMaterials:Array.from({length:25},(_,i)=>({id:'attachment-'+i}))}).length,20);
  assert.equal(media.materialsFor({previewMaterials:[slides,slides]}).length,1);
+ context.selectedCourse={previewMaterials:[slides],supportLinks:[{title:'Curso completo',url:'https://example.invalid/curso'}],lessons:[{previewMaterials:[video]},{}]};context.selectedLesson=0;context.renderClass();await wait();
+ assert.equal(document.querySelector('[data-material-scope="course"] a[download]').download,'slides.pptx');assert.equal(document.querySelector('[data-material-scope="lesson"] a[download]').download,'apoio.mp4');
+ context.selectedLesson=1;context.renderClass();await wait();assert.equal(document.querySelector('[data-material-scope="course"] a[download]').download,'slides.pptx');assert.equal(document.querySelectorAll('[data-material-scope="lesson"] a[download]').length,0);
+ delayReads=true;context.selectedCourse={previewMaterials:[slides],lessons:[]};context.selectedLesson=0;context.renderClass();await wait();context.selectedCourse={previewMaterials:[video],lessons:[]};context.renderClass();await wait();pending.splice(0).forEach(complete=>complete());await wait();
+ assert.equal(document.querySelectorAll('a[download]').length,1);assert.equal(document.querySelector('a[download]').download,'apoio.mp4','course identity must guard async reads when both lessons are null');delayReads=false;
  const otherDoc=parseHTML('<div id="player"></div><div id="lessonMaterial"></div>').document;
  const noDB={...context,indexedDB:undefined,document:otherDoc,selectedCourse:{lessons:[{supportLinks:[{title:'YouTube sem banco',url:'https://youtu.be/exemplo'}]}]},selectedLesson:0,$:id=>otherDoc.getElementById(id),renderClass(){otherDoc.getElementById('lessonMaterial').textContent='';},show(){}};
  noDB.window=noDB;vm.createContext(noDB);vm.runInContext(fs.readFileSync('src/assets/admin-preview-media.js','utf8'),noDB);noDB.renderClass();await wait();assert.equal(otherDoc.querySelector('[data-support-link]').href,'https://youtu.be/exemplo');
