@@ -4,27 +4,29 @@
  const byId=id=>document.getElementById(id);
  const isAdmin=()=>window.AcademySession?.role==='admin';
  const makeId=prefix=>prefix+'-'+crypto.randomUUID();
- let filter='',statusFilter='all',tab='details',courseBaseline=null,lessonBaseline=null,selectedPhoto='',selectedMaterial=null;
+ let filter='',statusFilter='all',tab='details',courseBaseline=null,lessonBaseline=null,selectedPhoto='',selectedMaterials=[],uploading=false,attachmentGeneration=0;
  const courseFields=['courseName','courseCategory','courseDescription','courseHours','courseFormat'];
  const lessonFields=['lessonName','lessonUrl','lessonDescription','lessonMaterialTitle','lessonMaterialUrl','lessonMinutes'];
- const fingerprint=fields=>JSON.stringify({values:fields.map(id=>byId(id).value),photo:fields===courseFields?selectedPhoto:null,material:fields===lessonFields?selectedMaterial:null});
+ const fingerprint=fields=>JSON.stringify({values:fields.map(id=>byId(id).value),photo:fields===courseFields?selectedPhoto:null,material:fields===lessonFields?selectedMaterials:null});
  function pendingEdits(){
   return {
    course:isAdmin()&&courseBaseline!==null&&fingerprint(courseFields)!==courseBaseline,
    lesson:isAdmin()&&lessonBaseline!==null&&!byId('lessonForm').classList.contains('hidden')&&fingerprint(lessonFields)!==lessonBaseline
   };
  }
- function hasPendingEdits(){const pending=pendingEdits();return pending.course||pending.lesson;}
+ function hasPendingEdits(){if(uploading)return true;const pending=pendingEdits();return pending.course||pending.lesson;}
  function confirmDiscard(lessonOnly=false){
+  if(uploading){notice('Aguarde o envio dos materiais antes de mudar de aula ou sair.',true);return false;}
   const pending=pendingEdits();
   if(!(pending.lesson||!lessonOnly&&pending.course))return true;
   return confirm('Existem alterações não salvas '+(lessonOnly?'nesta aula':'no curso ou na aula')+'. Deseja descartá-las e continuar?');
  }
  function updateEditStatus(){
   const pending=pendingEdits(),dirty=pending.course||pending.lesson,c=current();
-  byId('adminEditStatus').textContent=dirty?(pending.course&&pending.lesson?'Curso e aula com alterações não salvas.':pending.course?'Informações do curso com alterações não salvas.':'Aula com alterações não salvas.'):'';
-  byId('adminPublish').disabled=dirty||!c||!!readiness(c)||c.status==='published';
-  byId('adminUnpublish').disabled=dirty;
+  byId('adminEditStatus').textContent=uploading?'Guardando materiais neste navegador…':dirty?(pending.course&&pending.lesson?'Curso e aula com alterações não salvas.':pending.course?'Informações do curso com alterações não salvas.':'Aula com alterações não salvas.'):'';
+  byId('adminPublish').disabled=uploading||dirty||!c||!!readiness(c)||c.status==='published';
+  byId('adminUnpublish').disabled=uploading||dirty;
+  byId('saveLesson').disabled=uploading;byId('lessonMaterialFile').disabled=uploading;
   byId('editingStatus').classList.toggle('pending',!!dirty);
  }
  function savedBaseline(part='all'){
@@ -82,7 +84,7 @@
  byId('lessonUrl').placeholder='https://stream.mux.com/ID.m3u8 ou ID do Playback';
  byId('lessonUrl').insertAdjacentHTML('afterend','<small class="muted">Cole o link do player Mux ou o Playback ID do vídeo processado no Mux.</small>');
  byId('lessonMaterialUrl').parentElement.querySelector('label').textContent='Link do material de apoio (opcional)';
- byId('lessonMaterialUrl').parentElement.insertAdjacentHTML('afterend','<div class="field"><label for="lessonMaterialFile">Anexar conteúdo de apoio</label><input id="lessonMaterialFile" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"><small class="muted">PDF, imagens ou documentos · até 50 MB nesta prévia local.</small><p id="lessonMaterialAttachment" class="adm-attachment-status" aria-live="polite">Nenhum material anexado.</p><button type="button" id="removeLessonMaterial" class="outline" hidden>Remover material anexado</button></div>');
+ byId('lessonMaterialUrl').parentElement.insertAdjacentHTML('afterend','<div class="field"><label for="lessonMaterialFile">Anexar conteúdo de apoio</label><input id="lessonMaterialFile" type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.doc,.docx,.odt,.xls,.xlsx,.ods,.ppt,.pptx,.odp,.txt,.epub,.mp4,.webm"><small class="muted">Até 20 materiais por aula. Apostilas, livros PDF/EPUB, slides, manuais, fotos e documentos: até 50 MB cada. Vídeos de apoio MP4/WebM: até 500 MB cada. Os anexos ficam somente neste navegador; o vídeo principal da aula continua no Mux.</small><div id="lessonMaterialAttachment" class="adm-attachment-status" aria-live="polite">Nenhum material anexado.</div></div>');
  byId('lessonName').maxLength=180;
  byId('lessonDescription').maxLength=4000;
  byId('lessonName').parentElement.insertAdjacentHTML('afterend','<div class="field"><label for="lessonMinutes">Duração estimada (minutos, opcional)</label><input id="lessonMinutes" type="number" min="1" max="10000" step="1"></div>');
@@ -106,7 +108,7 @@
   byId('editingStatus').classList.toggle('published',c?.status==='published');
   byId('newAdminLesson').disabled=false;
   byId('lessonHint').textContent=c?c.name+' · '+(typeOf(c)==='single'?'Aula única':'Série de aulas'):'Preencha e salve as informações do curso para começar a adicionar aulas.';
-  byId('adminLessonOrder').innerHTML=c?.lessons.length?c.lessons.map((l,i)=>'<li><span class="adm-order">'+(i+1)+'</span><div class="adm-lesson-info"><b>'+esc(l.name)+'</b><small>'+ (videoId(l.url)?'Vídeo Mux cadastrado':'Link do Mux pendente')+(l.previewMaterial?.name?' · Material anexado':'')+(l.minutes?' · '+Number(l.minutes)+' min':'')+'</small></div><div class="adm-lesson-actions"><button type="button" class="outline" data-lesson-edit="'+i+'">Editar</button><button type="button" class="outline" data-move="'+i+':-1" aria-label="Subir aula '+(i+1)+'" '+(i===0?'disabled':'')+'>↑</button><button type="button" class="outline" data-move="'+i+':1" aria-label="Descer aula '+(i+1)+'" '+(i===c.lessons.length-1?'disabled':'')+'>↓</button><button type="button" class="danger" data-lesson-delete="'+i+'" aria-label="Remover aula '+(i+1)+'">Remover</button></div></li>').join(''):'<li class="adm-empty"><b>A sequência começa aqui.</b><span>Adicione a primeira aula e organize o conteúdo do curso.</span></li>';
+  byId('adminLessonOrder').innerHTML=c?.lessons.length?c.lessons.map((l,i)=>'<li><span class="adm-order">'+(i+1)+'</span><div class="adm-lesson-info"><b>'+esc(l.name)+'</b><small>'+ (videoId(l.url)?'Vídeo Mux cadastrado':'Link do Mux pendente')+((l.previewMaterials?.length||l.previewMaterial)?' · Materiais anexados':'')+(l.minutes?' · '+Number(l.minutes)+' min':'')+'</small></div><div class="adm-lesson-actions"><button type="button" class="outline" data-lesson-edit="'+i+'">Editar</button><button type="button" class="outline" data-move="'+i+':-1" aria-label="Subir aula '+(i+1)+'" '+(i===0?'disabled':'')+'>↑</button><button type="button" class="outline" data-move="'+i+':1" aria-label="Descer aula '+(i+1)+'" '+(i===c.lessons.length-1?'disabled':'')+'>↓</button><button type="button" class="danger" data-lesson-delete="'+i+'" aria-label="Remover aula '+(i+1)+'">Remover</button></div></li>').join(''):'<li class="adm-empty"><b>A sequência começa aqui.</b><span>Adicione a primeira aula e organize o conteúdo do curso.</span></li>';
   byId('adminReviewContent').innerHTML=c?'<div class="adm-review-title"><span class="adm-badge">'+(typeOf(c)==='single'?'Aula única':'Série de aulas')+'</span><h3>'+esc(c.name)+'</h3><p>'+esc(c.description)+'</p></div><dl class="adm-review-meta"><div><dt>Categoria</dt><dd>'+esc(c.category||'Sem categoria')+'</dd></div><div><dt>Carga horária</dt><dd>'+Number(c.hours||8)+' horas</dd></div><div><dt>Conteúdo</dt><dd>'+c.lessons.length+' aula(s)</dd></div></dl><p class="'+(readiness(c)?'notice':'adm-ready')+'">'+esc(readiness(c)||'Tudo pronto. Publique e libere o acesso no módulo Alunos.')+'</p><button type="button" id="adminStudentPreview" class="outline">Visualizar sala do aluno →</button>':'<div class="adm-empty">Salve um curso para revisar e publicar.</div>';
   byId('adminPublish').disabled=!c||!!readiness(c)||c.status==='published';
   byId('adminUnpublish').hidden=c?.status!=='published';
@@ -145,7 +147,7 @@
  byId('resetForm').onclick=newCourse;byId('newAdminCourse').onclick=newCourse;
  courseForm.onsubmit=event=>{
   event.preventDefault();if(!isAdmin())return;
-  if(pendingEdits().lesson){notice('Salve a aula em edição ou cancele suas alterações antes de salvar as informações do curso.',true);chooseTab('lessons');return;}
+  if(uploading||pendingEdits().lesson){notice('Salve a aula em edição ou cancele suas alterações antes de salvar as informações do curso.',true);chooseTab('lessons');return;}
   const c=current(),format=byId('courseFormat').value;
   if(format==='single'&&c?.lessons.length>1){notice('Este curso já tem várias aulas. Mantenha série de aulas ou remova as aulas extras antes de mudar o formato.',true);return;}
   const photo=selectedPhoto,name=byId('courseName').value.trim();
@@ -183,22 +185,37 @@
  });
  byId('removeCoursePhoto').onclick=()=>{selectedPhoto='';byId('coursePhotoFile').value='';showCoverPreview('');updateEditStatus();};
  function renderAttachmentStatus(){
-  const material=byId('lessonMaterialAttachment');
-  material.textContent=selectedMaterial?selectedMaterial.name+' · '+(selectedMaterial.size/1024/1024).toFixed(1)+' MB · salvo nesta prévia':'Nenhum material anexado.';
-  byId('removeLessonMaterial').hidden=!selectedMaterial;
+  const container=byId('lessonMaterialAttachment');container.textContent='';
+  if(!selectedMaterials.length){container.textContent='Nenhum material anexado.';return;}
+  const list=document.createElement('ul');
+  selectedMaterials.forEach((material,index)=>{
+   const row=document.createElement('li'),name=document.createElement('span'),button=document.createElement('button');
+   name.textContent=material.name+' · '+(material.size/1024/1024).toFixed(1)+' MB ';
+   button.type='button';button.className='outline';button.textContent='Remover';button.setAttribute('aria-label','Remover '+material.name);button.dataset.removeMaterial=String(index);button.disabled=uploading;
+   button.onclick=()=>{if(uploading)return;selectedMaterials.splice(index,1);renderAttachmentStatus();updateEditStatus();};
+   row.append(name,button);list.append(row);
+  });container.append(list);
  }
- async function attachLocalFile(file,kind){
-  if(!file)return;
-  if(!window.AcademyPreviewMedia){notice('Anexos locais indisponíveis neste navegador. Recarregue a prévia e tente novamente.',true);return;}
-  const extension=file.name.split('.').pop().toLowerCase(),allowed=['pdf','png','jpg','jpeg','webp','doc','docx','xls','xlsx','ppt','pptx','txt'];
-  if(!allowed.includes(extension)||file.size>50*1024*1024){byId('lessonMaterialFile').value='';notice('Selecione PDF, imagem ou documento de até 50 MB.',true);return;}
-  const status=byId('lessonMaterialAttachment');status.textContent='Salvando arquivo nesta prévia…';
-  try{const metadata=await window.AcademyPreviewMedia.save(file,'support');selectedMaterial=metadata;renderAttachmentStatus();updateEditStatus();notice('Material de apoio guardado nesta prévia. Salve a aula para vinculá-lo ao curso.');}
-  catch(error){status.textContent='Não foi possível salvar o arquivo.';notice(error.message||'O navegador não conseguiu guardar este anexo.',true);}
+ async function attachLocalFiles(files){
+  if(!isAdmin()||!files.length||uploading)return;
+  const media=window.AcademyPreviewMedia;
+  if(!media){notice('Anexos locais indisponíveis neste navegador. Recarregue a prévia e tente novamente.',true);return;}
+  if(files.length+selectedMaterials.length>media.MAX_FILES){notice('Cada aula permite até 20 materiais de apoio.',true);byId('lessonMaterialFile').value='';return;}
+  try{files.forEach(file=>media.validate(file,'support'));}catch(error){notice(error.message,true);byId('lessonMaterialFile').value='';return;}
+  const expected=++attachmentGeneration,courseId=current()?.id,lessonId=byId('editLessonId').value;
+  uploading=true;renderAttachmentStatus();updateEditStatus();
+  try{
+   for(const file of files){
+    const metadata=await media.save(file,'support');
+    if(expected!==attachmentGeneration||!isAdmin()||current()?.id!==courseId||byId('editLessonId').value!==lessonId)return;
+    selectedMaterials.push(metadata);renderAttachmentStatus();
+   }
+   notice('Materiais guardados nesta prévia. Salve a aula para vinculá-los ao curso.');
+  }catch(error){if(expected===attachmentGeneration)notice(error.message||'O navegador não conseguiu guardar este anexo.',true);}
+  finally{if(expected===attachmentGeneration){uploading=false;byId('lessonMaterialFile').value='';renderAttachmentStatus();updateEditStatus();}}
  }
- byId('lessonMaterialFile').addEventListener('change',event=>attachLocalFile(event.target.files?.[0],'support'));
- byId('removeLessonMaterial').onclick=()=>{selectedMaterial=null;byId('lessonMaterialFile').value='';renderAttachmentStatus();updateEditStatus();};
- const oldResetLesson=resetLessonForm;resetLessonForm=function(){oldResetLesson();byId('lessonUrl').value='';byId('lessonMinutes').value='';selectedMaterial=null;byId('lessonMaterialFile').value='';renderAttachmentStatus();savedBaseline('lesson');};
+ byId('lessonMaterialFile').addEventListener('change',event=>attachLocalFiles(Array.from(event.target.files||[])));
+ const oldResetLesson=resetLessonForm;resetLessonForm=function(){attachmentGeneration++;uploading=false;oldResetLesson();byId('lessonUrl').value='';byId('lessonMinutes').value='';selectedMaterials=[];byId('lessonMaterialFile').value='';renderAttachmentStatus();savedBaseline('lesson');};
  byId('newAdminLesson').onclick=()=>{
   if(!isAdmin())return;
   let c=current();
@@ -216,12 +233,13 @@
   if(current()?.id!==id){if(!openEditor(id,'lessons'))return;}else if(!confirmDiscard(true))return;
   selectedCourse=c;byId('editLessonId').value=lesson.id;byId('lessonName').value=lesson.name;byId('lessonUrl').value=lesson.url;
   byId('lessonDescription').value=lesson.description||'';byId('lessonMaterialTitle').value=lesson.materialTitle||'';
-  byId('lessonMaterialUrl').value=lesson.materialUrl||'';byId('lessonMinutes').value=lesson.minutes||'';selectedMaterial=lesson.previewMaterial||null;byId('lessonMaterialFile').value='';renderAttachmentStatus();
+  byId('lessonMaterialUrl').value=lesson.materialUrl||'';byId('lessonMinutes').value=lesson.minutes||'';selectedMaterials=(Array.isArray(lesson.previewMaterials)?lesson.previewMaterials:lesson.previewMaterial?[lesson.previewMaterial]:[]).map(material=>({...material}));byId('lessonMaterialFile').value='';renderAttachmentStatus();
   byId('lessonFormTitle').textContent='Editar aula';lessonForm.classList.remove('hidden');savedBaseline('lesson');chooseTab('lessons');byId('lessonName').focus();
  };
  byId('cancelLessonEdit').onclick=()=>{if(!confirmDiscard(true))return;resetLessonForm();lessonForm.classList.add('hidden');updateEditStatus();};
  lessonForm.onsubmit=event=>{
   event.preventDefault();if(!isAdmin())return;
+  if(uploading){notice('Aguarde os materiais terminarem de salvar antes de salvar a aula.',true);return;}
   const c=current();if(!c)return;
   const editId=byId('editLessonId').value,lesson=c.lessons.find(l=>l.id===editId),raw=byId('lessonUrl').value.trim(),mux=videoId(raw);
   if(editId&&!lesson){notice('A aula não existe mais. Abra o curso novamente.',true);return;}
@@ -232,8 +250,8 @@
   if(materialUrl&&!safeHttps(materialUrl)){notice('Use um endereço HTTPS válido para o material.',true);return;}
   const minutesText=byId('lessonMinutes').value,minutes=Number(minutesText);
   if(minutesText&&(!Number.isInteger(minutes)||minutes<1||minutes>10000)){notice('Informe uma duração de 1 a 10.000 minutos inteiros, ou deixe o campo vazio.',true);return;}
-  const data={name,url:mux?'https://player.mux.com/'+mux:'',description:byId('lessonDescription').value.trim(),materialTitle:byId('lessonMaterialTitle').value.trim()||selectedMaterial?.name||'',materialUrl,previewMaterial:selectedMaterial,minutes:Number(byId('lessonMinutes').value)||null};
-  if(lesson)Object.assign(lesson,data);else c.lessons.push({id:makeId('lesson'),...data});
+  const data={name,url:mux?'https://player.mux.com/'+mux:'',description:byId('lessonDescription').value.trim(),materialTitle:byId('lessonMaterialTitle').value.trim()||selectedMaterials[0]?.name||'',materialUrl,previewMaterials:selectedMaterials.map(material=>({...material})),minutes:Number(byId('lessonMinutes').value)||null};
+  if(lesson){Object.assign(lesson,data);delete lesson.previewMaterial;}else c.lessons.push({id:makeId('lesson'),...data});
   c.status='draft';save();resetLessonForm();byId('lessonMinutes').value='';lessonForm.classList.add('hidden');refresh();notice('Aula salva. Revise o curso para publicar na prévia.');
  };
  byId('adminCourses').addEventListener('click',event=>{
@@ -243,7 +261,7 @@
   if(b.dataset.courseDelete){const id=b.dataset.courseDelete,wasCurrent=current()?.id===id;if(wasCurrent&&!confirmDiscard())return;deleteCourse(id);if(wasCurrent&&!courses.some(c=>c.id===id))resetForm();refresh();}
  });
  byId('adminLessonOrder').addEventListener('click',event=>{
-  if(!isAdmin())return;const c=current(),b=event.target.closest('button');if(!c||!b)return;
+  if(!isAdmin())return;if(uploading){notice('Aguarde os materiais antes de alterar as aulas.',true);return;}const c=current(),b=event.target.closest('button');if(!c||!b)return;
   if(b.dataset.lessonEdit!==undefined){editLesson(c.id,Number(b.dataset.lessonEdit));return;}
   if(b.dataset.lessonDelete!==undefined){const n=c.lessons.length;deleteLesson(c.id,Number(b.dataset.lessonDelete));if(c.lessons.length!==n){c.status='draft';save();refresh();}return;}
   if(b.dataset.move){const [i,delta]=b.dataset.move.split(':').map(Number),to=i+delta;if(to<0||to>=c.lessons.length)return;[c.lessons[i],c.lessons[to]]=[c.lessons[to],c.lessons[i]];c.status='draft';save();refresh();notice('Ordem das aulas atualizada.');}
