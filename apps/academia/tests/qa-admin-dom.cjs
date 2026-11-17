@@ -138,6 +138,28 @@ const flush=()=>click('syncNow');
  assert.match($('lessonMaterial').textContent,/manual-aula\.pdf/,'attached support file must open from the lesson');
  assert.equal($('lessonMaterial').querySelectorAll('a[download]').length,2);
  assert.equal($('lessonMaterial').querySelector('a[download]').download,'manual-aula.pdf');
+ // Materials must be reachable directly from the lesson list, with no hidden ancestor.
+ run('show("adminView")');tab('lessons');const materialAction=document.querySelector('[data-lesson-materials="1"]');assert.ok(materialAction);
+ materialAction.dispatchEvent(new dom.Event('click',{bubbles:true}));
+ for(const id of ['lessonSupportSection','lessonMaterialFile','addSupportLink']){
+  for(let node=$(id);node;node=node.parentElement){assert.equal(Boolean(node.hidden),false,id+' hidden ancestor '+node.id);assert.equal(node.classList.contains('hidden'),false,id+' hidden class ancestor '+node.id);}
+ }
+ assert.equal($('lessonSupportHeading').textContent,'Materiais de apoio');
+ assert.equal($('attachSupportFiles').textContent,'+ Anexar arquivos');
+ const youtube='https://www.youtube.com/watch?v=teste123';
+ set('lessonMaterialTitle','Vídeo de apoio no YouTube');set('lessonMaterialUrl',youtube);
+ await submit('lessonForm');assert.match($('adminFeedback').textContent,/Adicionar link/,'unadded link draft must not be lost on save');
+ assert.equal(run('courses[1].lessons[1].supportLinks.length'),0);
+ await click('addSupportLink');assert.equal(document.querySelectorAll('[data-remove-support-link]').length,1);
+ await submit('lessonForm');assert.equal(run('courses[1].lessons[1].supportLinks[0].url'),youtube);
+ run('editLesson(courses[1].id,1)');assert.equal(document.querySelectorAll('[data-remove-support-link]').length,1);
+ set('lessonMaterialTitle','Link removível');set('lessonMaterialUrl','https://example.invalid/manual');await click('addSupportLink');
+ document.querySelector('[data-remove-support-link="1"]').onclick();await submit('lessonForm');
+ assert.equal(run('courses[1].lessons[1].supportLinks.length'),1);
+ // Legacy single links migrate into the list once and do not duplicate on re-edit.
+ run('courses[1].lessons[1].materialTitle="Legado";courses[1].lessons[1].materialUrl=courses[1].lessons[1].supportLinks[0].url');
+ run('editLesson(courses[1].id,1)');assert.equal(document.querySelectorAll('[data-remove-support-link]').length,1);await submit('lessonForm');
+ assert.equal(run('courses[1].lessons[1].materialUrl'),'');
  // Editor removal is metadata-only: shared blobs used by copied courses must remain.
  run('editLesson(courses[1].id,1)');
  assert.equal(document.querySelectorAll('[data-remove-material]').length,2);
@@ -226,6 +248,7 @@ const flush=()=>click('syncNow');
  set('cloudEmail','fluxo@example.invalid');set('cloudPassword','SomenteTeste123!');await submit('cloudLoginForm');
  run('openCourse("'+series+'");chooseLesson(1)');await new Promise(resolve=>setTimeout(resolve,0));
  assert.equal(context.AcademySession.role,'student');assert.equal($('lessonMaterial').querySelectorAll('a[download]').length,2);
+ const supportLink=$('lessonMaterial').querySelector('[data-support-link]');assert.ok(supportLink);assert.equal(supportLink.href,youtube);assert.equal(supportLink.target,'_blank');assert.equal(supportLink.rel,'noopener noreferrer');
  assert.equal($('lessonMaterial').querySelector('a[download]').download,'manual-aula.pdf');
  await click('exit');
  // Test fixtures use the same authoring, enrollment and learner persistence paths.

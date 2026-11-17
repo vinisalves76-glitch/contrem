@@ -1,7 +1,7 @@
 // Local-only supporting materials for the Academy ADM preview.
 (() => {
  'use strict';
- if(!window.CONTREM_ACADEMY_CONFIG?.preview||!window.indexedDB)return;
+ if(!window.CONTREM_ACADEMY_CONFIG?.preview)return;
  const DB='contrem-adm-preview-media-v1',STORE='attachments',MAX_FILES=20;
  const TYPES={pdf:['application/pdf'],png:['image/png'],jpg:['image/jpeg'],jpeg:['image/jpeg'],webp:['image/webp'],gif:['image/gif'],doc:['application/msword'],docx:['application/vnd.openxmlformats-officedocument.wordprocessingml.document'],odt:['application/vnd.oasis.opendocument.text'],xls:['application/vnd.ms-excel'],xlsx:['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],ods:['application/vnd.oasis.opendocument.spreadsheet'],ppt:['application/vnd.ms-powerpoint'],pptx:['application/vnd.openxmlformats-officedocument.presentationml.presentation'],odp:['application/vnd.oasis.opendocument.presentation'],txt:['text/plain'],epub:['application/epub+zip'],mp4:['video/mp4'],webm:['video/webm']};
  let opening;
@@ -21,7 +21,16 @@
   const values=Array.isArray(lesson?.previewMaterials)?lesson.previewMaterials:lesson?.previewMaterial?[lesson.previewMaterial]:[];
   const seen=new Set();return values.filter(item=>item&&typeof item.id==='string'&&!seen.has(item.id)&&(seen.add(item.id),true)).slice(0,MAX_FILES);
  }
+ function supportLinksFor(lesson){
+  const values=[...(Array.isArray(lesson?.supportLinks)?lesson.supportLinks:[]),...(lesson?.materialUrl?[{title:lesson.materialTitle||'Material de apoio',url:lesson.materialUrl}]:[])],seen=new Set(),links=[];
+  for(const value of values){
+   if(!value||typeof value.url!=='string'||value.url.length>2000)continue;
+   try{const url=new URL(value.url.trim());if(url.protocol!=='https:'||url.username||url.password||!url.hostname||['localhost','127.0.0.1'].includes(url.hostname)||seen.has(url.href))continue;seen.add(url.href);links.push({title:(String(value.title||'Material de apoio').trim().slice(0,150)||'Material de apoio'),url:url.href});}catch{}
+   if(links.length===20)break;
+  }return links;
+ }
  function database(){
+  if(!window.indexedDB)return Promise.reject(Error('Armazenamento local indisponível neste navegador.'));
   if(opening)return opening;
   opening=new Promise((resolve,reject)=>{
    const request=indexedDB.open(DB,1);
@@ -51,20 +60,23 @@
   const db=await database();
   await new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).delete(id);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error||Error('Não foi possível remover o anexo.'));});
  }
- window.AcademyPreviewMedia={save,get,remove,validate,materialsFor,MAX_FILES};
+ window.AcademyPreviewMedia={save,get,remove,validate,materialsFor,supportLinksFor,MAX_FILES};
  if(!document.getElementById('player'))return;
  let generation=0,urls=[];
  const release=url=>{if(url)URL.revokeObjectURL(url);};
  function clearDownloads(){generation++;urls.forEach(release);urls=[];document.querySelector('[data-preview-materials]')?.remove();}
  const lessonNow=()=>selectedCourse?.lessons?.[selectedLesson]||null;
  async function renderAttachments(){
-  clearDownloads();const expected=generation,lesson=lessonNow(),materials=materialsFor(lesson);
-  if(!materials.length)return;
+  clearDownloads();const expected=generation,lesson=lessonNow(),materials=materialsFor(lesson),links=supportLinksFor(lesson);
+  $('lessonMaterial').textContent='';$('lessonMaterial').hidden=!materials.length&&!links.length;
+  if(!materials.length&&!links.length)return;
   const holder=document.createElement('div');holder.dataset.previewMaterials='true';
   const title=document.createElement('h3');title.textContent='Materiais de apoio';holder.append(title);
-  const note=document.createElement('p');note.className='muted';note.textContent='Anexos de teste salvos somente neste navegador. Clique em Baixar para guardar uma cópia.';holder.append(note);
+  const note=document.createElement('p');note.className='muted';note.textContent='Baixe os arquivos ou abra os links externos. Os anexos desta prévia ficam salvos somente neste navegador.';holder.append(note);
   const list=document.createElement('ul');holder.append(list);
   $('lessonMaterial').append(holder);$('lessonMaterial').hidden=false;
+  links.forEach(material=>{const row=document.createElement('li'),link=document.createElement('a');link.className='buttonLink outline';link.dataset.supportLink='true';link.href=material.url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Abrir link: '+material.title;row.append(link);list.append(row);});
+
   await Promise.all(materials.map(async material=>{
    // Insert placeholders first so asynchronous reads preserve the author's order.
    const row=document.createElement('li');row.textContent=safeName(material.name)+' · Carregando…';list.append(row);

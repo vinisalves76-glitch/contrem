@@ -3,7 +3,7 @@ const {webcrypto}=require('node:crypto'),{File}=require('node:buffer'),{parseHTM
 const {document}=parseHTML('<div id="player"></div><div id="lessonMaterial"></div>');
 const records=new Map(),created=[],revoked=[],pending=[];let delayReads=false;
 const indexedDB={open(){const request={};queueMicrotask(()=>{request.result={objectStoreNames:{contains:()=>true},transaction(){const tx={objectStore(){return {put(record){queueMicrotask(()=>{records.set(record.id,record);tx.oncomplete?.();});},get(id){const result={},complete=()=>{result.result=records.get(id);result.onsuccess?.();};if(delayReads)pending.push(complete);else queueMicrotask(complete);return result;},delete(id){records.delete(id);queueMicrotask(()=>tx.oncomplete?.());}};}};return tx;}};request.onsuccess?.();});return request;}};
-const context={window:null,CONTREM_ACADEMY_CONFIG:{preview:true},indexedDB,document,Blob,crypto:webcrypto,URL:{createObjectURL(){const url='blob:test-'+created.length;created.push(url);return url;},revokeObjectURL(url){revoked.push(url);}},selectedCourse:{lessons:[]},selectedLesson:0,$:id=>document.getElementById(id),renderClass(){document.getElementById('lessonMaterial').textContent='';},show(){},addEventListener(){}};
+const context={window:null,CONTREM_ACADEMY_CONFIG:{preview:true},indexedDB,document,Blob,crypto:webcrypto,URL:class extends URL {static createObjectURL(){const url='blob:test-'+created.length;created.push(url);return url;}static revokeObjectURL(url){revoked.push(url);}},selectedCourse:{lessons:[]},selectedLesson:0,$:id=>document.getElementById(id),renderClass(){document.getElementById('lessonMaterial').textContent='';},show(){},addEventListener(){}};
 context.window=context;vm.createContext(context);vm.runInContext(fs.readFileSync('src/assets/admin-preview-media.js','utf8'),context);
 const media=context.AcademyPreviewMedia,wait=()=>new Promise(resolve=>setTimeout(resolve,0));
 const file=(name,type='application/octet-stream',size)=>{const value=new File(['content'],name,{type});if(size!==undefined)Object.defineProperty(value,'size',{value:size});return value;};
@@ -26,9 +26,10 @@ const file=(name,type='application/octet-stream',size)=>{const value=new File(['
  const downloaded=await media.get(pdf.id);assert.equal(downloaded.name,'manual.pdf');context.URL.revokeObjectURL(downloaded.url);
  const odd=await media.save(file('../nome:ruim.pdf','application/pdf'),'support');assert.equal(odd.name,'.._nome_ruim.pdf');
  const longName=await media.save(file('a'.repeat(240)+'.pdf','application/pdf'),'support');const longDownload=await media.get(longName.id);assert.ok(longDownload.name.endsWith('.pdf'));context.URL.revokeObjectURL(longDownload.url);
- context.selectedCourse.lessons=[{previewMaterials:[pdf,slides,video]},{previewMaterial:pdf},{previewMaterials:[],previewMaterial:pdf}];
+ context.selectedCourse.lessons=[{previewMaterials:[pdf,slides,video],supportLinks:[{title:'Vídeo externo',url:'https://www.youtube.com/watch?v=exemplo'},{title:'Inseguro',url:'javascript:alert(1)'},{title:'Credenciais',url:'https://user:secret@example.invalid/video'}],materialTitle:'Legado duplicado',materialUrl:'https://www.youtube.com/watch?v=exemplo'},{previewMaterial:pdf},{previewMaterials:[],previewMaterial:pdf}];
  context.renderClass();await wait();
  let links=document.querySelectorAll('a[download]');assert.equal(links.length,3);assert.equal(links[0].download,'manual.pdf');assert.equal(links[1].download,'slides.pptx');assert.equal(links[0].hasAttribute('target'),false);
+ assert.equal(document.querySelectorAll('[data-support-link]').length,1);assert.equal(document.querySelector('[data-support-link]').target,'_blank');assert.equal(document.querySelector('[data-support-link]').rel,'noopener noreferrer');
  const oldUrls=Array.from(links,link=>link.href);
  context.renderClass();await wait();assert.equal(document.querySelectorAll('a[download]').length,3,'rerender must not duplicate links');assert.ok(oldUrls.every(url=>revoked.includes(url)));
  context.selectedLesson=1;context.renderClass();await wait();assert.equal(document.querySelectorAll('a[download]').length,1,'legacy single attachment must download');
@@ -41,5 +42,8 @@ const file=(name,type='application/octet-stream',size)=>{const value=new File(['
  delayReads=false;records.delete(pdf.id);context.renderClass();await wait();assert.match(document.getElementById('lessonMaterial').textContent,/indisponível neste navegador/);
  assert.equal(media.materialsFor({previewMaterials:Array.from({length:25},(_,i)=>({id:'attachment-'+i}))}).length,20);
  assert.equal(media.materialsFor({previewMaterials:[slides,slides]}).length,1);
+ const otherDoc=parseHTML('<div id="player"></div><div id="lessonMaterial"></div>').document;
+ const noDB={...context,indexedDB:undefined,document:otherDoc,selectedCourse:{lessons:[{supportLinks:[{title:'YouTube sem banco',url:'https://youtu.be/exemplo'}]}]},selectedLesson:0,$:id=>otherDoc.getElementById(id),renderClass(){otherDoc.getElementById('lessonMaterial').textContent='';},show(){}};
+ noDB.window=noDB;vm.createContext(noDB);vm.runInContext(fs.readFileSync('src/assets/admin-preview-media.js','utf8'),noDB);noDB.renderClass();await wait();assert.equal(otherDoc.querySelector('[data-support-link]').href,'https://youtu.be/exemplo');
  console.log('PASS: native File downloads, type/size limits, multiple materials, legacy support, missing blobs, rerender deduplication and asynchronous lesson-switch cleanup.');
 })().catch(error=>{console.error(error);process.exitCode=1;});
