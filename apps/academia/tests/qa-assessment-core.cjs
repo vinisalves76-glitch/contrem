@@ -1,0 +1,15 @@
+const assert=require('node:assert/strict'),core=require('../src/assets/assessment-core.js');
+const legacy={text:'Pergunta antiga',choices:['A','B','C','D'],correct:1};
+assert.equal(core.normalizeQuestion(legacy).type,'single');assert.equal(core.gradeQuestion(legacy,1),true);assert.equal(core.gradeQuestion(legacy,'1'),false);
+const multi={...legacy,type:'multi',correct:[0,2]};assert.equal(core.gradeQuestion(multi,[2,0]),true);assert.equal(core.gradeQuestion(multi,[0]),false);assert.equal(core.gradeQuestion(multi,[0,1,2]),false);assert.equal(core.gradeQuestion(multi,[0,0,2]),false);
+const order={...legacy,type:'order',correct:[3,1,0,2]};assert.equal(core.gradeQuestion(order,[3,1,0,2]),true);assert.equal(core.gradeQuestion(order,[3,1,null,2]),false);assert.equal(core.gradeQuestion(order,[3,1,0,0]),false);
+const match={...order,type:'match',items:['I','II','III','IV']};assert.equal(core.gradeQuestion(match,[3,1,0,2]),true);assert.equal(core.gradeQuestion(match,[3,1]),false);
+assert.equal(core.grade([legacy,legacy,legacy],[1,1,0],67).passed,false);assert.equal(core.grade([legacy,legacy,legacy],[1,1,0],66).passed,true);assert.equal(core.grade([legacy,legacy,legacy],[1,1,0],67).score,66.67);
+assert.equal(core.grade(Array(8).fill(legacy),[1,1,1,1,1,1,0,0],75).passed,true);
+for(const q of [{...legacy,type:'x'},{...legacy,correct:99},{...multi,correct:[]},{...order,correct:[0,0,1,2]},{...match,items:['A']},{...legacy,imageUrl:'javascript:alert(1)'},{...legacy,imageUrl:'https://u:p@example.invalid/a.png'},{...legacy,illustration:'<script>'},{...legacy,choices:[]}])assert.throws(()=>core.normalizeQuestion(q),/inválida/);
+assert.throws(()=>core.validateQuestions([{...legacy,id:'repeat'},{...legacy,id:'repeat'}]),/duplicado/);
+assert.throws(()=>core.config([legacy],NaN),/mínima/);assert.throws(()=>core.grade([],[],75),/Cadastre/);
+const config=core.config([legacy,multi],75),before=core.fingerprint(config);config.questions[0].correct=0;assert.notEqual(core.fingerprint(config),before);
+const result=core.grade([{...legacy,competency:'Componentes'},{...multi,competency:'Registro'}],[1,[2,0]],75);assert.equal(result.competencies.Componentes.score,100);assert.equal(result.competencies.Registro.score,100);
+const pollution=core.grade([{...legacy,competency:'__proto__'}],[1],75);assert.equal(Object.hasOwn(pollution.competencies,'__proto__'),true);assert.equal(Object.prototype.total,undefined);
+console.log('PASS: backwards single, exact multi, complete order/match, raw threshold, competency scoring, safe schema and fingerprint changes.');

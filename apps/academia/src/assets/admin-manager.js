@@ -4,6 +4,8 @@
  const byId=id=>document.getElementById(id);
  const isAdmin=()=>window.AcademySession?.role==='admin';
  const makeId=prefix=>prefix+'-'+crypto.randomUUID();
+ const externalEdits=new Map();
+ window.AcademyAdminEdits={register(name,check,discard){externalEdits.set(name,{check,discard});},canLeave:()=>confirmDiscard(),changed:()=>updateEditStatus()};
  let filter='',statusFilter='all',tab='details',courseBaseline=null,lessonBaseline=null,selectedPhoto='',selectedMaterials=[],selectedLinks=[],uploading=false,attachmentGeneration=0,materialScope='lesson',courseMaterialsBaseline=null;
  const courseFields=['courseName','courseCategory','courseDescription','courseHours','courseFormat'];
  const lessonFields=['lessonName','lessonUrl','lessonDescription','lessonMaterialTitle','lessonMaterialUrl','lessonMinutes'];
@@ -12,19 +14,21 @@
  function pendingEdits(){
   return {
    course:isAdmin()&&courseBaseline!==null&&fingerprint(courseFields)!==courseBaseline,
+   external:isAdmin()&&Array.from(externalEdits.values()).some(hook=>hook.check()),
    courseMaterials:isAdmin()&&materialScope==='course'&&courseMaterialsBaseline!==null&&materialsFingerprint()!==courseMaterialsBaseline,
    lesson:isAdmin()&&lessonBaseline!==null&&!byId('lessonForm').classList.contains('hidden')&&fingerprint(lessonFields)!==lessonBaseline
   };
  }
- function hasPendingEdits(){if(uploading)return true;const pending=pendingEdits();return pending.course||pending.lesson||pending.courseMaterials;}
+ function hasPendingEdits(){if(uploading)return true;const pending=pendingEdits();return pending.course||pending.lesson||pending.courseMaterials||pending.external;}
  function confirmDiscard(lessonOnly=false){
   if(uploading){notice('Aguarde o envio dos materiais antes de mudar de aula ou sair.',true);return false;}
   const pending=pendingEdits();
-  if(!(pending.lesson||pending.courseMaterials||!lessonOnly&&pending.course))return true;
-  return confirm('Existem alterações não salvas '+(lessonOnly?'nesta aula':'no curso ou na aula')+'. Deseja descartá-las e continuar?');
+  if(!(pending.external||pending.lesson||pending.courseMaterials||!lessonOnly&&pending.course))return true;
+  const accepted=confirm('Existem alterações não salvas '+(lessonOnly?'nesta aula':'no curso ou na aula')+'. Deseja descartá-las e continuar?');
+  if(accepted)externalEdits.forEach(hook=>{if(hook.check())hook.discard?.();});return accepted;
  }
  function updateEditStatus(){
-  const pending=pendingEdits(),dirty=pending.course||pending.lesson||pending.courseMaterials,c=current();
+  const pending=pendingEdits(),dirty=pending.course||pending.lesson||pending.courseMaterials||pending.external,c=current();
   byId('adminEditStatus').textContent=uploading?'Guardando materiais neste navegador…':dirty?(pending.courseMaterials?'Materiais do curso com alterações não salvas.':pending.course&&pending.lesson?'Curso e aula com alterações não salvas.':pending.course?'Informações do curso com alterações não salvas.':'Aula com alterações não salvas.'):'';
   byId('adminPublish').disabled=uploading||dirty||!c||!!readiness(c)||c.status==='published';
   byId('adminUnpublish').disabled=uploading||dirty;

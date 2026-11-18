@@ -23,3 +23,7 @@ Nenhum SQL, conta, permissão de banco ou dado real foi alterado na organizaçã
 O registro da publicação central e os commits remotos devem ser consultados em `CONTINUIDADE_CENTRAL.md`. Arquivos de configuração preparados não são, sozinhos, evidência de deploy.
 
 Ciclo ADM em andamento: vídeo de aula por link/Playback ID Mux, botão Adicionar aula com orientação e anexos de apoio mantidos no sandbox local. Testes e build passaram; integração/deploy desta revisão em develop ainda pendentes. Nenhuma mudança em main ou produção. Detalhes em `continuidade/academia-adm.md`.
+
+## Avaliações dinâmicas — ciclo de 18/11/2026
+
+A frente da Academia integra autoria de atividades por aula/etapa e prova final por curso, com alternativa única/múltipla, ordenação e associação. Desafios mostram feedback imediato; prova final tem revisão e entrega, resultado por competência e retomada por aluno. Históricos/certificados e materiais de aula/curso foram preservados; testes e revisões independentes aprovados. A demonstração de Motores é um terceiro curso QA aditivo. O recurso permanece no sandbox local da homologação, sem Auth/banco/produção ou garantia antifraude. Código na feature `feature/academia-avaliacoes-dinamicas` a partir da develop `c87137c`; commit de integração, CI e Preview confirmados no registro `continuidade/academia-adm.md` ao concluir a publicação. QA visual real permanece pendente.
