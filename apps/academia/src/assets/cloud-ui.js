@@ -49,7 +49,7 @@
  }
  async function enterCloud(data){
   validateCourses(data.catalog.courses);
-  epoch++;identity=data;mode='cloud';window.AcademySession={role:data.member.role,preview:!!config?.preview};conflicted=false;dirtyCatalog=false;dirtyState=false;
+  epoch++;identity=data;mode='cloud';window.AcademySession={role:data.member.role,preview:!!config?.preview,userId:data.user.id};conflicted=false;dirtyCatalog=false;dirtyState=false;
   catalogRevision=data.catalog.revision;stateRevision=data.state.revision;
   catalogSaved=JSON.stringify(data.catalog.courses);stateSaved=stateJSON(data.state);
   academyStorage.setScope(data.user.id);
@@ -206,7 +206,7 @@
   if(!window.AcademyAdminPreviewService){loginStatus.textContent='A prévia não carregou. Recarregue a página.';return;}
   service=window.AcademyAdminPreviewService.create();
   const testAccess=document.createElement('div');testAccess.className='preview-login-note';
-  testAccess.innerHTML='<b>ÁREA DO ALUNO · CONTA DE TESTE</b><p>Entre como Aluno de teste pelo botão abaixo, sem e-mail ou senha. Dois cursos já vêm prontos: quatro aulas com vídeo de exemplo e duas provas. Basta entrar e abrir um curso. Seu progresso, provas e certificados ficam salvos aqui.</p><button type="button" id="previewStudentEntry" class="outline">Entrar como aluno de teste →</button><p>Não precisa cadastrar aulas nem informar vídeo. Para conferir a administração dos cursos, clique em Sair e abra o painel ADM de teste.</p><p id="previewStudentStatus" role="status" aria-live="polite"></p>';
+  testAccess.innerHTML='<b>ÁREA DO ALUNO · CONTA DE TESTE</b><p>Entre como Aluno de teste pelo botão abaixo, sem e-mail ou senha. Três cursos já vêm prontos, incluindo desafios por aula e prova final com caso prático. Basta entrar e abrir um curso. Seu progresso, provas e certificados ficam salvos aqui.</p><button type="button" id="previewStudentEntry" class="outline">Entrar como aluno de teste →</button><p>Não precisa cadastrar aulas nem informar vídeo. Para conferir a administração dos cursos, clique em Sair e abra o painel ADM de teste.</p><p id="previewStudentStatus" role="status" aria-live="polite"></p>';
   form.before(testAccess);
   document.getElementById('previewStudentEntry').onclick=async()=>{
    const button=document.getElementById('previewStudentEntry'),status=document.getElementById('previewStudentStatus');

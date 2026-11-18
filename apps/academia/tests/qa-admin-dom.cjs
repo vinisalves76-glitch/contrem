@@ -18,7 +18,7 @@ const run=code=>vm.runInContext(code,context);
 const asset=name=>run(fs.readFileSync('src/assets/'+name,'utf8'));
 asset('cloud-store.js');
 for(const code of html.matchAll(/<script>([\s\S]*?)<\/script>/g))run(code[1]);
-asset('contrem.js');asset('cloud-config.js');asset('cloud-service.js');asset('admin-preview-service.js');asset('cloud-ui.js');asset('admin-preview-media.js');asset('admin-manager.js');
+asset('contrem.js');asset('cloud-config.js');asset('assessment-core.js');asset('assessment-demo.js');asset('cloud-service.js');asset('admin-preview-service.js');asset('cloud-ui.js');asset('admin-preview-media.js');asset('admin-manager.js');asset('assessment-student.js');asset('assessment-author.js');
 const $=id=>document.getElementById(id);
 assert.ok($('coursePhotoFile'),'ADM must expose a native image picker');
 assert.equal($('coursePhotoFile').getAttribute('accept'),'image/jpeg,image/png,image/webp');
@@ -33,19 +33,24 @@ const click=async id=>$(id).onclick({currentTarget:$(id)});
 const mux='hXZZcG4J01eIXscxjSGGKtkfkQjbttFu1P01raXQinZ500';
 const tab=name=>document.querySelector('[data-admin-tab="'+name+'"]').onclick();
 const flush=()=>click('syncNow');
+const answerFinal=async values=>{
+ if($('assessmentRetry'))await click('assessmentRetry');else if($('assessmentStart'))await click('assessmentStart');
+ for(const value of values){const input=document.querySelector('[data-answer-index="'+value+'"]');input.checked=true;input.onchange();await click('assessmentNext');}
+ await click('assessmentConfirmSubmit');await flush();
+};
+
 (async()=>{
  await click('previewStudentEntry');
  assert.equal(context.AcademySession.role,'student');
  assert.equal($('app').classList.contains('hidden'),false);
- assert.deepEqual(Array.from(run('courses'),c=>c.lessons.length),[1,3]);
+ assert.deepEqual(Array.from(run('courses'),c=>c.lessons.length),[1,3,3]);
  run('openCourse("qa-academia-series-v1")');
  assert.equal($('lessonList').querySelectorAll('button').length,3);
- assert.equal($('takeAssessment').querySelectorAll('fieldset').length,4);
+ assert.ok($('assessmentStart'),'dynamic final assessment must offer start');
  assert.match($('player').src,/player.mux.com/);
  run('validateBackup({app:"VA Academia",schemaVersion:4,courses,progress:{}})');
  for(let i=0;i<3;i++){run('chooseLesson('+i+')');$('markDone').onclick();}
- [1,0,3,2].forEach((value,i)=>document.querySelector('input[name="answer-'+i+'"][value="'+value+'"]').setAttribute('checked',''));
- await submit('takeAssessment');await flush();
+ await answerFinal([1,0,3,2]);
  assert.equal(run('getAttempts(selectedCourse.id)[0].score'),100);
  run('printCertificate=()=>{};issueCertificate("participation");issueCertificate("approval")');await flush();
  assert.equal(run('certificates.length'),2);
@@ -299,10 +304,7 @@ const flush=()=>click('syncNow');
  set('cloudEmail','fluxo@example.invalid');set('cloudPassword','SomenteTeste123!');await submit('cloudLoginForm');
  run('openCourse("'+fixture+'")');
  for(let i=0;i<3;i++){run('chooseLesson('+i+')');$('markDone').onclick();}
- const answer=async values=>{
-  values.forEach((v,i)=>{document.querySelectorAll('input[name="answer-'+i+'"]').forEach(el=>el.removeAttribute('checked'));document.querySelector('input[name="answer-'+i+'"][value="'+v+'"]').setAttribute('checked','');});
-  await submit('takeAssessment');await flush();
- };
+ const answer=answerFinal;
  await answer([0,1,0,0]);assert.equal(run('getAttempts(selectedCourse.id)[0].passed'),false);
  await answer([1,0,3,0]);assert.equal(run('getAttempts(selectedCourse.id)[1].score'),75);
  assert.equal(run('getAttempts(selectedCourse.id)[1].passed'),true,'passing threshold must be inclusive');
@@ -315,7 +317,7 @@ const flush=()=>click('syncNow');
  await click('exit');
  await click('previewStudentEntry');
  assert.equal(context.AcademySession.role,'student');
- assert.deepEqual(Array.from(run('courses'),c=>c.id).sort(),['qa-academia-series-v1','qa-academia-single-v1']);
+ assert.deepEqual(Array.from(run('courses'),c=>c.id).sort(),['qa-academia-series-v1','qa-academia-single-v1','qa-assessments-dynamic-v1']);
  assert.equal($('adminNav').hidden,true);
  run('openCourse("qa-academia-single-v1")');$('markDone').onclick();await flush();await click('exit');
  await click('previewStudentEntry');

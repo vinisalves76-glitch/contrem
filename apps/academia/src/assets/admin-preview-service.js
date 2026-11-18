@@ -4,7 +4,7 @@
  const DB='contrem-adm-preview-db-v1', SESSION='contrem-adm-preview-session-v1';
  const ADMIN='00000000-0000-4000-8000-000000000001';
  const TEST_STUDENT='00000000-0000-4000-8000-000000000002';
- const TEST_COURSES=new Set(['qa-academia-single-v1','qa-academia-series-v1']);
+ const TEST_COURSES=new Set(['qa-academia-single-v1','qa-academia-series-v1','qa-assessments-dynamic-v1']);
  const copy=x=>JSON.parse(JSON.stringify(x));
  const load=()=>JSON.parse(localStorage.getItem(DB)||'null')||{catalog:{courses:[],revision:0},students:[],states:{}};
  const commit=db=>localStorage.setItem(DB,JSON.stringify(db));
@@ -53,7 +53,7 @@
    async startTestStudent(){
     // Explicit entry into a fictitious local account; never calls production Auth.
     const salt=crypto.randomUUID(),passwordHash=await digest(crypto.randomUUID(),salt),db=load();
-    const additions=buildTestCourses().filter(c=>!db.catalog.courses.some(existing=>existing.id===c.id));
+    const additions=[...buildTestCourses(),...(window.AcademyAssessmentDemo?[window.AcademyAssessmentDemo.build()]:[])].filter(c=>!db.catalog.courses.some(existing=>existing.id===c.id));
     if(additions.length){db.catalog.courses.push(...additions);db.catalog.revision+=1;}
     let student=db.students.find(s=>s.id===TEST_STUDENT);
     if(!student){student={id:TEST_STUDENT,name:'Aluno de teste',email:'aluno-teste@academia.example.invalid',active:true,courses:[],salt,passwordHash};db.students.push(student);}
