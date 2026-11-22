@@ -6,6 +6,7 @@
  const store=window.CONTREM_PROGRAM_STORE,core=window.CONTREM_PROGRAM_CORE;
  const $=id=>document.getElementById(id),e=s=>esc(s??''),date=()=>core.today();
  window.CONTREM_PROGRAM_COURSE_ACCESS=()=>courses;
+ window.CONTREM_PROGRAM_STATE_ACCESS=()=>({progress});
  let selected=null,opened=null;
  const admin=$('adminView'),panel=document.createElement('section');
  panel.id='academiasAdminPanel';panel.className='panel program-main';
@@ -311,7 +312,7 @@
  };
  $('studentTab').addEventListener('click',()=>{if(enrolled())renderStudent();});
  studentNav.addEventListener('click',()=>{if(enrolled()){show('studentView');renderStudent();studentPanel.scrollIntoView({behavior:'smooth'});}});
- window.addEventListener('academia:assessment-completed',()=>{if(enrolled())setTimeout(renderStudent,450);});
+ window.addEventListener('academia:assessment-completed',async()=>{if(!enrolled())return;try{await window.CONTREM_PREVIEW_SYNC?.flush?.();}catch{}renderStudent();});
  window.addEventListener('focus',()=>{if(enrolled())renderStudent();});
  document.getElementById('previewStudentEntry')?.addEventListener('click',()=>setTimeout(renderStudent,400));
  const originalRefresh=refresh;
