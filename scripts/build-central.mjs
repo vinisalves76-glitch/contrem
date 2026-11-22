@@ -1,7 +1,12 @@
 import {cp,mkdir,rm,readFile,writeFile,access} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 async function exists(path){try{await access(path);return true;}catch{return false;}}
-const admin=(await readFile('apps/academia/src/assets/cloud-config.js','utf8')).includes('preview:true');
+const academyConfig=await readFile('apps/academia/src/assets/cloud-config.js','utf8');
+const academyHtml=await readFile('apps/academia/src/index.html','utf8');
+const admin=academyConfig.includes('preview:true');
+if(admin||!academyConfig.includes('"mode":"connected"')||!academyConfig.includes('"preview":false')||!/"publishableKey":"sb_publishable_[a-zA-Z0-9_-]+"/.test(academyConfig)||/sb_secret_|service_role/.test(academyConfig))throw Error('A Academia em produção deve usar somente o cliente Supabase publicável conectado.');
+if(/id="(?:demoAccess|enter|displayName|previewAdminEntry)"/.test(academyHtml)||/src="assets\/(?:admin-preview-service|assessment-demo)\.js"/.test(academyHtml))throw Error('A release não pode conter acesso demonstrativo.');
+
 if(process.env.VERCEL_ENV==='production' && admin) throw Error('A produção não pode usar o sandbox ADM da homologação. Publique main.');
 await rm('dist',{recursive:true,force:true});await mkdir('dist',{recursive:true});
 const sourceFilter=path=>!path.endsWith('.md')&&!path.includes('/docs/')&&!path.endsWith('/docs');
