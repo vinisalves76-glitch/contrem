@@ -2,7 +2,7 @@
  'use strict';
  const config=window.CONTREM_ACADEMY_CONFIG;
  window.AcademySession=null;
- const status=document.getElementById('cloudStatus'),bar=document.getElementById('cloudBar');
+ const status=document.getElementById('cloudStatus'),bar=document.getElementById('cloudBar'),syncAlert=document.getElementById('cloudSyncAlert');
  const form=document.getElementById('cloudLoginForm'),loginStatus=document.getElementById('cloudLoginStatus');
  const keys=['va-academia-catalog-v1','va-academia-progress-v1','va-academia-certificates-v1','va-academia-profile-v1','va-academia-activity-v1'];
  let mode=config?.preview?'demo':'guest',identity=null,service=null,client=null,catalogRevision=0,stateRevision=0;
@@ -15,7 +15,13 @@
  function snapshot(){return {courses:copy(courses),progress:copy(progress),certificates:copy(certificates),profile:copy(profile),activity:copy(activity)};}
  function savePending(){if(!identity||conflicted)return;localStorage.setItem(pendingKey(identity.user.id),JSON.stringify({...snapshot(),catalogRevision,stateRevision,dirtyCatalog,dirtyState}));}
  function clearPending(){if(identity)localStorage.removeItem(pendingKey(identity.user.id));}
- function message(text,error=false){status.textContent=config?.preview?text.replaceAll('na sua conta','neste navegador de teste').replace('Conta conectada. Dados carregados.','Prévia isolada. Dados de teste carregados.'):text;bar.classList.toggle('sync-error',error);}
+ function message(text,error=false){
+  status.textContent=config?.preview?text.replaceAll('na sua conta','neste navegador de teste').replace('Conta conectada. Dados carregados.','Prévia isolada. Dados de teste carregados.'):text;
+  bar.classList.toggle('sync-error',error);
+  // Não exibir a faixa permanente de status. Avisar somente em caso de falha, conflito ou modo offline.
+  syncAlert.textContent=error?status.textContent:'';
+  syncAlert.hidden=!error;
+ }
  function validateCourses(value){validateBackup({app:'VA Academia',schemaVersion:4,courses:value,progress:{}});}
  function permissions(){
   const demoNote=document.querySelector('.demo-course-note');if(demoNote)demoNote.hidden=!courses.some(c=>c.id==='demo-mecanica');
@@ -113,7 +119,7 @@
  });
  function resetToDemo(){
   epoch++;clearTimeout(timer);mode=config?.preview?'demo':'guest';window.AcademySession=null;identity=null;conflicted=false;dirtyState=false;dirtyCatalog=false;
-  academyStorage.setScope(null);bar.hidden=true;
+  academyStorage.setScope(null);bar.hidden=true;syncAlert.hidden=true;syncAlert.textContent='';
   courses=config?.preview?read(KEY,demo):[];progress=config?.preview?read(PK,{}):{};certificates=config?.preview?read(CK,[]):[];profile=config?.preview?read(PROFILE_KEY,{fullName:'',email:'',company:'',role:''}):{fullName:'',email:'',company:'',role:''};activity=config?.preview?read(ACTIVITY_KEY,{}):{};
   selectedCourse=null;studentName=profile.fullName||(config?.preview?'Aluno demonstração':'Aluno');document.getElementById('hello').textContent=studentName;
   document.getElementById('studentNav').hidden=false;document.getElementById('adminNav').hidden=!config?.preview;document.getElementById('sidebarContext').textContent='AMBIENTE DE APRENDIZAGEM';document.getElementById('adminTab').hidden=!config?.preview;document.getElementById('adminStudents').hidden=true;setAdminSection('courses');document.querySelector('.demo-chip').textContent=config?.preview?'DEMONSTRAÇÃO · DADOS LOCAIS':'CONTREM ACADEMIA · CONECTADA';
