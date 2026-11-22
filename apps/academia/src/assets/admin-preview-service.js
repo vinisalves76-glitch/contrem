@@ -78,7 +78,7 @@
    async createContentAdmin(name,email,password){
     admin();
     name=String(name||'').trim();email=emailOf(email);
-    if(name.length<2||name.length>100||!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)||email.length>254)throw Error('Informe nome e e-mail válidos.');
+    if(name.length<2||name.length>100||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254)throw Error('Informe nome e e-mail válidos.');
     if(typeof password!=='string'||password.length<8||password.length>128)throw Error('Crie uma senha entre 8 e 128 caracteres.');
     const db=load();
     if(email==='vinicius.alves@irmen.com.br'||db.students.some(s=>s.email===email)||db.staff.some(s=>s.email===email))throw Error('Já existe uma conta cadastrada com este e-mail.');
