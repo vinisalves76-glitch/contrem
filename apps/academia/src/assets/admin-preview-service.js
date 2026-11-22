@@ -39,7 +39,10 @@
    if(!isAdmin&&(!student||!student.active))throw Error('Seu acesso à Academia está desativado.');
    const name=isAdmin?'Administrador · prévia':student.name;
    const allowed=new Set(isAdmin?db.catalog.courses.map(c=>c.id):student.courses.filter(id=>db.catalog.courses.some(c=>c.id===id&&!c.academyId)));
-   if(!isAdmin&&window.CONTREM_PROGRAM_STORE)for(const id of window.CONTREM_PROGRAM_STORE.accessibleCourseIds(id,db.catalog.courses,db.states[id]||emptyState(name)))allowed.add(id);
+   if(!isAdmin&&window.CONTREM_PROGRAM_STORE){
+    const unlockedCourseIds=window.CONTREM_PROGRAM_STORE.accessibleCourseIds(id,db.catalog.courses,db.states[id]||emptyState(name));
+    for(const courseId of unlockedCourseIds)allowed.add(courseId);
+   }
    const catalog=isAdmin?db.catalog.courses:db.catalog.courses.filter(c=>allowed.has(c.id)&&c.status==='published');
    const state=copy(db.states[id]||emptyState(name));
    const visible=new Set(catalog.map(c=>c.id));
