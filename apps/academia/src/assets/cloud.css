@@ -22,8 +22,5 @@
 #adminView.content-admin #adminUnpublish,
 #adminView.content-admin #studentForm{display:none!important}
 #adminStaff .field{min-width:min(250px,100%)}
-#staffInviteResult{margin-top:15px;padding:15px;border:1px solid #dce3e9;border-radius:10px}
-#staffInviteUrl{width:100%;min-width:0;margin:9px 0 12px}
-.content-staff-invite{margin:16px 0}
-.content-staff-invite input{width:100%;max-width:100%;padding:11px}
-.content-staff-invite button{margin-top:12px}
+#staffCreateForm input[type=password]{width:100%;min-width:0}
+#staffFormStatus:not(:empty){margin:14px 0;line-height:1.5}
