@@ -38,7 +38,8 @@
    const db=load(),isAdmin=id===ADMIN,student=db.students.find(s=>s.id===id);
    if(!isAdmin&&(!student||!student.active))throw Error('Seu acesso à Academia está desativado.');
    const name=isAdmin?'Administrador · prévia':student.name;
-   const allowed=new Set(isAdmin?db.catalog.courses.map(c=>c.id):student.courses);
+   const allowed=new Set(isAdmin?db.catalog.courses.map(c=>c.id):student.courses.filter(id=>db.catalog.courses.some(c=>c.id===id&&!c.academyId)));
+   if(!isAdmin&&window.CONTREM_PROGRAM_STORE)for(const id of window.CONTREM_PROGRAM_STORE.accessibleCourseIds(id,db.catalog.courses,db.states[id]||emptyState(name)))allowed.add(id);
    const catalog=isAdmin?db.catalog.courses:db.catalog.courses.filter(c=>allowed.has(c.id)&&c.status==='published');
    const state=copy(db.states[id]||emptyState(name));
    const visible=new Set(catalog.map(c=>c.id));
@@ -84,6 +85,7 @@
    async setCourseAccess(memberId,courseId,enabled){
     admin();const db=load(),s=db.students.find(s=>s.id===memberId);
     if(!s||!s.active||!db.catalog.courses.some(c=>c.id===courseId))throw Error('Aluno ou curso indisponível.');
+    if(db.catalog.courses.find(c=>c.id===courseId)?.academyId)throw Error('Módulos internos não podem receber matrícula avulsa.');
     s.courses=enabled?[...new Set([...s.courses,courseId])]:s.courses.filter(id=>id!==courseId);commit(db);
    },
    async setStudentActive(id,active){admin();const db=load(),s=db.students.find(s=>s.id===id);if(!s)throw Error('Aluno não encontrado.');s.active=active;commit(db);},
