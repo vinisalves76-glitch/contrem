@@ -13,6 +13,6 @@
     "build:academia": "npm --prefix apps/academia run build",
     "build:tec": "npm --prefix apps/tec run build",
     "build:guia": "npm --prefix apps/guia run build",
-    "test:central": "node --test tests/central.test.mjs tests/release.test.mjs apps/academia/tests/cloud-service.test.mjs"
+    "test:central": "node --test tests/central.test.mjs tests/release.test.mjs tests/academia-backend-cors.test.mjs apps/academia/tests/cloud-service.test.mjs"
   }
 }
