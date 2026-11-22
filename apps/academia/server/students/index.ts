@@ -53,8 +53,14 @@ Deno.serve(async req=>{
   if(email==='vinicius.alves@irmen.com.br')return reply(400,{error:'Este e-mail já é do administrador.'});
   const {data:created,error:createError}=await admin.auth.admin.createUser({email,password,email_confirm:true,user_metadata:{name}});
   if(createError||!created.user)return reply(409,{error:'Não foi possível criar a conta. Se o e-mail já existe no sistema, use outro ou entre em contato com o suporte.'});
-  const {error:insertError}=await admin.from('academy_members').insert({user_id:created.user.id,display_name:name,role:'student',active:true});
-  if(insertError){await admin.auth.admin.deleteUser(created.user.id);return reply(500,{error:'Não foi possível liberar o acesso do aluno. Tente novamente.'});}
+  const {data:memberCreated,error:insertError}=await admin.from('academy_members').insert({user_id:created.user.id,display_name:name,role:'student',active:true}).select('id').single();
+  if(insertError||!memberCreated?.id){await admin.auth.admin.deleteUser(created.user.id);return reply(500,{error:'Não foi possível liberar o acesso do aluno. Tente novamente.'});}
+  const {error:learningError}=await admin.from('academy_learning_state').insert({member_id:memberCreated.id,profile:{fullName:name,email,company:'',role:''},progress:{},activity:{},certificates:[]});
+  if(learningError){
+   await admin.from('academy_members').delete().eq('id',memberCreated.id);
+   await admin.auth.admin.deleteUser(created.user.id);
+   return reply(500,{error:'Não foi possível iniciar o histórico do aluno. Nenhuma conta incompleta foi liberada.'});
+  }
   return reply(201,{id:created.user.id,name,email});
  }catch{return reply(500,{error:'Falha ao cadastrar aluno. Tente novamente.'});}
 });
