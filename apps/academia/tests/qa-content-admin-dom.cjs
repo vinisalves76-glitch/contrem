@@ -80,7 +80,7 @@ const answerFinal=async values=>{
  const inviteRun=code=>vm.runInContext(code,invitedContext);
  const inviteAsset=name=>inviteRun(fs.readFileSync('src/assets/'+name,'utf8'));
  inviteAsset('cloud-store.js');
- for(const code of html.matchAll(/<script>([\\s\\S]*?)<\\/script>/g))inviteRun(code[1]);
+ for(const code of html.matchAll(/<script>([\s\S]*?)<\/script>/g))inviteRun(code[1]);
  for(const name of ['contrem.js','cloud-config.js','assessment-core.js','assessment-demo.js','cloud-service.js','admin-preview-service.js','cloud-ui.js','admin-preview-media.js','admin-manager.js','assessment-student.js','assessment-author.js'])inviteAsset(name);
  const invite$=id=>inviteDoc.getElementById(id);
  const acceptForm=invite$('staffAcceptForm');
