@@ -1,5 +1,9 @@
 # CONTREM — instruções para todos os chats e agentes
 
+## Integração real da Academia autorizada — 22/11/2026
+
+O proprietário solicitou iniciar a substituição da demonstração por Academia integrada ao banco e ao Mux. Esta autorização atualiza os limites históricos que proibiam conectar o backend da Academia: permite preparar e verificar Auth, autorização, funções e mudanças aditivas restritas a `academy_*` / `academy_private` no projeto existente. Não altera módulos operacionais do banco compartilhado nem autoriza importar cursos QA como conteúdo real. A demonstração não será publicada como produção. O ciclo está em `feature/academia-integracao-producao`; estado, alterações remotas e bloqueios constam de `docs/ACADEMIA_INTEGRACAO_PRODUCAO.md`. A substituição pública depende da conclusão dos fluxos reais, incluindo provas/certificados no servidor e configuração Mux; não remover as proteções para publicar funcionalidades incompletas.
+
 ## Autoridade e organização
 
 O pedido do proprietário em 15/11/2026 autoriza um único código-fonte CONTREM, organizado por setores e módulos, com GitHub para versionamento e Vercel para hospedagem. Esta decisão substitui instruções históricas que proibiam o compartilhamento de repositório entre Academia e ContremTec. A separação funcional, de dados e de permissões continua obrigatória.

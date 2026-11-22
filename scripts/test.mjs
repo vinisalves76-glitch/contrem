@@ -1,5 +1,7 @@
 import {readFile} from 'node:fs/promises';
 import {spawnSync} from 'node:child_process';
+const configuration=spawnSync(process.execPath,['--test','tests/academia-config.test.mjs'],{stdio:'inherit'});
+if(configuration.status!==0)process.exit(configuration.status??1);
 for(const app of ['academia','tec']){
  let pkg;try{pkg=JSON.parse(await readFile(`apps/${app}/package.json`,'utf8'));}catch{continue;}
  const task=pkg.scripts?.test?'test':pkg.scripts?.check?'check':null;

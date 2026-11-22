@@ -1,5 +1,9 @@
 # ADM da CONTREM Academia
 
+## Integração real iniciada — 22/11/2026
+
+Nova autorização do proprietário: preparar a Academia real com banco/Mux, sem publicar a demonstração como produto. Base atual `develop` `7b41fb2929ab515f34b15fff85982579cc36e751`; branch `feature/academia-integracao-producao`. Estado consolidado em `../ACADEMIA_INTEGRACAO_PRODUCAO.md`, inclusive funções/migrações remotas, testes, configuração pública e bloqueios. O incremento conectado não substitui a autoria sandbox por simples mudança de flag: Auth, catálogo publicado e playback passam pelos contratos reais; provas/certificados/material/autoria aguardam integração própria e ficam bloqueados. Não considerar a produção web publicada a partir deste registro. Commit e PR estarão no histórico da branch.
+
 ## Ciclo de 15/11/2026 — continuidade no GitHub central
 
 Entrega confirmada: feature integrada por fast-forward em develop no commit f22ebb91de39d26a8ebd1d18bdb77bcfde77f6f1. A Vercel criou automaticamente uma única preview dpl_Ec9sBHndh8GXuQx2Csxwdie59bHJ, READY, target null. O alias fixo de develop respondeu HTTP 200 em build-info.json e /academia/. Build-info confirmou o commit acima, branch develop e modo homologacao. O JS publicado respondeu 200 e é idêntico ao arquivo testado. A produção dpl_8mmUPopw84defEhECBxxBMYPSQEP continuou com os aliases públicos; main não foi alterada.

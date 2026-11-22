@@ -1,0 +1,51 @@
+// Emulated connected UI contracts; synthetic service only.
+function fixture(options={}){
+const {parseHTML}=require('linkedom');
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const {webcrypto}=require('node:crypto');
+const html=fs.readFileSync('src/index.html','utf8');
+const {document,window:dom}=parseHTML(html);
+const memory=new Map(),session=new Map();
+const mediaMemory=new Map();
+const indexedDB={open(){const request={},db={objectStoreNames:{contains:()=>true},createObjectStore(){},transaction(){const tx={objectStore(){return {put(record){queueMicrotask(()=>{mediaMemory.set(record.id,record);tx.oncomplete?.();});},get(id){const result={};queueMicrotask(()=>{result.result=mediaMemory.get(id);result.onsuccess?.();});return result;},delete(id){queueMicrotask(()=>{mediaMemory.delete(id);tx.oncomplete?.();});}};}};return tx;}};queueMicrotask(()=>{request.result=db;request.onsuccess?.();});return request;}};
+const storage=map=>({getItem:k=>map.get(k)??null,setItem:(k,v)=>map.set(k,String(v)),removeItem:k=>map.delete(k)});
+Object.defineProperty(dom.HTMLSelectElement.prototype,'value',{get(){return this.querySelector('option[selected]')?.value||this.querySelector('option')?.value||'';},set(value){for(const option of this.querySelectorAll('option'))option.toggleAttribute('selected',option.value===String(value));},configurable:true});
+dom.HTMLElement.prototype.reset=function(){this.querySelectorAll('input,textarea').forEach(el=>el.value=el.getAttribute('value')||'');};
+dom.HTMLElement.prototype.scrollIntoView=()=>{};
+const windowEvents=new Map();let allowDiscard=true;
+const context={document,localStorage:storage(memory),sessionStorage:storage(session),crypto:webcrypto,TextEncoder,URL,Blob,indexedDB,console,MutationObserver:dom.MutationObserver,navigator:{onLine:true},matchMedia:()=>({matches:false}),scrollTo:()=>{},alert:text=>{throw Error('Unexpected alert: '+text);},confirm:()=>allowDiscard,setTimeout:()=>0,clearTimeout(){},queueMicrotask,addEventListener:(name,fn)=>{windowEvents.set(name,fn);}};
+context.window=context;vm.createContext(context);
+const run=code=>vm.runInContext(code,context);
+const asset=name=>run(fs.readFileSync('src/assets/'+name,'utf8'));
+asset('cloud-store.js');
+for(const code of html.matchAll(/<script>([\s\S]*?)<\/script>/g))run(code[1]);
+asset('contrem.js');
+const uuid='d8e7309a-85cf-4189-b031-5f097739448c',requests=[],adminCalls=[];
+const config={mode:'connected',preview:false,url:'https://vwvesygsudhbaqmayhsz.supabase.co',publishableKey:'sb_publishable_contract_only',playbackFunction:'academy-playback'};
+const user={id:uuid,email:options.admin?'vinicius.alves@irmen.com.br':'learner@example.invalid'};
+const course={id:'granted',name:'Curso',description:'Teste',hours:8,status:'published',lessons:[{id:'a',name:'Primeira',url:'',videoId:uuid},{id:'b',name:'Segunda',url:'',videoId:uuid}]};
+const data={user,member:{id:'m',user_id:uuid,role:options.admin?'admin':'student',active:true,display_name:'QA'},catalog:{revision:1,courses:[course]},state:{revision:1,profile:{fullName:'QA'},progress:{},activity:{},certificates:[{id:'forged'}]}};
+const service={signIn:async()=>{if(options.denied)throw Error('denied');return data;},restore:async()=>data,reload:async()=>data,signOut:async()=>{},writeState:async()=>({revision:2}),playback:id=>new Promise((resolve,reject)=>requests.push({id,resolve,reject})),listStudents:async()=>{adminCalls.push('list');return {members:[],grants:[]};}};
+let authEvent,createdClient=0;
+context.CONTREM_ACADEMY_CONFIG=options.invalid?{preview:false}:config;context.supabase={createClient(){createdClient++;return {auth:{onAuthStateChange:fn=>authEvent=fn,getSession:async()=>({data:{session:null}})}};}};context.AcademyCloudService={create:()=>service};
+if(!options.missingModule)asset('cloud-connected.js');asset('cloud-ui.js');asset('admin-manager.js');
+const $=id=>document.getElementById(id),click=async id=>$(id).onclick?.({preventDefault(){}}),login=async()=>{$('cloudEmail').value=user.email;$('cloudPassword').value='mock';await $('cloudLoginForm').onsubmit({preventDefault(){}});await turns();};
+return {$,run,click,login,requests,adminCalls,memory,get createdClient(){return createdClient;},authEvent:(event,session)=>authEvent(event,session)};
+}
+const assert=require('node:assert/strict'),turns=async()=>{for(let i=0;i<8;i++)await Promise.resolve();};
+(async()=>{
+ const invalid=fixture({invalid:true});await turns();assert.equal(invalid.createdClient,0);assert.equal(invalid.$('app').classList.contains('hidden'),true);assert.equal(invalid.$('enter').disabled,true);assert.equal(invalid.$('cloudLoginForm').querySelector('button').disabled,true);assert.equal(invalid.$('previewAdminEntry'),null);assert.deepEqual(Array.from(invalid.run('courses')),[]);
+ const missing=fixture({missingModule:true});await turns();assert.equal(missing.createdClient,0);assert.equal(missing.$('enter').disabled,true);assert.equal(missing.$('app').classList.contains('hidden'),true);
+ const denied=fixture({denied:true});await denied.login();assert.equal(denied.$('app').classList.contains('hidden'),true);assert.deepEqual(Array.from(denied.run('courses')),[]);
+ const f=fixture();await f.login();assert.equal(f.$('app').classList.contains('hidden'),false);assert.equal(f.$('adminNav').hidden,true);assert.deepEqual(Array.from(f.run('courses'),c=>c.id),['granted']);assert.deepEqual(Array.from(f.run('certificates')),[]);
+ f.run('show("adminView")');assert.equal(f.$('adminView').classList.contains('hidden'),true);
+ f.run('openCourse(courses[0].id)');await turns();assert.equal(f.requests.length,1);assert.equal(f.$('markDone').disabled,true);assert.equal(f.$('player').src,'about:blank');
+ f.run('chooseLesson(1)');await turns();const url='https://player.mux.com/CurrentPrivate?playback-token=aaa.bbb.ccc';f.requests[1].resolve({iframeUrl:url,expiresAt:Math.floor(Date.now()/1000)+600});await turns();assert.equal(f.$('player').src,url);
+ f.requests[0].resolve({iframeUrl:'https://player.mux.com/Stale',expiresAt:Math.floor(Date.now()/1000)+600});await turns();assert.equal(f.$('player').src,url,'stale playback ignored');assert.equal(f.$('markDone').disabled,false);assert.match(f.$('markDone').textContent,/autodeclarado/);
+ f.run('chooseLesson(0)');await turns();f.requests[2].reject(Error('denied'));await turns();assert.equal(f.$('player').src,'about:blank');assert.equal(f.$('markDone').disabled,true);assert.match(f.$('lessonVideoStatus').textContent,/Não foi possível/);
+ f.run('issueCertificate()');assert.deepEqual(Array.from(f.run('certificates')),[]);assert.match(f.$('cloudStatus').textContent,/integração segura/);
+ f.run('chooseLesson(1)');await turns();const late=f.requests.at(-1);await f.click('exit');late.resolve({iframeUrl:url,expiresAt:Math.floor(Date.now()/1000)+600});await turns();assert.equal(f.$('player').src,'about:blank');assert.equal(f.$('app').classList.contains('hidden'),true);
+ const admin=fixture({admin:true});await admin.login();assert.equal(admin.$('adminNav').hidden,false);await admin.click('adminTab');await turns();assert.deepEqual(admin.adminCalls,['list']);assert.equal(admin.$('adminStudents').hidden,false);assert.equal(admin.$('courseForm').querySelector('input').disabled,true);
+ admin.authEvent('SIGNED_OUT',null);assert.equal(admin.$('app').classList.contains('hidden'),true);assert.deepEqual(Array.from(admin.run('courses')),[]);assert.equal(f.memory.size,0,'no demo persistence');
+ console.log('PASS (connected emulated DOM): fail-closed config/login, granted catalog, admin isolation, private playback races/error/logout, blocked certificates and no demo persistence.');
+})().catch(error=>{console.error(error);process.exitCode=1;});
