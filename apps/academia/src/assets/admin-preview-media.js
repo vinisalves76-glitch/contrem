@@ -45,7 +45,7 @@
  async function save(file,kind){
   const metadata=validate(file,kind);
   if(connected){
-   if(window.AcademySession?.role!=='admin')throw Error('Somente o administrador pode anexar materiais.');
+   if(!['admin','content_admin'].includes(window.AcademySession?.role))throw Error('Somente a equipe da Academia pode anexar materiais.');
    const courseId=document.getElementById('editId')?.value||'';
    if(!/^[A-Za-z0-9_-]+$/.test(courseId))throw Error('Salve o curso antes de enviar materiais.');
    const storage=remote();if(!storage)throw Error('Armazenamento privado não conectado. Faça login novamente.');

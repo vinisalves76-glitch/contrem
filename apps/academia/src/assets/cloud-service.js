@@ -9,6 +9,18 @@
   function current(version){if(version!==generation)throw Error('A sessão mudou. Entre novamente.');}
   const unwrap=result=>{if(result.error)throw result.error;return result.data;};
   const admin=()=>identity?.member.active===true&&identity.member.role==='admin'&&identity.user.email?.toLowerCase()==='vinicius.alves@irmen.com.br';
+  const editor=()=>admin()||(identity?.member.active===true&&identity.member.role==='content_admin');
+  async function workspace(action,body={}){
+   const result=await client.functions.invoke('academy-workspace',{body:{action,...body}});
+   if(result.error){
+    let data=null;
+    try{data=await result.error.context?.json?.()}catch{}
+    const error=new Error(data?.error||'Não foi possível concluir a operação administrativa.');
+    if(result.error.context?.status===409||data?.status===409)error.name='AcademyConflict';
+    throw error;
+   }
+   return result.data;
+  }
   // Client progress is self-reported learning history, never an exam result or certificate.
   function learningState(value){
    const profile=Object.fromEntries(['fullName','email','company','role'].map(key=>[key,String(value.profile?.[key]||'').slice(0,key==='email'?320:200)]));
@@ -28,11 +40,11 @@
    current(version);
    if(!member)throw Error('Seu acesso à Academia ainda não foi liberado. Peça ao administrador que cadastre seu e-mail.');
    if(member.active!==true)throw Error('Seu acesso à Academia está desativado.');
-   if(member.user_id!==user.id||!['admin','student'].includes(member.role)||(member.role==='admin'&&user.email?.toLowerCase()!=='vinicius.alves@irmen.com.br'))throw Error('Perfil de acesso inválido.');
-   const catalog=member.role==='admin'?unwrap(await client.from('academy_catalog').select('*').eq('id','main').single()):unwrap(await client.rpc('academy_my_catalog'));
+   if(member.user_id!==user.id||!['admin','student','content_admin'].includes(member.role)||(member.role==='admin'&&user.email?.toLowerCase()!=='vinicius.alves@irmen.com.br'))throw Error('Perfil de acesso inválido.');
+   const catalog=member.role==='admin'||member.role==='content_admin'?await workspace('catalog'):unwrap(await client.rpc('academy_my_catalog'));
    current(version);
    if(!catalog||!Array.isArray(catalog.courses))throw Error('Não foi possível carregar seus cursos.');
-   if(connected){
+   if(connected&&member.role==='student'){
     catalog.courses=catalog.courses.filter(course=>course?.status==='published');
     if(catalog.courses.some(course=>!course||!Array.isArray(course.lessons)))throw Error('Catálogo indisponível.');
    }
@@ -59,14 +71,25 @@
    async reload(){if(!identity)throw Error('Entre novamente.');const version=clearIdentity(),data=unwrap(await client.auth.getUser());return load(data.user,version);},
    async signOut(){clearIdentity();const result=await client.auth.signOut({scope:'local'});if(result.error)throw result.error;},
    async createStudent(name,email,password){return manage('create',{name,email,password});},
-   async listStudents(){return manage('list');},
-   async setCourseAccess(memberId,courseId,enabled){return manage('access',{memberId,courseId,enabled});},
+   async listStudents(){if(!editor())throw Error('Acesso restrito à equipe administrativa.');return admin()?manage('list'):workspace('list_students');},
+   async setCourseAccess(memberId,courseId,enabled){
+    if(!editor())throw Error('Acesso restrito à equipe administrativa.');
+    return admin()?manage('access',{memberId,courseId,enabled}):workspace('access',{memberId,courseId,enabled});
+   },
+   async createContentAdmin(name,email,password){
+    if(!admin())throw Error('Somente o ADM Master cria funcionários.');
+    return workspace('create_staff',{name,email,password});
+   },
+   async listStaff(){if(!admin())throw Error('Somente o ADM Master gerencia funcionários.');return workspace('list_staff');},
+   async setStaffActive(memberId,active){if(!admin())throw Error('Somente o ADM Master gerencia funcionários.');return workspace('staff_status',{memberId,active});},
+   async publishCourse(courseId){if(!admin())throw Error('Somente o ADM Master publica cursos.');return workspace('publish',{courseId});},
+   async unpublishCourse(courseId){if(!admin())throw Error('Somente o ADM Master retira cursos.');return workspace('unpublish',{courseId});},
    async setStudentActive(memberId,active){return manage('status',{memberId,active});},
    async writeCatalog(courses,revision){
-    // RLS academy_catalog_admin_update and the current signed-in member govern updates.
-    if(!admin())throw Error('Somente administradores da Academia podem alterar cursos.');
-    const row=unwrap(await client.from('academy_catalog').update({courses}).eq('id','main').eq('revision',revision).select('*').maybeSingle());
-    if(!row)throw new AcademyConflict();return row;
+    if(!editor())throw Error('Acesso restrito à equipe administrativa.');
+    const row=await workspace('save',{courses,revision});
+    if(!row||!Number.isSafeInteger(row.revision))throw Error('Resposta de salvamento inválida.');
+    return row;
    },
    async writeState(state,revision){
     if(!identity)throw Error('Entre novamente.');

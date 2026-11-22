@@ -2,7 +2,8 @@
 (() => {
  'use strict';
  const byId=id=>document.getElementById(id);
- const isAdmin=()=>window.AcademySession?.role==='admin';
+ const isMaster=()=>window.AcademySession?.role==='admin';
+ const isAdmin=()=>isMaster()||window.AcademySession?.role==='content_admin';
  const makeId=prefix=>prefix+'-'+crypto.randomUUID();
  const externalEdits=new Map();
  window.AcademyAdminEdits={register(name,check,discard){externalEdits.set(name,{check,discard});},canLeave:()=>confirmDiscard(),changed:()=>updateEditStatus()};
@@ -30,8 +31,8 @@
  function updateEditStatus(){
   const pending=pendingEdits(),dirty=pending.course||pending.lesson||pending.courseMaterials||pending.external,c=current();
   byId('adminEditStatus').textContent=uploading?'Guardando materiais no armazenamento…':dirty?(pending.courseMaterials?'Materiais do curso com alterações não salvas.':pending.course&&pending.lesson?'Curso e aula com alterações não salvas.':pending.course?'Informações do curso com alterações não salvas.':'Aula com alterações não salvas.'):'';
-  byId('adminPublish').disabled=uploading||dirty||!c||!!readiness(c)||c.status==='published';
-  byId('adminUnpublish').disabled=uploading||dirty;
+  byId('adminPublish').disabled=!isMaster()||uploading||dirty||!c||!!readiness(c)||c.status==='published';
+  byId('adminUnpublish').disabled=!isMaster()||uploading||dirty;
   byId('saveLesson').disabled=uploading;byId('saveCourseMaterials').disabled=uploading;byId('lessonMaterialFile').disabled=uploading;
   byId('editingStatus').classList.toggle('pending',!!dirty);
  }
@@ -69,7 +70,7 @@
   byId('adminStatusFilter').querySelector('option[value="published"]').textContent='Publicados';
  }
  byId('createTestCourses').onclick=()=>{
-  if(!isAdmin()||!window.AcademySession?.preview)return;
+  if(!isMaster()||!window.AcademySession?.preview)return;
   if(hasPendingEdits()){notice('Salve as alterações em edição antes de criar os cursos de teste.',true);return;}
   const playback=videoId(byId('testMuxUrl').value);
   if(!playback){notice('Informe um link público do Mux ou Playback ID válido para testar o vídeo.',true);return;}
@@ -165,8 +166,8 @@
   byId('lessonHint').textContent=c?c.name+' · '+(typeOf(c)==='single'?'Aula única':'Série de aulas'):'Preencha e salve as informações do curso para começar a adicionar aulas.';
   byId('adminLessonOrder').innerHTML=c?.lessons.length?c.lessons.map((l,i)=>'<li><span class="adm-order">'+(i+1)+'</span><div class="adm-lesson-info"><b>'+esc(l.name)+'</b><small>'+ (videoId(l.url)?'Vídeo Mux cadastrado':'Link do Mux pendente')+((l.previewMaterials?.length||l.previewMaterial)?' · Materiais anexados':'')+(l.minutes?' · '+Number(l.minutes)+' min':'')+'</small></div><div class="adm-lesson-actions"><button type="button" class="primary" data-lesson-materials="'+i+'">Materiais de apoio</button><button type="button" class="outline" data-lesson-edit="'+i+'">Editar aula</button><button type="button" class="outline" data-move="'+i+':-1" aria-label="Subir aula '+(i+1)+'" '+(i===0?'disabled':'')+'>↑</button><button type="button" class="outline" data-move="'+i+':1" aria-label="Descer aula '+(i+1)+'" '+(i===c.lessons.length-1?'disabled':'')+'>↓</button><button type="button" class="danger" data-lesson-delete="'+i+'" aria-label="Remover aula '+(i+1)+'">Remover</button></div></li>').join(''):'<li class="adm-empty"><b>A sequência começa aqui.</b><span>Adicione a primeira aula e organize o conteúdo do curso.</span></li>';
   byId('adminReviewContent').innerHTML=c?'<div class="adm-review-title"><span class="adm-badge">'+(typeOf(c)==='single'?'Aula única':'Série de aulas')+'</span><h3>'+esc(c.name)+'</h3><p>'+esc(c.description)+'</p></div><dl class="adm-review-meta"><div><dt>Categoria</dt><dd>'+esc(c.category||'Sem categoria')+'</dd></div><div><dt>Carga horária</dt><dd>'+Number(c.hours||8)+' horas</dd></div><div><dt>Conteúdo</dt><dd>'+c.lessons.length+' aula(s)</dd></div></dl><p class="'+(readiness(c)?'notice':'adm-ready')+'">'+esc(readiness(c)||'Tudo pronto. Publique e libere o acesso no módulo Alunos.')+'</p><button type="button" id="adminStudentPreview" class="outline">Visualizar sala do aluno →</button>':'<div class="adm-empty">Salve um curso para revisar e publicar.</div>';
-  byId('adminPublish').disabled=!c||!!readiness(c)||c.status==='published';
-  byId('adminUnpublish').hidden=c?.status!=='published';
+  byId('adminPublish').hidden=!isMaster();byId('adminPublish').disabled=!isMaster()||!c||!!readiness(c)||c.status==='published';
+  byId('adminUnpublish').hidden=!isMaster()||c?.status!=='published';
   byId('adminStudentPreview')?.addEventListener('click',()=>openCourse(c.id));
   updateEditStatus();
  }
@@ -338,17 +339,34 @@
   if(!isAdmin())return;const b=event.target.closest('button');if(!b)return;
   if(b.dataset.courseEdit)openEditor(b.dataset.courseEdit);
   if(b.dataset.courseCopy){if(!confirmDiscard())return;const original=courses.find(c=>c.id===b.dataset.courseCopy);if(!original)return;const c=JSON.parse(JSON.stringify(original));c.id=makeId('course');c.name+=' (cópia)';c.status='draft';c.lessons.forEach(l=>{l.id=makeId('lesson');});courses.push(c);save();openEditor(c.id,'details',true);refresh();notice('Cópia criada como rascunho.');}
-  if(b.dataset.courseDelete){const id=b.dataset.courseDelete,wasCurrent=current()?.id===id;if(wasCurrent&&!confirmDiscard())return;deleteCourse(id);if(wasCurrent&&!courses.some(c=>c.id===id))resetForm();refresh();}
+  if(b.dataset.courseDelete){if(!isMaster()){notice('Somente o ADM Master pode excluir cursos.',true);return;}const id=b.dataset.courseDelete,wasCurrent=current()?.id===id;if(wasCurrent&&!confirmDiscard())return;deleteCourse(id);if(wasCurrent&&!courses.some(c=>c.id===id))resetForm();refresh();}
  });
  byId('adminLessonOrder').addEventListener('click',event=>{
   if(!isAdmin())return;if(uploading){notice('Aguarde os materiais antes de alterar as aulas.',true);return;}const c=current(),b=event.target.closest('button');if(!c||!b)return;
   if(b.dataset.lessonMaterials!==undefined){if(editLesson(c.id,Number(b.dataset.lessonMaterials))){byId('lessonSupportSection').scrollIntoView({behavior:'smooth',block:'start'});byId('lessonSupportHeading').focus();}return;}
   if(b.dataset.lessonEdit!==undefined){editLesson(c.id,Number(b.dataset.lessonEdit));return;}
-  if(b.dataset.lessonDelete!==undefined){const n=c.lessons.length;deleteLesson(c.id,Number(b.dataset.lessonDelete));if(c.lessons.length!==n){c.status='draft';save();refresh();}return;}
+  if(b.dataset.lessonDelete!==undefined){if(!isMaster()){notice('O ADM de Conteúdo não pode excluir aulas.',true);return;}const n=c.lessons.length;deleteLesson(c.id,Number(b.dataset.lessonDelete));if(c.lessons.length!==n){c.status='draft';save();refresh();}return;}
   if(b.dataset.move){const [i,delta]=b.dataset.move.split(':').map(Number),to=i+delta;if(to<0||to>=c.lessons.length)return;[c.lessons[i],c.lessons[to]]=[c.lessons[to],c.lessons[i]];c.status='draft';save();refresh();notice('Ordem das aulas atualizada.');}
  });
- byId('adminPublish').onclick=()=>{const c=current();if(!isAdmin()||!c)return;if(hasPendingEdits()){notice('Salve as alterações do curso e da aula antes de publicar.',true);chooseTab(pendingEdits().course?'details':'lessons');return;}const error=readiness(c);if(error){notice(error,true);return;}c.status='published';save();refresh();notice(window.CONTREM_ACADEMY_CONFIG?.mode==='connected'?'Curso publicado no catálogo. Libere o acesso em Alunos e confira o vídeo privado no Mux.':'Curso publicado na prévia. Agora libere o acesso em Alunos.');};
- byId('adminUnpublish').onclick=()=>{const c=current();if(!isAdmin()||!c||hasPendingEdits())return;c.status='draft';save();refresh();notice('Curso voltou a rascunho e não será listado na próxima entrada do aluno.');};
+ byId('adminPublish').onclick=async()=>{
+   const c=current();if(!isMaster()||!c)return;
+   if(hasPendingEdits()){notice('Salve as alterações do curso e da aula antes de publicar.',true);chooseTab(pendingEdits().course?'details':'lessons');return;}
+   const error=readiness(c);if(error){notice(error,true);return;}
+   const originalStatus=c.status,id=c.id;
+   c.status='published';save();refresh();
+   if(window.CONTREM_ACADEMY_CONFIG?.mode==='connected'&&window.AcademyCloudPublishing){
+    try{await window.AcademyCloudPublishing.publish(id);notice('Curso publicado pelo ADM Master. Agora libere a matrícula em Alunos.');}
+    catch(e){c.status=originalStatus;save();refresh();notice(e.message||'Não foi possível publicar o curso.',true);}
+   }else notice('Curso publicado na prévia. Agora libere o acesso em Alunos.');
+  };
+ byId('adminUnpublish').onclick=async()=>{
+   const c=current();if(!isMaster()||!c||hasPendingEdits())return;
+   const id=c.id; c.status='draft';save();refresh();
+   if(window.CONTREM_ACADEMY_CONFIG?.mode==='connected'&&window.AcademyCloudPublishing){
+    try{await window.AcademyCloudPublishing.unpublish(id);notice('Curso retirado de publicação.');}
+    catch(e){c.status='published';save();refresh();notice(e.message||'Não foi possível retirar a publicação.',true);}
+   }else notice('Curso voltou a rascunho e não será listado na próxima entrada do aluno.');
+  };
  byId('adminCourseSearch').oninput=e=>{filter=e.target.value.trim().toLocaleLowerCase('pt-BR');renderLibrary();};
  byId('adminStatusFilter').onchange=e=>{statusFilter=e.target.value;renderLibrary();};
  document.querySelectorAll('[data-admin-tab]').forEach(b=>b.onclick=()=>chooseTab(b.dataset.adminTab));
