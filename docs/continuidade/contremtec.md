@@ -1,3 +1,9 @@
+## Publicação autorizada — 15/11/2026
+
+O proprietário solicitou a publicação da ContremTec. ContremTec demonstrativa e guia vinculado entram na base estável, preservando a Academia e o novo ADM em homologação. Ler ../PUBLICACAO_CONTREMTEC_2026-11-15.md. Os registros de origem abaixo permanecem como histórico.
+
+---
+
 # ContremTec
 
 Fonte importada do Site privado `appgprj_6af9c7d9b6d48191a652b1d86d9a6c9b`, commit `f304bf9d117d9b223ecdcf9f54350e7945ea8aef`.
