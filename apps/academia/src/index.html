@@ -7,7 +7,14 @@
 <div id="staffInviteBox" class="panel content-staff-invite" hidden>
  <div class="tag">CONVITE DE FUNCIONÁRIO · PRÉVIA</div>
  <h3>Crie sua senha de acesso</h3><p class="muted">Seu convite de teste será validado neste navegador. Nenhum e-mail real será enviado.</p>
- <form id="staffAcceptForm"><label for="staffAcceptPassword">Escolha sua senha (mínimo 8 caracteres)</label><input id="staffAcceptPassword" type="password" autocomplete="new-password" minlength="8" required><button class="primary" type="submit">Aceitar convite e entrar</button></form>
+ <form id="staffAcceptForm">
+  <label for="staffAcceptPassword">Criar senha do funcionário</label>
+  <input id="staffAcceptPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="Mínimo de 8 caracteres" required>
+  <label for="staffAcceptConfirmPassword">Confirmar senha</label>
+  <input id="staffAcceptConfirmPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="Repita a senha criada" required>
+  <small class="muted">A senha será definida pelo funcionário e não ficará visível para o ADM Master.</small>
+  <button class="primary" type="submit">Concluir cadastro e entrar</button>
+ </form>
  <p id="staffAcceptStatus" role="status" aria-live="polite"></p>
 </div>
 <button class="install-login" type="button" data-install-app>Instalar aplicativo <span aria-hidden="true">↓</span></button><a class="institutional-link" href="https://contrem.vercel.app" target="_blank" rel="noopener noreferrer">Conheça a CONTREM <span aria-hidden="true">→</span></a></div><small class="login-footer">CONTREM · Consultoria e Treinamento Técnico</small></div></section>
@@ -24,7 +31,14 @@
   <div class="field"><label for="staffEmail">E-mail do funcionário</label><input id="staffEmail" type="email" required maxlength="254" autocomplete="off"></div>
   <button type="submit" class="primary">Criar convite de ADM de Conteúdo</button>
  </form>
- <div id="staffInviteResult" class="notice" hidden><strong>Convite de teste criado</strong><p>Copie o link abaixo e abra-o neste mesmo navegador e perfil para simular a criação da senha. O convite real por e-mail dependerá do backend de homologação.</p><input id="staffInviteUrl" readonly aria-label="Link do convite"><button id="copyStaffInvite" type="button" class="outline">Copiar link do convite</button></div>
+ <div id="staffInviteResult" class="notice" hidden>
+  <strong>1. Convite criado — falta definir a senha para concluir o cadastro</strong>
+  <p>2. Nesta preview, clique em <b>Definir senha do funcionário</b>, informe e confirme a senha. O cadastro só ficará ativo depois disso. No sistema real, o convite será enviado ao e-mail do funcionário.</p>
+  <button id="openStaffInvite" type="button" class="primary">Definir senha do funcionário →</button>
+  <p class="muted">Ou copie o link de convite de teste abaixo e abra-o neste mesmo navegador e perfil.</p>
+  <input id="staffInviteUrl" readonly aria-label="Link do convite">
+  <button id="copyStaffInvite" type="button" class="outline">Copiar link do convite</button>
+ </div>
  <p id="staffFormStatus" role="status" aria-live="polite"></p>
  <h3>Funcionários cadastrados</h3><div id="staffRoster" class="muted">Nenhum funcionário cadastrado.</div>
 </section>
