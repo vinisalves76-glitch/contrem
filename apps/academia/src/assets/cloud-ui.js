@@ -152,7 +152,7 @@
  }
  async function loadStudentRoster(){
   const roster=document.getElementById('studentRoster');if(mode!=='cloud'||!isEditor())return;
-  try{const data=await service.listStudents(),rows=data.members||[],grants=data.grants||[];roster.innerHTML=rows.length?rows.map(m=>'<div class="student-roster-row"><b>'+esc(m.display_name)+'</b><small class="roster-email">'+esc(m.email||'')+'</small> · '+(m.active?'Ativo':'Inativo')+' <button type="button" class="outline" data-member="'+esc(m.id)+'" data-active="'+(!m.active)+'">'+(m.active?'Desativar':'Reativar')+'</button><div class="access-course-list">'+(courses.length?courses.map(c=>'<label><input type="checkbox" data-member="'+esc(m.id)+'" data-course="'+esc(c.id)+'" '+(grants.some(g=>g.member_id===m.id&&g.course_id===c.id)?'checked':'')+' '+(!m.active?'disabled':'')+'> '+esc(c.name)+(config?.preview&&c.status!=='published'?' · rascunho':'')+'</label>').join(''):'Cadastre um treinamento para liberar acesso.')+'</div></div>').join(''):'Nenhum aluno cadastrado.';}catch{roster.textContent='Não foi possível carregar os alunos.';}
+  try{const data=await service.listStudents(),rows=data.members||[],grants=data.grants||[];roster.innerHTML=rows.length?rows.map(m=>'<div class="student-roster-row"><b>'+esc(m.display_name)+'</b><small class="roster-email">'+esc(m.email||'')+'</small> · '+(m.active?'Ativo':'Inativo')+' <button type="button" class="outline" '+(!isMaster()?'hidden':'')+' data-member="'+esc(m.id)+'" data-active="'+(!m.active)+'">'+(m.active?'Desativar':'Reativar')+'</button><div class="access-course-list">'+(courses.length?courses.map(c=>'<label><input type="checkbox" data-member="'+esc(m.id)+'" data-course="'+esc(c.id)+'" '+(grants.some(g=>g.member_id===m.id&&g.course_id===c.id)?'checked':'')+' '+(!m.active||(!isMaster()&&c.status!=='published')?'disabled':'')+'> '+esc(c.name)+(c.status!=='published'?' · rascunho':'')+'</label>').join(''):'Cadastre um treinamento para liberar acesso.')+'</div></div>').join(''):'Nenhum aluno cadastrado.';}catch{roster.textContent='Não foi possível carregar os alunos.';}
  }
  document.getElementById('studentRoster').addEventListener('change',async event=>{
   const el=event.target;if(!el.matches('[data-course]')||mode!=='cloud')return;
@@ -167,15 +167,65 @@
   const form=event.currentTarget,status=document.getElementById('studentFormStatus'),button=form.querySelector('button');button.disabled=true;status.textContent='Criando acesso…';
   try{const result=await service.createStudent(document.getElementById('studentFullName').value.trim(),document.getElementById('studentEmail').value.trim(),document.getElementById('studentPassword').value);form.reset();status.textContent='Aluno '+result.name+' cadastrado. Entregue o e-mail e a senha inicial a ele.';await loadStudentRoster();}catch(error){status.textContent=error.message||'Não foi possível cadastrar o aluno.';}finally{button.disabled=false;}
  };
+ async function loadStaffRoster(){
+  if(!isMaster())return;
+  const roster=document.getElementById('staffRoster');
+  try{
+   const staff=await service.listStaff();
+   roster.innerHTML=staff.length?staff.map(m=>'<div class="student-roster-row"><b>'+esc(m.name)+'</b> <small class="roster-email">'+esc(m.email)+'</small> · '+(m.active?'Ativo':'Inativo')+' <button type="button" class="outline" data-staff-id="'+esc(m.id)+'" data-staff-active="'+(!m.active)+'">'+(m.active?'Desativar':'Reativar')+'</button></div>').join(''):'Nenhum funcionário cadastrado.';
+  }catch(error){roster.textContent=error.message||'Não foi possível carregar funcionários.';}
+ }
+ document.getElementById('staffCreateForm').onsubmit=async event=>{
+  event.preventDefault();if(!isMaster())return;
+  const form=event.currentTarget,button=form.querySelector('button'),status=document.getElementById('staffFormStatus');
+  button.disabled=true;status.textContent='Criando login do funcionário…';
+  try{
+   const name=document.getElementById('staffName').value.trim();
+   const email=document.getElementById('staffEmail').value.trim();
+   const password=document.getElementById('staffPassword').value;
+   const created=await service.createContentAdmin(name,email,password);
+   form.reset();document.getElementById('staffPassword').value='';
+   status.textContent='Login de '+created.name+' criado. Entregue o e-mail e a senha inicial ao funcionário.';
+   await loadStaffRoster();
+  }catch(error){status.textContent=error.message||'Não foi possível cadastrar o funcionário.';}
+  finally{button.disabled=false;}
+ };
+ document.getElementById('staffRoster').addEventListener('click',async event=>{
+  const button=event.target.closest('[data-staff-id]');if(!button||!isMaster())return;
+  button.disabled=true;
+  try{await service.setStaffActive(button.dataset.staffId,button.dataset.staffActive==='true');await loadStaffRoster();}
+  catch(error){document.getElementById('staffFormStatus').textContent=error.message;button.disabled=false;}
+ });
  function setAdminSection(section){
-  const students=section==='students',view=document.getElementById('adminView');view.classList.toggle('show-students',students);
-  document.getElementById('adminHeading').textContent=students?'Alunos':'Treinamentos';
-  document.querySelector('#adminView > .muted').textContent=students?'Cadastre alunos e consulte os acessos da Academia.':mode==='cloud'?'Crie cursos, aulas e materiais para os alunos da Academia.':'Demonstração: alterações salvas neste navegador.';
-  document.getElementById('adminTab').classList.toggle('active',!students);document.getElementById('studentsTab').classList.toggle('active',students);
-  document.getElementById('workspaceLabel').textContent=students?'Alunos':'Treinamentos';
+  if(section==='staff'&&!isMaster())section='courses';
+  const students=section==='students',staff=section==='staff',view=document.getElementById('adminView');
+  view.classList.toggle('show-students',students);
+  view.classList.toggle('show-staff',staff);
+  document.getElementById('adminHeading').textContent=students?'Alunos':staff?'Funcionários':'Treinamentos';
+  document.querySelector('#adminView > .muted').textContent=students?'Consulte alunos e gerencie matrículas em cursos publicados.':staff?'Gerencie as contas e os acessos dos funcionários.':mode==='cloud'?'Crie cursos e aulas. Somente o ADM Master publica treinamentos.':'Demonstração: alterações salvas neste navegador.';
+  document.getElementById('adminTab').classList.toggle('active',section==='courses');
+  document.getElementById('studentsTab').classList.toggle('active',students);
+  document.getElementById('staffTab').classList.toggle('active',staff);
+  document.getElementById('workspaceLabel').textContent=students?'Alunos':staff?'Funcionários':'Treinamentos';
  }
  document.getElementById('adminTab').addEventListener('click',()=>setAdminSection('courses'));
- document.getElementById('studentsTab').addEventListener('click',()=>{if(mode!=='cloud'||identity?.member.role!=='admin')return;show('adminView');setAdminSection('students');loadStudentRoster();window.scrollTo({top:0,behavior:'instant'});});
+ document.getElementById('studentsTab').addEventListener('click',()=>{if(!isEditor())return;show('adminView');setAdminSection('students');loadStudentRoster();window.scrollTo({top:0,behavior:'instant'});});
+ document.getElementById('staffTab').addEventListener('click',()=>{if(!isMaster())return;show('adminView');setAdminSection('staff');loadStaffRoster();window.scrollTo({top:0,behavior:'instant'});});
+ // Explicit publication actions. A local edit alone never changes the student-facing catalog.
+ window.AcademyCloudPublishing={
+  async publish(courseId){
+   if(!isMaster())throw Error('Somente o ADM Master pode publicar.');
+   await flush();
+   if(conflicted||dirtyCatalog)throw Error('Salve as informações do curso antes de publicar.');
+   return service.publishCourse(courseId);
+  },
+  async unpublish(courseId){
+   if(!isMaster())throw Error('Somente o ADM Master pode despublicar.');
+   await flush();
+   if(conflicted||dirtyCatalog)throw Error('Salve as informações do curso antes de retirar a publicação.');
+   return service.unpublishCourse(courseId);
+  }
+ };
  const baseRefresh=refresh;refresh=function(){baseRefresh();permissions();};
  const baseRenderClass=renderClass;
  let playbackGeneration=0;
