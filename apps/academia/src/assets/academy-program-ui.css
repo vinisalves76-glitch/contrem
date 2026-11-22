@@ -29,3 +29,31 @@
 .program-certificate{border-top:1px solid #e1e5ed;margin-top:20px;padding-top:17px}.program-certificate b{font-size:13px}.program-certificate p{color:#6b798a;font-size:12px}
 @media(max-width:1100px){.program-layout{grid-template-columns:1fr}.program-list{grid-template-columns:repeat(2,minmax(0,1fr))}.program-access-form{grid-template-columns:repeat(2,minmax(140px,1fr))}}
 @media(max-width:700px){.program-main,.program-student-panel{padding:16px!important}.program-list,#studentAcademiesList,.program-form-grid,.program-access-form{grid-template-columns:1fr}.program-form-grid>.wide{grid-column:auto}.program-edit-head,.program-stage-head,.program-module,.program-student-module{align-items:stretch;flex-direction:column}.program-module-actions{justify-content:flex-start}.program-student-module .program-student-actions{justify-content:start}.program-editor{padding:13px}.program-stage{padding:12px}.program-student-heading{align-items:start}.program-actions button{flex:1 1 170px}.program-access-form button{width:100%}}
+
+/* Portal da formação: separado da visão geral do aluno. */
+#academyPortalView{padding-top:18px;padding-bottom:48px}
+#academyPortalView.hidden{display:none!important}
+.program-portal-hero{overflow:hidden;position:relative;border-radius:18px;background:linear-gradient(115deg,#12263b 0%,#1b344d 65%,#314559 100%);color:#fff;padding:27px 32px 34px;box-shadow:0 12px 30px rgba(13,32,51,.12)}
+.program-portal-hero:after{content:'';position:absolute;width:350px;height:350px;top:-180px;right:-110px;border:1px solid rgba(249,185,120,.23);border-radius:50%;box-shadow:0 0 0 60px rgba(230,152,75,.04),0 0 0 120px rgba(230,152,75,.025);pointer-events:none}
+.program-portal-toolbar{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:14px;border-bottom:1px solid rgba(255,255,255,.14);padding-bottom:19px}
+.program-portal-back{background:rgba(255,255,255,.09)!important;border:1px solid rgba(255,255,255,.22)!important;color:#fff!important;font-weight:750;padding:9px 14px!important;border-radius:9px!important}
+.program-portal-back:hover,.program-portal-back:focus-visible{background:rgba(255,255,255,.17)!important}
+.program-portal-brand{font-size:11px;font-weight:800;letter-spacing:.13em;color:#f2ad74;text-align:right}
+.program-portal-heading{position:relative;z-index:1;max-width:760px;padding-top:30px}
+.program-portal-heading .tag{color:#f0a86b;font-size:11px;letter-spacing:.14em}
+.program-portal-heading h1{font-size:clamp(25px,4vw,42px);font-weight:900;letter-spacing:-.035em;color:#fff;line-height:1.1;margin:12px 0 14px}
+.program-portal-heading p{color:#ccd8e3;font-size:14px;line-height:1.7;margin:0}
+.program-portal-meta{display:inline-flex;flex-wrap:wrap;gap:12px;margin-top:23px;color:#efb57f;font-size:12px;font-weight:800}
+.program-portal-content{padding-top:22px}
+.program-portal #studentAcademyDetail{margin-top:0}
+.program-portal .program-student-stage{margin:23px 0}
+.program-portal .program-student-module{transition:border-color .16s,box-shadow .16s}
+.program-portal .program-student-module.unlocked:hover{border-color:#eebf92;box-shadow:0 5px 14px rgba(25,47,68,.06)}
+.program-student-card:focus-visible{outline:3px solid #e8a65e;outline-offset:2px}
+@media(max-width:700px){
+ .program-portal-hero{padding:18px 18px 26px}
+ .program-portal-brand{font-size:9px;max-width:140px}
+ .program-portal-heading{padding-top:24px}
+ .program-portal-heading p{font-size:12px}
+ .program-portal-content{padding-top:13px}
+}
