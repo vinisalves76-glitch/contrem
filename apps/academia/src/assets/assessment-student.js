@@ -28,10 +28,10 @@
   Object.defineProperty(activity,ctx.course.id,{value:{...(activity[ctx.course.id]||{}),assessments:{...(activity[ctx.course.id]?.assessments||{}),[ctx.key]:record}},writable:true,enumerable:true,configurable:true});
   academyStorage.setItem(ACTIVITY_KEY,JSON.stringify(activity));return true;
  }
- function start(ctx){
+ async function start(ctx){
   if(!alive(ctx))return;
   if(!ctx.checkpoint&&ctx.course.academyId){
-   try{const ui=window.CONTREM_PROGRAM_UI;if(!ui)throw Error('Regras da Academia não carregadas.');ui.consumeRetry(ctx.course.id);}
+   try{await window.CONTREM_PREVIEW_SYNC?.flush?.();if(!alive(ctx))return;const ui=window.CONTREM_PROGRAM_UI;if(!ui)throw Error('Regras da Academia não carregadas.');ui.consumeRetry(ctx.course.id);}
    catch(error){root.append(el('p',error.message||'Não é possível iniciar a prova.','notice'));return;}
   }
   const previous=recordFor(ctx),record={version:1,fingerprint:ctx.fingerprint,snapshot:clone(ctx.config),choiceOrders:ctx.config.questions.map(q=>shuffled(q.choices.length)),answers:ctx.config.questions.map(()=>null),locked:[],flags:[],index:0,xp:0,status:'active',startedAt:new Date().toISOString(),history:Array.isArray(previous?.history)?previous.history.slice(-100):[]};
