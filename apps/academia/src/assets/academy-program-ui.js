@@ -106,6 +106,32 @@
     const c=courses.find(c=>c.id===id);
     const row=document.createElement('div');row.className='program-module';
     row.innerHTML='<div><b>'+String(i+1).padStart(2,'0')+'. '+e(c?.name||'Módulo não encontrado')+'</b><small>'+Number(c?.hours||0)+'h · '+(c?.lessons?.length||0)+' aulas · '+e(c?.status==='published'?'Publicado':'Rascunho')+'</small></div><div class="program-module-actions"><button type="button" class="outline" data-module-up="'+idx+':'+i+'" '+(i===0?'disabled':'')+'>↑</button><button type="button" class="outline" data-module-down="'+idx+':'+i+'" '+(i===stage.moduleIds.length-1?'disabled':'')+'>↓</button><button type="button" class="primary" data-module-edit="'+e(id)+'">Gerenciar aulas →</button></div>';
+    if(a.stages.length>1){
+     const selector=document.createElement('select');
+     selector.className='program-move-stage';
+     selector.setAttribute('aria-label','Mover módulo '+(c?.name||id)+' para outra etapa');
+     for(const otherStage of a.stages){
+      const option=document.createElement('option');
+      option.value=otherStage.id;
+      option.textContent='Etapa: '+otherStage.title;
+      option.selected=stage.id===otherStage.id;
+      selector.append(option);
+     }
+     selector.onchange=()=>{
+      const stages=core.copy(a.stages);
+      const sourceStage=stages.find(item=>item.id===stage.id);
+      const destinationStage=stages.find(item=>item.id===selector.value);
+      if(!sourceStage||!destinationStage||sourceStage.id===destinationStage.id)return;
+      sourceStage.moduleIds=sourceStage.moduleIds.filter(moduleId=>moduleId!==id);
+      destinationStage.moduleIds.push(id);
+      const updated=updateProgram({...a,stages});
+      if(updated){
+       if(c)c.stageId=destinationStage.id;
+       save();refresh();
+      }else selector.value=stage.id;
+     };
+     row.querySelector('.program-module-actions').append(selector);
+    }
     list.append(row);
    });
    if(!stage.moduleIds.length)list.innerHTML='<p class="muted">Etapa vazia. Adicione um módulo para começar.</p>';
@@ -298,19 +324,6 @@
     if(m.canOpen&&m.status==='failed'){
      const request=document.createElement('button');request.type='button';request.className='outline';request.textContent='Solicitar nova tentativa';
      request.onclick=async()=>{try{await window.CONTREM_PREVIEW_SYNC?.flush?.();store.requestRetake(id);renderStudent();}catch(err){alert(err.message);}};actions.append(request);
-    }
-    if(a.stages.length>1){
-     const move=document.createElement('select');move.className='program-move-stage';
-     move.setAttribute('aria-label','Mover módulo para outra etapa');
-     for(const optionStage of a.stages){const opt=document.createElement('option');opt.value=optionStage.id;opt.textContent='Etapa: '+optionStage.title;opt.selected=stage.id===optionStage.id;move.append(opt);}
-     move.onchange=()=>{
-      const stages=core.copy(a.stages),src=stages.find(s=>s.id===stage.id),dest=stages.find(s=>s.id===move.value);
-      if(!src||!dest||src.id===dest.id)return;
-      src.moduleIds=src.moduleIds.filter(item=>item!==id);dest.moduleIds.push(id);
-      const result=updateProgram({...a,stages});
-      if(result){if(c)c.stageId=dest.id;save();refresh();}else move.value=stage.id;
-     };
-     actions.append(move);
     }
     row.append(actions);block.append(row);
    }
