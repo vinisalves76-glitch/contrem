@@ -15,6 +15,35 @@
     {id:'M11',stage:3,name:'Gestão da manutenção e diagnóstico',hours:8,desc:'Ordens de serviço, inspeções e análise de causas.',goal:'Registrar sintomas, hipóteses e evidências em uma ordem de serviço fictícia.',lessons:['Manutenção preventiva, corretiva e preditiva','Planos por horímetro específicos do OEM','Ordens de serviço e rastreabilidade','Sintomas, hipóteses e evidências','Segurança, criticidade e priorização','Comunicação e indicadores'],quiz:{q:'No diagnóstico técnico, o que diferencia um sintoma de uma causa comprovada?',choices:['Um sintoma é observado; a causa depende de evidências e validação','Sintoma e causa são exatamente iguais','A causa pode ser escolhida sem dados'],answer:0,why:'O registro deve separar observações de hipóteses e conclusões fundamentadas.'}},
     {id:'M12',stage:3,name:'Laboratório virtual e caso final',hours:6,desc:'Estudos integrados e relatório técnico simulado.',goal:'Construir um relatório de caso virtual com riscos, evidências, hipóteses e encaminhamento.',lessons:['Revisão integrada de sistemas','Caso virtual: escavadeira hidráulica','Caso virtual: caminhão fora de estrada','Escolhas de segurança e análise de evidências','Relatório técnico e avaliação integradora'],quiz:{q:'Qual relatório tem maior valor técnico em um caso de falha simulada?',choices:['Uma lista de peças substituídas sem justificativa','Sintomas observados, dados, hipóteses e encaminhamento justificado','Uma conclusão definitiva sem verificação'],answer:1,why:'Um relatório rastreável distingue dados reais de hipóteses e recomenda uma sequência segura de investigação.'}}
   ];
+  // A prévia visual usa o catálogo fictício do MESMO ADM e da MESMA origem.
+  // Não altera aulas nem substitui o player Mux real da Academia.
+  function syncConfiguredCourses(){
+    const definitions=window.CONTREM_TRILHA_CATALOG?.modules;
+    if(!Array.isArray(definitions))return;
+    let catalog=[];
+    try{
+      const db=JSON.parse(localStorage.getItem('contrem-adm-preview-db-v1')||'null');
+      if(Array.isArray(db?.catalog?.courses))catalog=db.catalog.courses;
+    }catch{}
+    for(const module of modules){
+      const base=definitions.find(item=>item.id===module.id);
+      if(!base)continue;
+      const configured=catalog.find(c=>c.id==='trilha-formacao-'+module.id.toLowerCase());
+      module.name=typeof configured?.name==='string'&&configured.name.trim()?configured.name:base.name;
+      module.hours=Number.isFinite(Number(configured?.hours))&&Number(configured.hours)>0?Number(configured.hours):base.hours;
+      module.desc=typeof configured?.description==='string'&&configured.description.trim()?configured.description:base.description;
+      module.lessons=Array.isArray(configured?.lessons)&&configured.lessons.length
+        ?configured.lessons.filter(l=>typeof l?.name==='string'&&l.name.trim()).map(l=>l.name)
+        :[...base.lessons];
+      module.catalogStatus=configured?.status==='published'?'published':configured?'draft':'unprepared';
+      module.materialCount=Array.isArray(configured?.previewMaterials)?configured.previewMaterials.length:0;
+      module.linkCount=Array.isArray(configured?.supportLinks)?configured.supportLinks.length:0;
+      if(Array.isArray(configured?.lessons))for(const lesson of configured.lessons){
+        module.materialCount+=Array.isArray(lesson.previewMaterials)?lesson.previewMaterials.length:0;
+        module.linkCount+=Array.isArray(lesson.supportLinks)?lesson.supportLinks.length:0;
+      }
+    }
+  }
   const stageNames={1:'Fundamentos',2:'Sistemas das máquinas',3:'Aplicação e diagnóstico'};
   const stageDescs={1:'Construa a base técnica',2:'Conheça os principais sistemas',3:'Aplique o raciocínio técnico'};
   const KEY='contrem-trilha-preview-explorados-v1';
@@ -57,11 +86,11 @@
         const btn=document.createElement('button');btn.type='button';btn.className='module-card'+(module.id==='M01'?' first':'');btn.dataset.module=module.id;
         btn.innerHTML='<div class="module-card-top"><span class="module-card-id"></span><span class="module-chip"></span></div><h3></h3><p></p><div class="module-card-footer"><span></span><span aria-hidden="true">→</span></div>';
         btn.querySelector('.module-card-id').textContent=module.id;
-        const chip=btn.querySelector('.module-chip');chip.textContent=explored.has(module.id)?'EXPLORADO':module.id==='M01'?'AULA DE EXEMPLO':'VISUALIZAR';
+        const chip=btn.querySelector('.module-chip');chip.textContent=module.catalogStatus==='published'?'PUBLICADO · TESTE':module.catalogStatus==='draft'?'RASCUNHO · ADM':explored.has(module.id)?'EXPLORADO':module.id==='M01'?'AULA DE EXEMPLO':'VISUALIZAR';
         if(module.id==='M01'||explored.has(module.id))chip.classList.add('sample');
         btn.querySelector('h3').textContent=module.name;
         btn.querySelector('p').textContent=module.desc;
-        btn.querySelector('.module-card-footer span').textContent=module.hours+' horas estimadas';
+        btn.querySelector('.module-card-footer span').textContent=module.hours+'h estimadas · '+module.lessons.length+' aulas';
         grid.append(btn);
       }
       section.append(grid);root.append(section);
@@ -81,6 +110,7 @@
     for(const entry of ['MÓDULO '+module.id, module.hours+' HORAS ESTIMADAS',module.lessons.length+' AULAS PREVISTAS']){const span=document.createElement('span');span.textContent=entry;$('detail-tags').append(span);}
     const list=$('detail-lessons');list.replaceChildren();
     for(const lesson of module.lessons){const item=document.createElement('li');item.textContent=lesson;list.append(item);}
+    if(module.catalogStatus!=='unprepared'&&(module.materialCount||module.linkCount)){$('detail-tags').append(Object.assign(document.createElement('span'),{textContent:module.materialCount+' arquivo(s) · '+module.linkCount+' link(s) no ADM'}));}
     renderQuiz();showView('detail');
   }
   function renderQuiz() {
@@ -135,5 +165,7 @@
   $('startSample').addEventListener('click',()=>openModule('M01'));
   $('resetLab').addEventListener('click',renderLab);
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&$('sidebar').classList.contains('open')){$('sidebar').classList.remove('open');$('menuToggle').setAttribute('aria-expanded','false');}});
-  updateProgress();renderModules();renderLab();showView('overview');
+  syncConfiguredCourses();updateProgress();renderModules();renderLab();showView('overview');
+  window.addEventListener('focus',()=>{syncConfiguredCourses();if(!$('view-modules').hidden)renderModules();});
+  window.addEventListener('storage',event=>{if(event.key==='contrem-adm-preview-db-v1'){syncConfiguredCourses();if(!$('view-modules').hidden)renderModules();}});
 })();
