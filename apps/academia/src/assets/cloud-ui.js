@@ -4,9 +4,8 @@
  const status=document.getElementById('cloudStatus'),bar=document.getElementById('cloudBar');
  const form=document.getElementById('cloudLoginForm'),loginStatus=document.getElementById('cloudLoginStatus');
  const keys=['va-academia-catalog-v1','va-academia-progress-v1','va-academia-certificates-v1','va-academia-profile-v1','va-academia-activity-v1'];
- let mode='demo',identity=null,service=null,client=null,catalogRevision=0,stateRevision=0;
+ let mode='guest',identity=null,service=null,client=null,catalogRevision=0,stateRevision=0;
  let catalogSaved='',stateSaved='',dirtyCatalog=false,dirtyState=false,conflicted=false,timer=null,saving=null,epoch=0;
- const demoAdminNotice=document.querySelector('#adminView > .notice').textContent;
  const pendingKey=id=>'contrem-academia:'+id+':pending';
  const copy=value=>JSON.parse(JSON.stringify(value));
  const stateJSON=value=>JSON.stringify({profile:value.profile,progress:value.progress,certificates:value.certificates,activity:value.activity});
@@ -107,21 +106,22 @@
   else if(keys.includes(key))dirtyState=true;
   savePending();scheduleSync();
  });
- function resetToDemo(){
-  epoch++;clearTimeout(timer);mode='demo';identity=null;conflicted=false;dirtyState=false;dirtyCatalog=false;
+ function resetToLogin(){
+  epoch++;clearTimeout(timer);mode='guest';identity=null;conflicted=false;dirtyState=false;dirtyCatalog=false;
   academyStorage.setScope(null);bar.hidden=true;
-  courses=read(KEY,demo);progress=read(PK,{});certificates=read(CK,[]);profile=read(PROFILE_KEY,{fullName:'',email:'',company:'',role:''});activity=read(ACTIVITY_KEY,{});
-  selectedCourse=null;studentName=profile.fullName||'Aluno demonstração';document.getElementById('hello').textContent=studentName;
-  document.getElementById('studentNav').hidden=false;document.getElementById('adminNav').hidden=false;document.getElementById('sidebarContext').textContent='AMBIENTE DE APRENDIZAGEM';document.getElementById('adminTab').hidden=false;document.getElementById('adminStudents').hidden=true;setAdminSection('courses');document.querySelector('.demo-chip').textContent='DEMONSTRAÇÃO · DADOS LOCAIS';
+  courses=[];progress={};certificates=[];profile={fullName:'',email:'',company:'',role:''};activity={};
+  selectedCourse=null;studentName='Aluno';
+  document.getElementById('hello').textContent=studentName;
+  document.getElementById('studentNav').hidden=true;
+  document.getElementById('adminNav').hidden=true;
+  document.getElementById('adminStudents').hidden=true;
+  document.getElementById('adminTab').hidden=true;
   document.getElementById('player').src='about:blank';
-  document.querySelector('#my-profile .row p').textContent='Nome e dados de exibição ficam salvos somente neste navegador.';
-  document.querySelector('#adminView > .muted').textContent='Demonstração: as alterações são salvas somente neste navegador.';
-  document.querySelector('#adminView > .notice').textContent=demoAdminNotice;
-  document.querySelector('#assessmentPanel .row p').textContent='Responda às questões para registrar seu resultado neste navegador.';
   document.getElementById('cloudImportHint').hidden=true;
-  document.querySelectorAll('[data-cloud-disabled]').forEach(el=>{el.disabled=false;delete el.dataset.cloudDisabled;});
-  ['importBackupBtn','importBackupText'].forEach(id=>{document.getElementById(id).disabled=false;});
-  loadProfile();refresh();show('studentView');document.getElementById('app').classList.add('hidden');document.getElementById('login').classList.remove('hidden');
+  document.getElementById('cloudPassword').value='';
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('login').classList.remove('hidden');
+  loginStatus.textContent='';
  }
  function errorText(error){
   if(error.name==='AcademyConflict')return error.message;
@@ -150,7 +150,7 @@
  function setAdminSection(section){
   const students=section==='students',view=document.getElementById('adminView');view.classList.toggle('show-students',students);
   document.getElementById('adminHeading').textContent=students?'Alunos':'Treinamentos';
-  document.querySelector('#adminView > .muted').textContent=students?'Cadastre alunos e consulte os acessos da Academia.':mode==='cloud'?'Crie cursos, aulas e materiais para os alunos da Academia.':'Demonstração: alterações salvas neste navegador.';
+  document.querySelector('#adminView > .muted').textContent=students?'Cadastre alunos e consulte os acessos da Academia.':mode==='cloud'?'Crie cursos, aulas e materiais para os alunos da Academia.':'Entre na sua conta para gerenciar treinamentos.';
   document.getElementById('adminTab').classList.toggle('active',!students);document.getElementById('studentsTab').classList.toggle('active',students);
   document.getElementById('workspaceLabel').textContent=students?'Alunos':'Treinamentos';
  }
@@ -158,16 +158,14 @@
  document.getElementById('studentsTab').addEventListener('click',()=>{if(mode!=='cloud'||identity?.member.role!=='admin')return;show('adminView');setAdminSection('students');loadStudentRoster();window.scrollTo({top:0,behavior:'instant'});});
  const baseRefresh=refresh;refresh=function(){baseRefresh();permissions();};
  const baseRenderClass=renderClass;renderClass=function(){baseRenderClass();permissions();};
- const baseShow=show;show=function(id){if(mode==='cloud'&&id==='adminView'&&(identity?.member.role!=='admin'||identity.user.email?.toLowerCase()!=='vinicius.alves@irmen.com.br'))id='studentView';baseShow(id);permissions();};
- const demoEnter=document.getElementById('enter').onclick;
- document.getElementById('enter').onclick=()=>{if(mode==='cloud')return;demoEnter();};
+ const baseShow=show;show=function(id){if(mode!=='cloud'||!identity)return;if(id==='adminView'&&(identity.member.role!=='admin'||identity.user.email?.toLowerCase()!=='vinicius.alves@irmen.com.br'))id='studentView';baseShow(id);permissions();};
  document.getElementById('exit').onclick=async()=>{
   if(mode==='cloud'){
    await flush();
    if((dirtyCatalog||dirtyState||conflicted)&&!confirm('Existem alterações pendentes neste aparelho. Elas ficarão guardadas para a próxima entrada. Deseja sair?'))return;
    try{await service.signOut();}catch{message('Não foi possível encerrar a sessão. Tente novamente.',true);return;}
   }
-  resetToDemo();
+  resetToLogin();
  };
  const baseSaveProfile=saveProfile;saveProfile=function(){baseSaveProfile();if(mode==='cloud')document.getElementById('profileStatus').textContent='Alterações preparadas. Acompanhe o salvamento no painel da conta.';};
  document.getElementById('saveProfile').onclick=saveProfile;
@@ -183,16 +181,7 @@
   if(readPending()&&!confirm('Recarregar substituirá as alterações pendentes deste aparelho pelos dados da conta. Baixe a cópia pendente antes, se precisar preservá-las. Continuar?'))return;
   try{const data=await service.reload();clearPending();await enterCloud(data);}catch(error){message(errorText(error),true);}
  };
- document.getElementById('migrateLocalCatalog').onclick=async()=>{
-  if(mode!=='cloud'||identity.member.role!=='admin'||conflicted||saving)return;
-  try{
-   const local=JSON.parse(academyStorage.getLegacy(keys[0])||'null');
-   if(!local){message('Não há catálogo local salvo neste navegador. Exporte o backup na versão anterior e importe-o na demonstração local desta URL primeiro.');return;}
-   validateCourses(local);
-   if(!confirm('Publicar o catálogo local substituirá o catálogo compartilhado da Academia. O progresso local não será importado. Continuar?'))return;
-   courses=copy(local);save();refresh();await flush();
-  }catch(error){message(errorText(error),true);}
- };
+ document.getElementById('migrateLocalCatalog').disabled=true;
  form.onsubmit=async event=>{
   event.preventDefault();if(!service)return;const submit=form.querySelector('button');submit.disabled=true;loginStatus.textContent='Entrando na sua conta…';
   try{const data=await service.signIn(document.getElementById('cloudEmail').value.trim(),document.getElementById('cloudPassword').value);document.getElementById('cloudPassword').value='';await enterCloud(data);loginStatus.textContent='';}
@@ -200,9 +189,9 @@
   finally{submit.disabled=false;}
  };
  window.addEventListener('online',()=>{if(mode==='cloud')scheduleSync();});
- if(!config||!window.supabase||!window.AcademyCloudService){loginStatus.textContent='A conexão da conta não carregou. Você pode usar a demonstração local.';form.querySelector('button').disabled=true;return;}
+ if(!config?.url||!/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(config.url)||!config.publishableKey||config.preview===true||!window.supabase||!window.AcademyCloudService){loginStatus.textContent='Não foi possível carregar o acesso à sua conta. Atualize a página ou tente novamente mais tarde.';form.querySelector('button').disabled=true;return;}
  client=window.supabase.createClient(config.url,config.publishableKey,{auth:{storageKey:'contrem-academia-auth-v1',persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
  service=window.AcademyCloudService.create(client);
- client.auth.onAuthStateChange((event,session)=>{if(mode==='cloud'&&(event==='SIGNED_OUT'||(session?.user?.id&&session.user.id!==identity.user.id)))resetToDemo();});
+ client.auth.onAuthStateChange((event,session)=>{if(mode==='cloud'&&(event==='SIGNED_OUT'||(session?.user?.id&&session.user.id!==identity.user.id)))resetToLogin();});
  client.auth.getSession().then(async({data})=>{if(!data.session)return;loginStatus.textContent='Retomando sua conta…';try{const value=await service.restore();if(value)await enterCloud(value);loginStatus.textContent='';}catch(error){loginStatus.textContent=errorText(error);}});
 })();
