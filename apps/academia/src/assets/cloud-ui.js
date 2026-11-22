@@ -159,7 +159,24 @@
  document.getElementById('adminTab').addEventListener('click',()=>setAdminSection('courses'));
  document.getElementById('studentsTab').addEventListener('click',()=>{if(mode!=='cloud'||identity?.member.role!=='admin')return;show('adminView');setAdminSection('students');loadStudentRoster();window.scrollTo({top:0,behavior:'instant'});});
  const baseRefresh=refresh;refresh=function(){baseRefresh();permissions();};
- const baseRenderClass=renderClass;renderClass=function(){baseRenderClass();permissions();};
+ const baseRenderClass=renderClass;
+ let playbackGeneration=0;
+ renderClass=function(){
+  baseRenderClass();
+  if(config?.mode==='connected'&&config.preview===false&&mode==='cloud'){
+   const sequence=++playbackGeneration,lesson=selectedCourse?.lessons?.[selectedLesson],session=identity;
+   const player=document.getElementById('player'),videoStatus=document.getElementById('lessonVideoStatus');
+   player.src='about:blank';document.getElementById('markDone').disabled=true;
+   if(lesson?.videoId && /^[a-f0-9-]{36}$/i.test(lesson.videoId)){
+    videoStatus.hidden=false;videoStatus.textContent='Autorizando vídeo privado no Mux...';
+    service.playback(lesson.videoId).then(value=>{
+     if(sequence!==playbackGeneration||identity!==session||mode!=='cloud'||selectedCourse?.lessons?.[selectedLesson]!==lesson)return;
+     player.src=value.iframeUrl;videoStatus.hidden=true;document.getElementById('markDone').disabled=false;
+    }).catch(()=>{if(sequence===playbackGeneration&&identity===session){videoStatus.hidden=false;videoStatus.textContent='Vídeo privado ainda não autorizado. Confira o vínculo Mux e sua matrícula.';}});
+   }else {videoStatus.hidden=false;videoStatus.textContent='Aula ainda sem vídeo privado vinculado no Mux.';}
+  }else{playbackGeneration++;}
+  permissions();
+ };
  const baseShow=show;show=function(id){if(mode==='cloud'&&id==='adminView'&&(identity?.member.role!=='admin'||identity.user.email?.toLowerCase()!=='vinicius.alves@irmen.com.br'))id='studentView';baseShow(id);permissions();};
  const demoButton=document.getElementById('enter'),demoPanel=document.getElementById('demoAccess');
  if(!config?.preview){
@@ -242,6 +259,7 @@
  if(!config||config.mode!=='connected'||config.preview!==false||config.url!=='https://vwvesygsudhbaqmayhsz.supabase.co'||!/^sb_publishable_[A-Za-z0-9_-]+$/.test(config.publishableKey||'')||!window.supabase||!window.AcademyCloudService){loginStatus.textContent='A conexão segura da Academia não está disponível. Não há acesso por demonstração.';form.querySelector('button').disabled=true;return;}
  client=window.supabase.createClient(config.url,config.publishableKey,{auth:{storageKey:'contrem-academia-auth-v1',persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
  service=window.AcademyCloudService.create(client);
+ window.AcademyCloudMediaClient=client; // publishable key only; Storage and Auth enforce RLS.
  client.auth.onAuthStateChange((event,session)=>{if(mode==='cloud'&&(event==='SIGNED_OUT'||(session?.user?.id&&session.user.id!==identity.user.id)))resetToDemo();});
  client.auth.getSession().then(async({data})=>{if(!data.session)return;loginStatus.textContent='Retomando sua conta…';try{const value=await service.restore();if(value)await enterCloud(value);loginStatus.textContent='';}catch(error){loginStatus.textContent=errorText(error);}});
 })();
