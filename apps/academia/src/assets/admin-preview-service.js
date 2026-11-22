@@ -130,6 +130,7 @@
      for(const course of courses)if(!db.workspace.courses.some(c=>c.id===course.id)&&course.status==='published')throw Error('Somente o ADM Master publica cursos.');
      if(courses.some(c=>c._unpublishRequested&&!db.workspace.courses.find(b=>b.id===c.id)?._unpublishRequested))throw Error('Somente o ADM Master pode despublicar cursos.');
     }
+    const previousWorkspace=new Map(db.workspace.courses.map(c=>[c.id,c]));
     db.workspace={courses:copy(courses).map(c=>{delete c._unpublishRequested;return c;}),revision:revision+1};
     if(current===ADMIN){
      // Uma revisão editorial de curso já publicado não é publicada automaticamente
@@ -137,7 +138,9 @@
      const byId=new Map(db.catalog.courses.map(c=>[c.id,c]));
      const published=courses.map(c=>{
       const previous=byId.get(c.id);
-      return previous?.status==='published'&&c.status!=='published'&&!c._unpublishRequested?copy(previous):copy(c);
+      const previousEditorial=previousWorkspace.get(c.id);
+      const deliberateUnpublish=c._unpublishRequested||(previousEditorial?.status==='published'&&c.status!=='published');
+      return previous?.status==='published'&&c.status!=='published'&&!deliberateUnpublish?copy(previous):copy(c);
      }).map(c=>{delete c._unpublishRequested;return c;});
      db.catalog={courses:published,revision:db.catalog.revision+1};
     }
