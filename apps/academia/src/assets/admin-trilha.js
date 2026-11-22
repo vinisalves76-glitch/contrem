@@ -5,7 +5,7 @@
  const adminView=document.getElementById('adminView');
  const bridge=window.CONTREM_TRILHA_ADMIN_BRIDGE;
  const blueprint=window.CONTREM_TRILHA_CATALOG;
- if(!adminView||!bridge||!blueprint)return;
+ if(!adminView||!bridge||!blueprint||window.CONTREM_ACADEMY_CONFIG?.preview!==true)return;
  const panel=document.createElement('details');
  panel.id='admTrilhaPanel';panel.className='panel adm-trilha-panel';
  panel.innerHTML=`
