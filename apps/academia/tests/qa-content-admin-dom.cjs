@@ -87,7 +87,7 @@ const answerFinal=async values=>{
  assert.equal(invite$('staffInviteBox').hidden,false,'Link deve mostrar a etapa de senha');
  assert.equal(invite$('cloudLoginForm').hidden,true,'Login normal deve ficar oculto durante o convite');
  assert.equal(invite$('demoAccess').hidden,true,'Demo fica oculta durante a definição da senha');
- assert.equal(invite$('staffAcceptConfirmPassword').required,true,'Confirmação da senha é obrigatória');
+ assert.equal(invite$('staffAcceptConfirmPassword').hasAttribute('required'),true,'Confirmação da senha é obrigatória');
  invite$('staffAcceptPassword').value='SenhaTeste123!';
  invite$('staffAcceptConfirmPassword').value='SenhaDiferente123!';
  await acceptForm.onsubmit({preventDefault(){},currentTarget:acceptForm});
