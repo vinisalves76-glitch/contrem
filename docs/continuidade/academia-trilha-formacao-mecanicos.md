@@ -1,5 +1,7 @@
 # CONTREM Academia — Trilha de Formação de Mecânicos de Máquinas Pesadas
 
+> **Atualização confirmada em 22/11/2026 — MODALIDADE 100% ONLINE.** O restante deste arquivo registra a proposta histórica (versão 0.1), inclusive opções de modalidade e prática presencial que **não se aplicam mais**. O planejamento pedagógico atual, com carga horária **proposta de 120h**, 12 módulos, projetos em laboratório virtual, avaliação e limites de certificação, está em [Projeto Pedagógico EAD v1](academia-trilha-ead-projeto-pedagogico-v1.md). Nenhum conteúdo prático presencial será obrigatório para concluir esta trilha online. A certificação proposta atesta somente conclusão de atividades teóricas e simuladas, **não aptidão prática ou qualificação regulamentada**.
+
 **Situação:** proposta curricular inicial, para validação do proprietário; não publicada, não cadastrada no banco e sem interface implementada.
 
 **Repositório:** `vinisalves76-glitch/contrem`
