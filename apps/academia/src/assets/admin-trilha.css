@@ -1,0 +1,26 @@
+/* Extensão visual do ADM existente: apenas composição da trilha EAD. */
+.adm-trilha-panel{margin:17px 0 20px;padding:0!important;overflow:hidden;border-color:#e1e7ed!important}
+.adm-trilha-summary{display:flex;align-items:center;gap:17px;padding:20px 24px;cursor:pointer;list-style:none;background:linear-gradient(120deg,#18283e,#263d53);color:#fff}
+.adm-trilha-summary::-webkit-details-marker{display:none}
+.adm-trilha-summary:after{content:'⌄';margin-left:auto;font-size:25px;color:#d89a5c}
+.adm-trilha-panel[open] .adm-trilha-summary:after{content:'⌃'}
+.adm-trilha-summary strong{display:block;font-weight:900;font-size:19px;line-height:1.3}
+.adm-trilha-summary small{display:block;color:#bdc8d3;margin-top:4px;font-size:12px;line-height:1.6}
+.adm-trilha-symbol{color:#ed9f58;font-size:34px}
+.adm-trilha-intro{padding:20px 24px 7px}
+.adm-trilha-intro p{font-size:13px;color:#526276;line-height:1.75;margin:0 0 15px}
+.adm-trilha-intro .adm-trilha-notice{color:#8c673f;background:#fff7ea;padding:12px;border-radius:8px;border:1px solid #f2e2ca}
+.adm-trilha-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:16px 0}
+.adm-trilha-preview-link{display:inline-flex;align-items:center;text-decoration:none;border:1px solid #dce2e8;border-radius:8px;padding:10px 13px;color:#263a52;background:#fff;font-size:13px;font-weight:800}
+.adm-trilha-list{padding:0 24px 22px;display:grid;gap:9px}
+.adm-trilha-stage{font-size:12px;font-weight:900;color:#8e693f;margin:20px 0 6px;letter-spacing:.08em}
+.adm-trilha-item{display:flex;align-items:center;justify-content:space-between;gap:14px;background:#f8fafc;border:1px solid #e7ecf0;padding:13px 15px;border-radius:10px}
+.adm-trilha-item-info{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;column-gap:12px;row-gap:2px;min-width:0}
+.adm-trilha-module-code{grid-row:span 2;font-size:11px;font-weight:900;color:#a7622e;border-radius:6px;background:#fff1e5;padding:8px}
+.adm-trilha-item-info strong{font-weight:800;white-space:normal;line-height:1.4}
+.adm-trilha-item-info small{font-size:11px;color:#8190a0}
+.adm-trilha-item>button{flex:0 0 auto}
+#trilhaStatus{font-size:12px;font-weight:700}
+#trilhaStatus.error{color:#ad4338}
+.adm-trilha-external-hint{padding:11px;border-radius:8px;background:#fff6e8;color:#805b32;font-weight:700;font-size:12px;line-height:1.6}
+@media(max-width:650px){.adm-trilha-summary{padding:15px}.adm-trilha-intro{padding:17px}.adm-trilha-list{padding:0 13px 17px}.adm-trilha-item{flex-direction:column;align-items:stretch}.adm-trilha-item>button{width:100%}}
