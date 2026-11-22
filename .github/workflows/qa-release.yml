@@ -1,7 +1,7 @@
 name: QA release CONTREM
 on:
   pull_request:
-    branches: [main]
+    branches: [main, 'release/**']
     paths:
       - 'apps/academia/**'
       - 'scripts/**'
