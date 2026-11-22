@@ -1,8 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile,access} from 'node:fs/promises';
-const read=p=>readFile(p,'utf8');
-const exists=async p=>{try{await access(p);return true;}catch{return false;}};
+import {fileURLToPath} from 'node:url';
+import {resolve} from 'node:path';
+const root=fileURLToPath(new URL('../../../',import.meta.url));
+const full=p=>resolve(root,p);
+const read=p=>readFile(full(p),'utf8');
+const exists=async p=>{try{await access(full(p));return true;}catch{return false;}};
 
 test('Publicação da Academia mantém construtor completo do Developer',async()=>{
  const html=await read('apps/academia/src/index.html');
