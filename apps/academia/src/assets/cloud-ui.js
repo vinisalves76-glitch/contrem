@@ -162,37 +162,23 @@
   if(mode!=='cloud'||!isMaster())return;
   try{
    const staff=await service.listStaff();
-   roster.innerHTML=staff.length?staff.map(m=>'<div class="student-roster-row"><b>'+esc(m.name)+'</b> <small class="roster-email">'+esc(m.email)+'</small> · '+(m.invited?'Convite pendente':m.active?'Ativo':'Inativo')+(m.invited?'':' <button type="button" class="outline" data-staff-id="'+esc(m.id)+'" data-staff-active="'+(!m.active)+'">'+(m.active?'Desativar':'Reativar')+'</button>')+'</div>').join(''):'Nenhum funcionário cadastrado.';
+   roster.innerHTML=staff.length?staff.map(m=>'<div class="student-roster-row"><b>'+esc(m.name)+'</b> <small class="roster-email">'+esc(m.email)+'</small> · '+(m.active?'Ativo':'Inativo')+' <button type="button" class="outline" data-staff-id="'+esc(m.id)+'" data-staff-active="'+(!m.active)+'">'+(m.active?'Desativar':'Reativar')+'</button></div>').join(''):'Nenhum funcionário cadastrado.';
   }catch(error){roster.textContent=error.message||'Não foi possível carregar os funcionários.';}
  }
- document.getElementById('staffInviteForm').onsubmit=async event=>{
+ document.getElementById('staffCreateForm').onsubmit=async event=>{
   event.preventDefault();if(mode!=='cloud'||!isMaster())return;
   const form=event.currentTarget,button=form.querySelector('button'),status=document.getElementById('staffFormStatus');
-  button.disabled=true;status.textContent='Preparando convite de teste…';
+  button.disabled=true;status.textContent='Criando login do funcionário…';
   try{
-   const name=document.getElementById('staffName').value.trim(),email=document.getElementById('staffEmail').value.trim();
-   const created=await service.inviteContentAdmin(name,email);
-   const inviteUrl=new URL(window.location.href);inviteUrl.searchParams.set('staffInvite',created.token);
-   document.getElementById('staffInviteUrl').value=inviteUrl.href;document.getElementById('staffInviteResult').hidden=false;
-   form.reset();status.textContent='Convite de teste gerado para '+created.email+'. Expira em 7 dias; não foi enviado por e-mail.';
+   const name=document.getElementById('staffName').value.trim();
+   const email=document.getElementById('staffEmail').value.trim();
+   const password=document.getElementById('staffPassword').value;
+   const created=await service.createContentAdmin(name,email,password);
+   form.reset();
+   status.textContent='Login de '+created.name+' criado. O funcionário pode entrar usando o e-mail '+created.email+' e a senha inicial cadastrada nesta prévia.';
    await loadStaffRoster();
-  }catch(error){status.textContent=error.message||'Não foi possível gerar o convite.';}
+  }catch(error){status.textContent=error.message||'Não foi possível criar o login.';}
   finally{button.disabled=false;}
- };
- document.getElementById('openStaffInvite').onclick=()=>{
-  const url=document.getElementById('staffInviteUrl').value;
-  if(url&&new URL(url).origin===new URL(window.location.href).origin)window.location.href=url;
- };
- document.getElementById('copyStaffInvite').onclick=async()=>{
-  const field=document.getElementById('staffInviteUrl');
-  try{
-   if(!navigator.clipboard?.writeText)throw Error('Indisponível');
-   await navigator.clipboard.writeText(field.value);
-   document.getElementById('staffFormStatus').textContent='Link copiado. Abra-o neste mesmo navegador para testar.';
-  }catch{
-   field.focus();field.select();
-   document.getElementById('staffFormStatus').textContent='Selecione e copie o link do campo acima.';
-  }
  };
  document.getElementById('staffRoster').addEventListener('click',async event=>{
   const button=event.target.closest('[data-staff-id]');if(!button||mode!=='cloud'||!isMaster())return;
@@ -206,7 +192,7 @@
   view.classList.toggle('show-students',section==='students');
   view.classList.toggle('show-staff',section==='staff');
   document.getElementById('adminHeading').textContent=section==='students'?'Alunos':section==='staff'?'Funcionários':'Treinamentos';
-  document.querySelector('#adminView > .muted').textContent=section==='students'?'Consulte alunos e gerencie matrículas nos cursos publicados.':section==='staff'?'Convide e gerencie profissionais responsáveis por criar cursos e aulas.':mode==='cloud'?'Crie e edite cursos, aulas e materiais para a Academia.':'Demonstração: alterações salvas neste navegador.';
+  document.querySelector('#adminView > .muted').textContent=section==='students'?'Consulte alunos e gerencie matrículas nos cursos publicados.':section==='staff'?'Crie e gerencie logins para funcionários responsáveis por cursos e aulas.':mode==='cloud'?'Crie e edite cursos, aulas e materiais para a Academia.':'Demonstração: alterações salvas neste navegador.';
   document.getElementById('adminTab').classList.toggle('active',section==='courses');
   document.getElementById('studentsTab').classList.toggle('active',section==='students');
   document.getElementById('staffTab').classList.toggle('active',section==='staff');
@@ -262,41 +248,9 @@
  if(config?.preview){
   if(!window.AcademyAdminPreviewService){loginStatus.textContent='A prévia não carregou. Recarregue a página.';return;}
   service=window.AcademyAdminPreviewService.create();
-  const inviteParam=typeof window.location?.href==='string'?new URL(window.location.href).searchParams.get('staffInvite'):null;
-  if(inviteParam){
-   // O link abre exclusivamente o passo "Definir senha"; outras entradas são ocultadas.
-   document.getElementById('staffInviteBox').hidden=false;
-   document.getElementById('cloudLoginForm').hidden=true;
-   document.getElementById('demoAccess').hidden=true;
-   document.querySelectorAll('.preview-login-note,.preview-student-login,.cloud-login-note').forEach(el=>el.hidden=true);
-   document.getElementById('staffAcceptForm').onsubmit=async event=>{
-    event.preventDefault();
-    const status=document.getElementById('staffAcceptStatus');
-    const button=event.currentTarget.querySelector('button');
-    const password=document.getElementById('staffAcceptPassword');
-    const confirmation=document.getElementById('staffAcceptConfirmPassword');
-    if(password.value.length<8||password.value.length>128){
-     status.textContent='Crie uma senha entre 8 e 128 caracteres.';return;
-    }
-    if(password.value!==confirmation.value){
-     status.textContent='As senhas não coincidem. Digite novamente para concluir o cadastro.';
-     confirmation.focus();return;
-    }
-    button.disabled=true;status.textContent='Ativando sua conta de funcionário…';
-    try{
-     await enterCloud(await service.acceptContentInvite(inviteParam,password.value));
-     password.value='';confirmation.value='';
-     document.getElementById('staffInviteBox').hidden=true;
-     window.history?.replaceState?.({},'',window.location.pathname);
-    }catch(error){status.textContent=errorText(error);}
-    finally{button.disabled=false;}
-   };
-  }
-
   const testAccess=document.createElement('div');testAccess.className='preview-login-note';
   testAccess.innerHTML='<b>ÁREA DO ALUNO · CONTA DE TESTE</b><p>Entre como Aluno de teste pelo botão abaixo, sem e-mail ou senha. Três cursos já vêm prontos, incluindo desafios por aula e prova final com caso prático. Basta entrar e abrir um curso. Seu progresso, provas e certificados ficam salvos aqui.</p><button type="button" id="previewStudentEntry" class="outline">Entrar como aluno de teste →</button><p>Não precisa cadastrar aulas nem informar vídeo. Para conferir a administração dos cursos, clique em Sair e abra o painel ADM de teste.</p><p id="previewStudentStatus" role="status" aria-live="polite"></p>';
   form.before(testAccess);
-  if(inviteParam)testAccess.hidden=true;
   document.getElementById('previewStudentEntry').onclick=async()=>{
    const button=document.getElementById('previewStudentEntry'),status=document.getElementById('previewStudentStatus');
    button.disabled=true;status.textContent='Preparando o aluno de teste…';
@@ -309,9 +263,7 @@
   };
 
   document.getElementById('previewAdminEntry').onclick=async()=>{try{await enterCloud(await service.startAdmin());}catch(error){loginStatus.textContent=errorText(error);}};
-  // Ao abrir um convite, não restaurar a sessão de ADM Master no lugar
-  // da tela em que o funcionário define sua própria senha.
-  if(!inviteParam)service.restore().then(data=>data&&enterCloud(data)).catch(error=>{loginStatus.textContent=errorText(error);});
+  service.restore().then(data=>data&&enterCloud(data)).catch(error=>{loginStatus.textContent=errorText(error);});
   return;
  }
  if(!config||!window.supabase||!window.AcademyCloudService){loginStatus.textContent='A conexão da conta não carregou. Você pode usar a demonstração local.';form.querySelector('button').disabled=true;return;}
