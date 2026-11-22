@@ -289,7 +289,9 @@
   };
 
   document.getElementById('previewAdminEntry').onclick=async()=>{try{await enterCloud(await service.startAdmin());}catch(error){loginStatus.textContent=errorText(error);}};
-  service.restore().then(data=>data&&enterCloud(data)).catch(error=>{loginStatus.textContent=errorText(error);});
+  // Ao abrir um convite, não restaurar a sessão de ADM Master no lugar
+  // da tela em que o funcionário define sua própria senha.
+  if(!inviteParam)service.restore().then(data=>data&&enterCloud(data)).catch(error=>{loginStatus.textContent=errorText(error);});
   return;
  }
  if(!config||!window.supabase||!window.AcademyCloudService){loginStatus.textContent='A conexão da conta não carregou. Você pode usar a demonstração local.';form.querySelector('button').disabled=true;return;}
