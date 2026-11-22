@@ -329,6 +329,19 @@
  window.addEventListener('academia:assessment-completed',async()=>{if(!enrolled())return;try{await window.CONTREM_PREVIEW_SYNC?.flush?.();}catch{}renderStudent();});
  window.addEventListener('focus',()=>{if(enrolled())renderStudent();});
  document.getElementById('previewStudentEntry')?.addEventListener('click',()=>setTimeout(renderStudent,400));
+ const oldCertificateList=renderCertificateList;
+ renderCertificateList=function(){
+  oldCertificateList();
+  if(!enrolled())return;
+  const entries=store.studentPrograms().certificates,holder=$('certificateList');
+  for(const item of entries){
+   const row=document.createElement('div');row.className='item';
+   const title=document.createElement('b');title.textContent=item.title+' · Academia completa';
+   const description=document.createElement('span');description.textContent=' · '+item.hours+'h · '+item.code+' ';
+   const btn=document.createElement('button');btn.className='outline';btn.type='button';btn.textContent='Abrir certificado';
+   btn.onclick=()=>printCert(item);row.append(title,description,btn);holder.append(row);
+  }
+ };
  const originalRefresh=refresh;
  refresh=function(){originalRefresh();if(enrolled())renderStudent();};
  const originalShow=show;
