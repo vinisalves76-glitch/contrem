@@ -8,7 +8,7 @@
  const copy=x=>JSON.parse(JSON.stringify(x));
  const load=()=>{
   const db=JSON.parse(localStorage.getItem(DB)||'null')||{catalog:{courses:[],revision:0},students:[],states:{}};
-  db.staff??=[];db.workspace??=copy(db.catalog);return db;
+  db.staff??=[];db.staff=db.staff.filter(person=>!!person.passwordHash);db.workspace??=copy(db.catalog);return db;
  };
  const commit=db=>localStorage.setItem(DB,JSON.stringify(db));
  const emailOf=x=>String(x||'').trim().toLowerCase();
@@ -37,7 +37,7 @@
  function create(){
   let current=null;
   function admin(){if(current!==ADMIN)throw Error('Acesso restrito ao ADM Master da prévia.');}
-  function editor(){const db=load();if(current!==ADMIN&&!db.staff.some(s=>s.id===current&&s.active&&!s.inviteHash))throw Error('Acesso restrito ao editor de conteúdo.');}
+  function editor(){const db=load();if(current!==ADMIN&&!db.staff.some(s=>s.id===current&&s.active&&s.passwordHash))throw Error('Acesso restrito ao editor de conteúdo.');}
   function enrollment(){editor();}
   function data(id){
    const db=load(),isAdmin=id===ADMIN,staff=db.staff.find(s=>s.id===id),student=db.students.find(s=>s.id===id),isEditor=isAdmin||!!staff;
@@ -75,25 +75,21 @@
     if(!person||!person.passwordHash||await digest(password,person.salt)!==person.passwordHash){const e=new Error('Confira o e-mail e a senha de teste.');e.code='invalid_credentials';throw e;}
     return data(person.id);
    },
-   async inviteContentAdmin(name,email){
-    admin();name=String(name||'').trim();email=emailOf(email);
-    if(name.length<2||name.length>100||!/^\S+@\S+\.\S+$/.test(email)||email.length>254)throw Error('Informe nome e e-mail válidos.');
-    const db=load();if(db.staff.some(s=>s.email===email)||db.students.some(s=>s.email===email)||email==='vinicius.alves@irmen.com.br')throw Error('Já existe um cadastro com este e-mail.');
-    const token=crypto.randomUUID()+crypto.randomUUID(),salt=crypto.randomUUID();
-    db.staff.push({id:crypto.randomUUID(),name,email,salt,inviteHash:await digest(token,salt),expiresAt:Date.now()+7*86400000,passwordHash:null,active:false});
-    commit(db);return {name,email,token,expiresInDays:7};
+   async createContentAdmin(name,email,password){
+    admin();
+    name=String(name||'').trim();email=emailOf(email);
+    if(name.length<2||name.length>100||!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)||email.length>254)throw Error('Informe nome e e-mail válidos.');
+    if(typeof password!=='string'||password.length<8||password.length>128)throw Error('Crie uma senha entre 8 e 128 caracteres.');
+    const db=load();
+    if(email==='vinicius.alves@irmen.com.br'||db.students.some(s=>s.email===email)||db.staff.some(s=>s.email===email))throw Error('Já existe uma conta cadastrada com este e-mail.');
+    const salt=crypto.randomUUID(),passwordHash=await digest(password,salt);
+    admin();
+    const staff={id:crypto.randomUUID(),name,email,salt,passwordHash,active:true};
+    db.staff.push(staff);commit(db);
+    return {id:staff.id,name,email,active:true};
    },
-   async acceptContentInvite(token,password){
-    if(typeof token!=='string'||!/^[0-9a-f-]{72}$/i.test(token)||typeof password!=='string'||password.length<8||password.length>128)throw Error('Convite ou senha inválidos.');
-    const db=load(),invited=db.staff.filter(s=>s.inviteHash&&s.expiresAt>Date.now());
-    for(const person of invited){
-     if(await digest(token,person.salt)!==person.inviteHash)continue;
-     person.passwordHash=await digest(password,person.salt);person.inviteHash=null;person.active=true;delete person.expiresAt;commit(db);return data(person.id);
-    }
-    throw Error('Convite expirado, já utilizado ou inválido.');
-   },
-   async listStaff(){admin();return load().staff.map(s=>({id:s.id,name:s.name,email:s.email,active:s.active,invited:!!s.inviteHash}));},
-   async setStaffActive(id,active){admin();const db=load(),s=db.staff.find(s=>s.id===id);if(!s)throw Error('Funcionário não encontrado.');s.active=active===true&&!s.inviteHash;commit(db);return {id,active:s.active};},
+   async listStaff(){admin();return load().staff.map(s=>({id:s.id,name:s.name,email:s.email,active:s.active}));},
+   async setStaffActive(id,active){admin();const db=load(),s=db.staff.find(s=>s.id===id);if(!s)throw Error('Funcionário não encontrado.');s.active=active===true;commit(db);return {id,active:s.active};},
    async restore(){const id=sessionStorage.getItem(SESSION);return id?data(id):null;},
    async reload(){if(!current)throw Error('Entre novamente.');return data(current);},
    async signOut(){current=null;sessionStorage.removeItem(SESSION);},
