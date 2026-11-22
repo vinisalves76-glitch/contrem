@@ -80,3 +80,20 @@ Data: 22/11/2026 · branch exclusiva: `feature/academia-trilha-formacao-mecanico
 Não alterar `main`, `develop` nem produção. `develop` avançou com alterações da frente de ADM de Conteúdo, Auth e outros módulos **durante este trabalho**. Antes de integração, executar merge/rebase controlado na feature, revisar conflitos dos arquivos compartilhados, preservar a implementação de staff mais recente e executar os novos testes. Não sobrescrever arquivos recentes do `develop` com esta versão de preview.
 
 Não há configuração de gateway de pagamento ou migração Supabase aplicada neste ciclo.
+
+
+## Correção de navegação — Portal da Academia liberada
+
+**Relato:** aluno com matrícula de Academia liberada clicava no cartão da formação e permanecia em Minha aprendizagem, sem entrar no portal específico.
+
+**Causa:** o evento `button.onclick` executava somente `renderStudentDetail()`, que atualizava uma seção situada abaixo dos cartões na mesma página. Não havia mudança de tela nem posicionamento para exibir o mapa.
+
+**Correção na mesma feature:**
+- `academy-program-ui.js`: cria `#academyPortalView` como `main` separado, com título, resumo e validade da matrícula; o cartão chama `openAcademyPortal(id)`, que valida a matrícula existente, desenha as etapas e os módulos e troca a tela atual pelo portal.
+- O portal tem **Voltar às minhas Academias** e, ao sair de uma aula iniciada pelo portal, retorna ao portal, preservando a navegação no contexto da formação.
+- `academy-program-ui.css`: estilos dedicados ao portal e layout responsivo.
+- `apps/academia/tests/qa-academy-portal-navigation.cjs`: regressão do clique, seleção da Academia, mudança de tela, retorno e restrição de acesso.
+
+**Verificação executada:** sintaxe JS válida; teste isolado do caminho do clique passou (renderização → troca para portal → rolagem ao início); tentativa de abrir ID inexistente não navega; presença das regras de retorno comprovada na fonte. **Não houve teste E2E em navegador real.**
+
+**Importante:** o controle de matrícula e desbloqueio permanece restrito ao **sandbox local da Preview**. A correção não altera banco real, Supabase Auth/RLS, `develop`, `main` nem produção. Antes de integrar à base mais recente, reconciliar modificações concorrentes de outros trabalhos.
