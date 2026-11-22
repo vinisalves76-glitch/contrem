@@ -1,80 +1,118 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
+const source=path=>readFile(path,'utf8');
 
-const source = path => readFile(path, 'utf8');
-
-test('release: mantém conexão Supabase com credenciais publicáveis e sessão persistente', async () => {
- const [config, cloud, service] = await Promise.all([
+test('Academia: configuração pública usa Supabase real, backend conectado e sessão persistente',async()=>{
+ const [config,connected,service]=await Promise.all([
   source('apps/academia/src/assets/cloud-config.js'),
-  source('apps/academia/src/assets/cloud-ui.js'),
+  source('apps/academia/src/assets/cloud-connected.js'),
   source('apps/academia/src/assets/cloud-service.js')
  ]);
- assert.match(config, /"url":"https:\/\/[a-z0-9-]+\.supabase\.co"/);
- assert.match(config, /"publishableKey":"sb_publishable_/);
- assert.doesNotMatch(config, /\bpreview\s*:\s*true\b|sb_secret_|service_role/);
- assert.match(cloud, /signIn\(document\.getElementById\('cloudEmail'\)/);
- assert.match(cloud, /service\.restore\(\)/);
- assert.match(cloud, /service\.signOut\(\)/);
- assert.match(cloud, /storageKey:'contrem-academia-auth-v1'/);
- assert.match(service, /signInWithPassword/);
+ assert.match(config,/"mode":"connected"/);
+ assert.match(config,/"preview":false/);
+ assert.match(config,/"url":"https:\/\/[a-z0-9-]+\.supabase\.co"/);
+ assert.match(config,/"publishableKey":"sb_publishable_/);
+ assert.match(config,/"playbackFunction":"academy-playback"/);
+ assert.doesNotMatch(config,/sb_secret_|service_role|preview:true/);
+ assert.match(connected,/service\.signIn\(/);
+ assert.match(connected,/service\.restore\(\)/);
+ assert.match(connected,/service\.signOut\(\)/);
+ assert.match(connected,/storageKey:'contrem-academia-auth-v1'/);
+ assert.match(service,/signInWithPassword/);
+ assert.match(service,/academy_my_catalog/);
+ assert.match(service,/academy_save_learning/);
 });
 
-test('release: login é exclusivamente autenticado, sem acesso local de demonstração', async () => {
- const [html, cloud, intro] = await Promise.all([
+test('Academia: interface sem demonstração e com fail-closed antes da autenticação',async()=>{
+ const [html,cloud,connected,intro]=await Promise.all([
   source('apps/academia/src/index.html'),
   source('apps/academia/src/assets/cloud-ui.js'),
+  source('apps/academia/src/assets/cloud-connected.js'),
   source('apps/academia/src/assets/contrem.js')
  ]);
- assert.match(html, /id="cloudLoginForm"/);
- assert.match(html, /id="cloudEmail"/);
- assert.match(html, /id="cloudPassword"/);
- assert.doesNotMatch(html, /id="(?:demoAccess|enter|displayName)"/);
- assert.doesNotMatch(html, /Testar a demonstração local|Acessar demonstração local/);
- assert.doesNotMatch(html, /\$\('enter'\)|const previousEnter=/);
- assert.doesNotMatch(cloud + intro, /getElementById\('enter'\)|getElementById\('displayName'\)/);
- assert.match(cloud, /let mode='guest'/);
- assert.match(cloud, /if\(mode!=='cloud'\|\|!identity\)return/);
- assert.doesNotMatch(cloud, /resetToDemo|demoEnter\(\)/);
- assert.match(intro, /data-intro-play/); // o vídeo institucional continua disponível
+ for(const id of ['cloudLoginForm','cloudEmail','cloudPassword'])assert.match(html,new RegExp('id="'+id+'"'));
+ assert.doesNotMatch(html,/id="(?:demoAccess|enter|displayName)"/);
+ assert.doesNotMatch(html,/Testar a demonstração local|Acessar demonstração local|\$\('enter'\)/);
+ assert.match(html,/src="assets\/cloud-connected\.js"/);
+ assert.doesNotMatch(cloud+connected+intro,/getElementById\('enter'\)|getElementById\('displayName'\)|resetToDemo|demoEnter\(\)/);
+ assert.match(cloud,/config\.mode!=='connected'/);
+ assert.match(cloud,/app\.classList\.add\('hidden'\)/);
+ assert.match(cloud,/form\.querySelector\('button'\)\.disabled=true/);
+ assert.match(connected,/if\(!identity\)/);
+ assert.match(intro,/data-intro-play/);
 });
 
-test('release: falha sem Auth, não substitui conta real por demo e impede importação oculta', async () => {
- const [cloud, build] = await Promise.all([
-  source('apps/academia/src/assets/cloud-ui.js'),
+test('Academia: autorizações e dados são controlados pelo backend, sem gabaritos ou certificados locais',async()=>{
+ const [connected,service,build]=await Promise.all([
+  source('apps/academia/src/assets/cloud-connected.js'),
+  source('apps/academia/src/assets/cloud-service.js'),
   source('scripts/build-central.mjs')
  ]);
- assert.match(cloud, /config\.preview===true/);
- assert.match(cloud, /Não foi possível carregar o acesso à sua conta/);
- assert.doesNotMatch(cloud, /Você pode usar a demonstração local/);
- assert.match(cloud, /getElementById\('migrateLocalCatalog'\)\.disabled=true/);
- assert.match(build, /VERCEL_ENV==='production'/);
- assert.match(build, /Configuração autenticada da Academia ausente na release/);
- assert.match(build, /A release contém acesso à demonstração local/);
+ assert.match(connected,/createStudent\(/);
+ assert.match(connected,/setCourseAccess\(/);
+ assert.match(connected,/setStudentActive\(/);
+ assert.match(connected,/playback\(lesson\.videoId\)/);
+ assert.match(connected,/certificates=\[\]/);
+ assert.match(service,/A autoria conectada aguarda integração segura/);
+ assert.match(service,/client\.rpc\('academy_save_learning'/);
+ assert.match(build,/VERCEL_ENV==='production'/);
+ assert.match(build,/A release contém acesso à demonstração local/);
 });
 
-test('release: mantém Mux e atualização silenciosa do PWA', async () => {
- const [html, pwa, sw] = await Promise.all([
+test('Academia: mantém vídeo institucional, Mux privado e PWA sem aviso de atualização',async()=>{
+ const [html,pwa,sw,service]=await Promise.all([
   source('apps/academia/src/index.html'),
   source('apps/academia/src/assets/pwa.js'),
-  source('apps/academia/src/sw.js')
+  source('apps/academia/src/sw.js'),
+  source('apps/academia/src/assets/cloud-service.js')
  ]);
- assert.match(html, /player\.mux\.com|stream\.mux\.com|Mux/);
- assert.match(pwa, /updateBox\?\.remove\(\)/);
- assert.match(pwa, /applyAutomaticUpdate/);
- assert.match(sw, /20261122-auth-release-v1/);
+ assert.match(html,/player\.mux\.com|stream\.mux\.com|Mux/);
+ assert.match(service,/policy!=='signed'/);
+ assert.match(pwa,/updateBox\?\.remove\(\)/);
+ assert.match(pwa,/applyAutomaticUpdate/);
+ assert.match(sw,/20261122-backend-connected-v1/);
+ assert.match(sw,/assets\/cloud-connected\.js/);
 });
 
-test('release: distribuição mantém as rotas e a Academia conectada', async () => {
- const [html, info, config] = await Promise.all([
+test('Academia: build conecta o app e preserva módulos centrais sem demo',async()=>{
+ const [html,info,config,connected]=await Promise.all([
   source('dist/academia/index.html'),
   source('dist/build-info.json'),
-  source('dist/academia/assets/cloud-config.js')
+  source('dist/academia/assets/cloud-config.js'),
+  source('dist/academia/assets/cloud-connected.js')
  ]);
- const build=JSON.parse(info);
- assert.equal(build.mode,'estavel');
- assert.equal(build.modules.academia,'conectada');
+ const infoObj=JSON.parse(info);
+ assert.equal(infoObj.mode,'estavel');
+ assert.equal(infoObj.modules.academia,'conectada');
  assert.match(html,/id="cloudLoginForm"/);
  assert.doesNotMatch(html,/id="(?:demoAccess|enter|displayName)"/);
- assert.match(config,/"publishableKey":"sb_publishable_/);
+ assert.match(config,/"mode":"connected"/);
+ assert.match(connected,/AcademyConnectedUI/);
+});
+
+test('ADM: redirecionamento por perfil comprovado sem promover alunos',async()=>{
+ const {runInNewContext}=await import('node:vm');
+ const connected=await source('apps/academia/src/assets/cloud-connected.js');
+ const navigation=connected.match(/show\(owner\(\)\?'adminView':'studentView'\)/)?.[0];
+ assert.ok(navigation,'A decisão de rota deve depender do papel autenticado');
+ const nav=connected.match(/byId\('studentNav'\)\.hidden=owner\(\);byId\('adminNav'\)\.hidden=!owner\(\);byId\('adminTab'\)\.hidden=!owner\(\);/)?.[0];
+ assert.ok(nav,'Menus administrativo e do aluno devem ser mutuamente exclusivos');
+ assert.match(connected,/if\(owner\(\)\)roster\(\)/,'ADM deve carregar alunos na entrada');
+ assert.match(connected,/identity\?\.member\.role==='admin'&&identity\.member\.active===true/,'ADM depende de membro ativo com papel admin');
+ const outputs=[];
+ for(const admin of [true,false]){
+  const controls={studentNav:{hidden:null},adminNav:{hidden:null},adminTab:{hidden:null}};
+  let destination=null;
+  runInNewContext(navigation+';'+nav,{owner:()=>admin,show:view=>{destination=view;},byId:id=>controls[id]});
+  outputs.push({destination,controls});
+ }
+ assert.equal(outputs[0].destination,'adminView');
+ assert.equal(outputs[0].controls.studentNav.hidden,true);
+ assert.equal(outputs[0].controls.adminNav.hidden,false);
+ assert.equal(outputs[0].controls.adminTab.hidden,false);
+ assert.equal(outputs[1].destination,'studentView');
+ assert.equal(outputs[1].controls.studentNav.hidden,false);
+ assert.equal(outputs[1].controls.adminNav.hidden,true);
+ assert.equal(outputs[1].controls.adminTab.hidden,true);
 });

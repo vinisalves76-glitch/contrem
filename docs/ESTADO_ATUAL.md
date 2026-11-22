@@ -15,3 +15,9 @@ Academia estável mantém Mux, autenticação existente e dados no mesmo backend
 Nenhum SQL, conta, permissão de banco ou dado real foi alterado na organização. Os endereços anteriores continuam preservados até transição validada.
 
 O registro da publicação central e os commits remotos devem ser consultados em `CONTINUIDADE_CENTRAL.md`. Arquivos de configuração preparados não são, sozinhos, evidência de deploy.
+
+## Integração da Academia com o backend — release isolada, 22/11/2026
+
+Na branch `feature/academia-backend-release-20261122` (PR #13 direcionado à `release/2026-11-22-academia-auth`), a Academia utiliza modo conectado ao Supabase real sem login de demonstração: Auth, associação ativa de membro, catálogo matriculado, progresso/perfil com revisão, gestão de alunos e solicitação autorizada de playback Mux. Os recursos sem validação segura (autoria de cursos, materiais, provas e certificados) permanecem bloqueados. Arquivos, limites e próximos passos em `docs/ACADEMIA_RELEASE_BACKEND_2026-11-22.md`.
+
+CI da implementação: QA release 45051767066 aprovado (51 testes centrais, 5 da release). A preview web foi criada no deployment `dpl_1vxg3KSS8vQCMtbqb8aguHaJBicv`, READY; commits posteriores adicionam somente fontes de Edge Functions/QA/docs. A nova origem CORS foi preparada no GitHub, **não implantada** nas funções Supabase ativas. Mux privado depende de configurações/restrições e vídeo real cadastrado. Não houve merge em `main`, alteração de dados ou publicação em produção.
