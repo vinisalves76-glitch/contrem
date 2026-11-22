@@ -340,7 +340,7 @@
   if(b.dataset.move){const [i,delta]=b.dataset.move.split(':').map(Number),to=i+delta;if(to<0||to>=c.lessons.length)return;[c.lessons[i],c.lessons[to]]=[c.lessons[to],c.lessons[i]];c.status='draft';save();refresh();notice('Ordem das aulas atualizada.');}
  });
  byId('adminPublish').onclick=()=>{const c=current();if(!isMaster()||!c)return;if(hasPendingEdits()){notice('Salve as alterações do curso e da aula antes de publicar.',true);chooseTab(pendingEdits().course?'details':'lessons');return;}const error=readiness(c);if(error){notice(error,true);return;}c.status='published';save();refresh();notice('Curso publicado na prévia. Agora libere o acesso em Alunos.');};
- byId('adminUnpublish').onclick=()=>{const c=current();if(!isMaster()||!c||hasPendingEdits())return;c.status='draft';save();refresh();notice('Curso voltou a rascunho e não será listado na próxima entrada do aluno.');};
+ byId('adminUnpublish').onclick=()=>{const c=current();if(!isMaster()||!c||hasPendingEdits())return;c.status='draft';c._unpublishRequested=true;save();refresh();notice('Curso voltou a rascunho e não será listado na próxima entrada do aluno.');};
  byId('adminCourseSearch').oninput=e=>{filter=e.target.value.trim().toLocaleLowerCase('pt-BR');renderLibrary();};
  byId('adminStatusFilter').onchange=e=>{statusFilter=e.target.value;renderLibrary();};
  document.querySelectorAll('[data-admin-tab]').forEach(b=>b.onclick=()=>chooseTab(b.dataset.adminTab));
