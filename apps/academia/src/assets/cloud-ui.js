@@ -134,7 +134,7 @@
  }
  async function loadStudentRoster(){
   const roster=document.getElementById('studentRoster');if(mode!=='cloud'||identity?.member.role!=='admin')return;
-  try{const data=await service.listStudents(),rows=data.members||[],grants=data.grants||[];roster.innerHTML=rows.length?rows.map(m=>'<div class="student-roster-row"><b>'+esc(m.display_name)+'</b><small class="roster-email">'+esc(m.email||'')+'</small> · '+(m.active?'Ativo':'Inativo')+' <button type="button" class="outline" data-member="'+esc(m.id)+'" data-active="'+(!m.active)+'">'+(m.active?'Desativar':'Reativar')+'</button><div class="access-course-list">'+(courses.length?courses.map(c=>'<label><input type="checkbox" data-member="'+esc(m.id)+'" data-course="'+esc(c.id)+'" '+(grants.some(g=>g.member_id===m.id&&g.course_id===c.id)?'checked':'')+' '+(!m.active?'disabled':'')+'> '+esc(c.name)+(config?.preview&&c.status!=='published'?' · rascunho':'')+'</label>').join(''):'Cadastre um treinamento para liberar acesso.')+'</div></div>').join(''):'Nenhum aluno cadastrado.';}catch{roster.textContent='Não foi possível carregar os alunos.';}
+  try{const data=await service.listStudents(),rows=data.members||[],grants=data.grants||[];roster.innerHTML=rows.length?rows.map(m=>'<div class="student-roster-row"><b>'+esc(m.display_name)+'</b><small class="roster-email">'+esc(m.email||'')+'</small> · '+(m.active?'Ativo':'Inativo')+' <button type="button" class="outline" data-member="'+esc(m.id)+'" data-active="'+(!m.active)+'">'+(m.active?'Desativar':'Reativar')+'</button><div class="access-course-list">'+(courses.some(c=>!c.academyId)?courses.filter(c=>!c.academyId).map(c=>'<label><input type="checkbox" data-member="'+esc(m.id)+'" data-course="'+esc(c.id)+'" '+(grants.some(g=>g.member_id===m.id&&g.course_id===c.id)?'checked':'')+' '+(!m.active?'disabled':'')+'> '+esc(c.name)+(config?.preview&&c.status!=='published'?' · rascunho':'')+'</label>').join(''):'Cadastre um treinamento para liberar acesso.')+'</div></div>').join(''):'Nenhum aluno cadastrado.';}catch{roster.textContent='Não foi possível carregar os alunos.';}
  }
  document.getElementById('studentRoster').addEventListener('change',async event=>{
   const el=event.target;if(!el.matches('[data-course]')||mode!=='cloud')return;
@@ -205,6 +205,15 @@
  if(config?.preview){
   if(!window.AcademyAdminPreviewService){loginStatus.textContent='A prévia não carregou. Recarregue a página.';return;}
   service=window.AcademyAdminPreviewService.create();
+  window.CONTREM_PREVIEW_SYNC={
+   async flush(){await flush();if(conflicted||dirtyCatalog||dirtyState)throw Error('Existem alterações não sincronizadas no ambiente de teste.');},
+   async reload(){
+    await flush();
+    if(conflicted||dirtyCatalog||dirtyState)throw Error('Salve as alterações pendentes antes de recarregar.');
+    const currentData=await service.reload();
+    await enterCloud(currentData);
+   }
+  };
   const testAccess=document.createElement('div');testAccess.className='preview-login-note';
   testAccess.innerHTML='<b>ÁREA DO ALUNO · CONTA DE TESTE</b><p>Entre como Aluno de teste pelo botão abaixo, sem e-mail ou senha. Três cursos já vêm prontos, incluindo desafios por aula e prova final com caso prático. Basta entrar e abrir um curso. Seu progresso, provas e certificados ficam salvos aqui.</p><button type="button" id="previewStudentEntry" class="outline">Entrar como aluno de teste →</button><p>Não precisa cadastrar aulas nem informar vídeo. Para conferir a administração dos cursos, clique em Sair e abra o painel ADM de teste.</p><p id="previewStudentStatus" role="status" aria-live="polite"></p>';
   form.before(testAccess);
