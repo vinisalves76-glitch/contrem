@@ -347,5 +347,44 @@
  [courseForm,lessonForm].forEach(form=>{form.addEventListener('input',updateEditStatus);form.addEventListener('change',updateEditStatus);});
  ['exit','reloadCloud'].forEach(id=>{const button=byId(id),previous=button.onclick;button.onclick=event=>{if(!confirmDiscard()){event?.preventDefault?.();return;}return previous?.call(button,event);};});
  window.addEventListener('beforeunload',event=>{if(hasPendingEdits()){event.preventDefault();event.returnValue='';}});
+ // A formação reutiliza os cursos e o construtor já existentes.
+ // Apenas o ADM fictício da PREVIEW prepara módulos; sem Auth, SQL ou produção.
+ window.CONTREM_TRILHA_ADMIN_BRIDGE={
+  isAllowed:()=>isAdmin()&&window.AcademySession?.preview===true,
+  list:()=>isAdmin()&&window.AcademySession?.preview===true
+   ?courses.filter(c=>/^trilha-formacao-m(0[1-9]|1[0-2])$/.test(c.id)).map(c=>({
+    id:c.id,name:c.name,description:c.description||'',hours:c.hours,
+    status:c.status||'draft',lessons:c.lessons?.length||0
+   })) : [],
+  prepare:()=>{
+   if(!isAdmin()||window.AcademySession?.preview!==true)return {ok:false,message:'Acesso exclusivo ao ADM da prévia.'};
+   if(hasPendingEdits())return {ok:false,message:'Salve ou descarte as alterações em andamento antes de preparar os módulos.'};
+   const definition=window.CONTREM_TRILHA_CATALOG;
+   if(!definition||!Array.isArray(definition.modules)||definition.modules.length!==12)return {ok:false,message:'Matriz didática indisponível.'};
+   let added=0;
+   for(const m of definition.modules){
+    const id='trilha-formacao-'+m.id.toLowerCase();
+    if(courses.some(c=>c.id===id))continue;
+    courses.push({
+     id,name:m.name,category:'Formação de Mecânicos · Etapa '+m.stage,
+     description:m.description,icon:'⚙️',hours:m.hours,format:'series',status:'draft',
+     lessons:m.lessons.map((name,i)=>({
+      id:id+'-aula-'+String(i+1).padStart(2,'0'),name,url:'',
+      description:'Conteúdo didático a produzir e revisar.',minutes:null,
+      materialTitle:'',materialUrl:'',supportLinks:[],previewMaterials:[]
+     }))
+    });added++;
+   }
+   if(added){save();refresh();}
+   return {ok:true,added,message:added?'Foram preparados '+added+' módulos como cursos em rascunho. Agora utilize o editor de cursos e aulas.':'Os 12 módulos já foram preparados. Suas edições foram preservadas.'};
+  },
+  edit:id=>{
+   if(!isAdmin()||window.AcademySession?.preview!==true)return false;
+   if(!/^trilha-formacao-m(0[1-9]|1[0-2])$/.test(id))return false;
+   const result=openEditor(id,'details');
+   if(result!==false)byId('adminView').querySelector('.adm-editor')?.scrollIntoView({behavior:'smooth',block:'start'});
+   return result;
+  }
+ };
  savedBaseline();chooseTab('details');renderLibrary();
 })();
