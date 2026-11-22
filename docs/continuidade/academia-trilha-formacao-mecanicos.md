@@ -97,3 +97,23 @@ Documento criado exclusivamente na `feature/academia-trilha-formacao-mecanicos`,
 - Sotreq — Escola de Formação de Mecânicos: https://www.sotreq.com.br/trabalhe-conosco/
 - Sotreq — catálogo público de treinamentos de construção: https://www.sotreq.com.br/treinamentos-para-construcao
 - Sotreq — conteúdo público de hidráulica básica: https://www.sotreq.com.br/treinamento-hidraulica-basica
+
+
+## Ciclo de 22/11/2026 — configuração da trilha no ADM existente
+
+**Solicitação:** permitir alterar nomes de módulos, cadastrar e editar aulas, anexar materiais e manter o construtor anterior da CONTREM Academia. A prévia visual original era de leitura e tinha módulos estáticos.
+
+**Implementação na branch isolada `feature/academia-trilha-formacao-mecanicos`:**
+- `apps/academia/src/trilha-formacao/catalog.js`: matriz compartilhada de 12 módulos e 78 aulas previstas, com carga horária estimada de 120h.
+- `apps/academia/src/assets/admin-manager.js`: ponte restrita ao ADM fictício da prévia, capaz de preparar módulos como **cursos em rascunho** com IDs estáveis `trilha-formacao-m01` a `trilha-formacao-m12`, sem substituir cursos ou aulas existentes; edição continua no construtor original.
+- `apps/academia/src/assets/admin-trilha.js` e `admin-trilha.css`: painel expansível `Trilhas de formação`, botão `Preparar 12 módulos`, lista por etapa e acesso direto ao editor original. Nome, descrição, foto e carga horária ficam em `1. Informações`; aulas, anexos/links, vídeo Mux e materiais comuns seguem em `2. Aulas e materiais`; revisão/publicação de prévia preservada.
+- `apps/academia/src/index.html`: carrega a extensão apenas na branch; o módulo verifica `preview===true` e não aparece em produção.
+- `apps/academia/src/trilha-formacao/index.html` e `app.js`: botão de acesso à configuração na rota da prévia visual e leitura **somente local** do catálogo fictício do ADM na mesma origem para atualizar títulos, descrições, cargas e nomes de aulas.
+
+**Como testar:** abrir `/academia/?trilha=1`, clicar em `Abrir painel ADM de teste`, expandir `Trilhas de formação`, clicar em `Preparar 12 módulos como rascunhos` (idempotente), depois `Gerenciar módulo` e usar as abas originais. Voltar a `/academia/trilha-formacao/` e atualizar a página para ver os nomes de módulos e aulas sincronizados do catálogo local. Para testar arquivo/link e reprodução Mux, usar a visualização original de sala de aula do construtor ADM, pois a página de mapa possui player apenas ilustrativo.
+
+**Verificações executadas:** sintaxe JS dos quatro arquivos executáveis alterados/novos aprovada; ordem de carregamento confirmada; contagem de 12 módulos, 78 aulas e 120h; isolamento `preview` e IDs estáveis verificados; diff GitHub `develop...feature` contendo somente arquivos da Academia e estes documentos. Não houve teste end-to-end em navegador real, reprodução Mux ou upload binário comprovado nesta rodada.
+
+**Deploy Preview confirmado:** `dpl_DLgnBEmMAuZfjoyCMznp2XksngJA`, status `READY`, branch `feature/academia-trilha-formacao-mecanicos`, commit executável `bbaf8f50975c583fdf7653e78c4c2e7444374efc`, alias estável `https://contrem-git-feature-aca-7c1631-vinicius-alves-projects-fdea38e8.vercel.app`. Não alterar `develop`, `main`, produção, Mux real, Auth nem Supabase; módulos pré-preparados são dados locais da demonstração e **não** são cursos oficialmente publicados.
+
+**Próxima revisão:** testar no navegador do proprietário o fluxo ADM → editar módulo → salvar aula/material → consultar mapa da trilha; depois evoluir a modelagem real de trilhas, permissões e persistência/integração de mídia em homologação separada, antes de qualquer promoção à produção.
