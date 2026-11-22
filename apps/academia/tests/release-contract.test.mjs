@@ -125,3 +125,13 @@ test('Funcionários com login real, rascunhos privados e aprovação do ADM Mast
  assert.match(migration,/REVOKE ALL ON public\.academy_editor_catalog FROM PUBLIC, anon, authenticated/);
  assert.match(migration,/role IN \('admin','student','content_admin'\)/);
 });
+
+test('Preflight da API administrativa responde CORS 204 sem corpo, evitando bloqueio do login',async()=>{
+ const source=await read('apps/academia/supabase/functions/academy-workspace/index.ts');
+ assert.match(source,/if\(req\.method==='OPTIONS'\)return new Response\(null,\{status:204,headers\}\)/);
+ assert.doesNotMatch(source,/reply\(204,/);
+ const response=new Response(null,{status:204,headers:{'Access-Control-Allow-Origin':'https://contrem.vercel.app','Access-Control-Allow-Headers':'authorization,apikey,content-type,x-client-info'}});
+ assert.equal(response.status,204);
+ assert.equal(response.body,null);
+ assert.equal(response.headers.get('Access-Control-Allow-Origin'),'https://contrem.vercel.app');
+});
