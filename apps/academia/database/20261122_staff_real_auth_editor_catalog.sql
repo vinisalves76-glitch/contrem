@@ -45,15 +45,4 @@ CREATE POLICY academy_materials_content_admin_insert
 ON storage.objects FOR INSERT TO authenticated
 WITH CHECK (bucket_id='academy-materials' AND (SELECT academy_private.is_content_admin()));
 
-DROP POLICY IF EXISTS academy_materials_content_admin_update ON storage.objects;
-CREATE POLICY academy_materials_content_admin_update
-ON storage.objects FOR UPDATE TO authenticated
-USING (bucket_id='academy-materials' AND (SELECT academy_private.is_content_admin()))
-WITH CHECK (bucket_id='academy-materials' AND (SELECT academy_private.is_content_admin()));
-
-DROP POLICY IF EXISTS academy_materials_content_admin_delete ON storage.objects;
-CREATE POLICY academy_materials_content_admin_delete
-ON storage.objects FOR DELETE TO authenticated
-USING (bucket_id='academy-materials' AND (SELECT academy_private.is_content_admin()));
-
 COMMIT;
