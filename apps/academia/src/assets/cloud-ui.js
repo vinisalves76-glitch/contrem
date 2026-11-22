@@ -142,7 +142,7 @@
  }
  async function loadStudentRoster(){
   const roster=document.getElementById('studentRoster');if(mode!=='cloud'||!isEditor())return;
-  try{const data=await service.listStudents(),rows=data.members||[],grants=data.grants||[];roster.innerHTML=rows.length?rows.map(m=>'<div class="student-roster-row"><b>'+esc(m.display_name)+'</b><small class="roster-email">'+esc(m.email||'')+'</small> · '+(m.active?'Ativo':'Inativo')+' <button type="button" class="outline" data-member="'+esc(m.id)+'" data-active="'+(!m.active)+'">'+(m.active?'Desativar':'Reativar')+'</button><div class="access-course-list">'+(courses.length?courses.map(c=>'<label><input type="checkbox" data-member="'+esc(m.id)+'" data-course="'+esc(c.id)+'" '+(grants.some(g=>g.member_id===m.id&&g.course_id===c.id)?'checked':'')+' '+(!m.active?'disabled':'')+'> '+esc(c.name)+(config?.preview&&c.status!=='published'?' · rascunho':'')+'</label>').join(''):'Cadastre um treinamento para liberar acesso.')+'</div></div>').join(''):'Nenhum aluno cadastrado.';}catch{roster.textContent='Não foi possível carregar os alunos.';}
+  try{const data=await service.listStudents(),rows=data.members||[],grants=data.grants||[];roster.innerHTML=rows.length?rows.map(m=>'<div class="student-roster-row"><b>'+esc(m.display_name)+'</b><small class="roster-email">'+esc(m.email||'')+'</small> · '+(m.active?'Ativo':'Inativo')+' <button type="button" class="outline" '+(!isMaster()?'hidden':'')+' data-member="'+esc(m.id)+'" data-active="'+(!m.active)+'">'+(m.active?'Desativar':'Reativar')+'</button><div class="access-course-list">'+(courses.length?courses.map(c=>'<label><input type="checkbox" data-member="'+esc(m.id)+'" data-course="'+esc(c.id)+'" '+(grants.some(g=>g.member_id===m.id&&g.course_id===c.id)?'checked':'')+' '+(!m.active?'disabled':'')+'> '+esc(c.name)+(config?.preview&&c.status!=='published'?' · rascunho':'')+'</label>').join(''):'Cadastre um treinamento para liberar acesso.')+'</div></div>').join(''):'Nenhum aluno cadastrado.';}catch{roster.textContent='Não foi possível carregar os alunos.';}
  }
  document.getElementById('studentRoster').addEventListener('change',async event=>{
   const el=event.target;if(!el.matches('[data-course]')||mode!=='cloud')return;
@@ -157,15 +157,60 @@
   const form=event.currentTarget,status=document.getElementById('studentFormStatus'),button=form.querySelector('button');button.disabled=true;status.textContent='Criando acesso…';
   try{const result=await service.createStudent(document.getElementById('studentFullName').value.trim(),document.getElementById('studentEmail').value.trim(),document.getElementById('studentPassword').value);form.reset();status.textContent='Aluno '+result.name+' cadastrado. Entregue o e-mail e a senha inicial a ele.';await loadStudentRoster();}catch(error){status.textContent=error.message||'Não foi possível cadastrar o aluno.';}finally{button.disabled=false;}
  };
+ async function loadStaffRoster(){
+  const roster=document.getElementById('staffRoster');
+  if(mode!=='cloud'||!isMaster())return;
+  try{
+   const staff=await service.listStaff();
+   roster.innerHTML=staff.length?staff.map(m=>'<div class="student-roster-row"><b>'+esc(m.name)+'</b> <small class="roster-email">'+esc(m.email)+'</small> · '+(m.invited?'Convite pendente':m.active?'Ativo':'Inativo')+(m.invited?'':' <button type="button" class="outline" data-staff-id="'+esc(m.id)+'" data-staff-active="'+(!m.active)+'">'+(m.active?'Desativar':'Reativar')+'</button>')+'</div>').join(''):'Nenhum funcionário cadastrado.';
+  }catch(error){roster.textContent=error.message||'Não foi possível carregar os funcionários.';}
+ }
+ document.getElementById('staffInviteForm').onsubmit=async event=>{
+  event.preventDefault();if(mode!=='cloud'||!isMaster())return;
+  const form=event.currentTarget,button=form.querySelector('button'),status=document.getElementById('staffFormStatus');
+  button.disabled=true;status.textContent='Preparando convite de teste…';
+  try{
+   const name=document.getElementById('staffName').value.trim(),email=document.getElementById('staffEmail').value.trim();
+   const created=await service.inviteContentAdmin(name,email);
+   const inviteUrl=new URL(window.location.href);inviteUrl.searchParams.set('staffInvite',created.token);
+   document.getElementById('staffInviteUrl').value=inviteUrl.href;document.getElementById('staffInviteResult').hidden=false;
+   form.reset();status.textContent='Convite de teste gerado para '+created.email+'. Expira em 7 dias; não foi enviado por e-mail.';
+   await loadStaffRoster();
+  }catch(error){status.textContent=error.message||'Não foi possível gerar o convite.';}
+  finally{button.disabled=false;}
+ };
+ document.getElementById('copyStaffInvite').onclick=async()=>{
+  const field=document.getElementById('staffInviteUrl');
+  try{
+   if(!navigator.clipboard?.writeText)throw Error('Indisponível');
+   await navigator.clipboard.writeText(field.value);
+   document.getElementById('staffFormStatus').textContent='Link copiado. Abra-o neste mesmo navegador para testar.';
+  }catch{
+   field.focus();field.select();
+   document.getElementById('staffFormStatus').textContent='Selecione e copie o link do campo acima.';
+  }
+ };
+ document.getElementById('staffRoster').addEventListener('click',async event=>{
+  const button=event.target.closest('[data-staff-id]');if(!button||mode!=='cloud'||!isMaster())return;
+  button.disabled=true;
+  try{await service.setStaffActive(button.dataset.staffId,button.dataset.staffActive==='true');await loadStaffRoster();}
+  catch(error){document.getElementById('staffFormStatus').textContent=error.message;button.disabled=false;}
+ });
  function setAdminSection(section){
-  const students=section==='students',view=document.getElementById('adminView');view.classList.toggle('show-students',students);
-  document.getElementById('adminHeading').textContent=students?'Alunos':'Treinamentos';
-  document.querySelector('#adminView > .muted').textContent=students?'Cadastre alunos e consulte os acessos da Academia.':mode==='cloud'?'Crie cursos, aulas e materiais para os alunos da Academia.':'Demonstração: alterações salvas neste navegador.';
-  document.getElementById('adminTab').classList.toggle('active',!students);document.getElementById('studentsTab').classList.toggle('active',students);
-  document.getElementById('workspaceLabel').textContent=students?'Alunos':'Treinamentos';
+  const students=section==='students',staff=section==='staff',view=document.getElementById('adminView');
+  if(staff&&!isMaster())section='courses';
+  view.classList.toggle('show-students',section==='students');
+  view.classList.toggle('show-staff',section==='staff');
+  document.getElementById('adminHeading').textContent=section==='students'?'Alunos':section==='staff'?'Funcionários':'Treinamentos';
+  document.querySelector('#adminView > .muted').textContent=section==='students'?'Consulte alunos e gerencie matrículas nos cursos publicados.':section==='staff'?'Convide e gerencie profissionais responsáveis por criar cursos e aulas.':mode==='cloud'?'Crie e edite cursos, aulas e materiais para a Academia.':'Demonstração: alterações salvas neste navegador.';
+  document.getElementById('adminTab').classList.toggle('active',section==='courses');
+  document.getElementById('studentsTab').classList.toggle('active',section==='students');
+  document.getElementById('staffTab').classList.toggle('active',section==='staff');
+  document.getElementById('workspaceLabel').textContent=section==='students'?'Alunos':section==='staff'?'Funcionários':'Treinamentos';
  }
  document.getElementById('adminTab').addEventListener('click',()=>setAdminSection('courses'));
  document.getElementById('studentsTab').addEventListener('click',()=>{if(mode!=='cloud'||!isEditor())return;show('adminView');setAdminSection('students');loadStudentRoster();window.scrollTo({top:0,behavior:'instant'});});
+ document.getElementById('staffTab').addEventListener('click',()=>{if(mode!=='cloud'||!isMaster())return;show('adminView');setAdminSection('staff');loadStaffRoster();window.scrollTo({top:0,behavior:'instant'});});
  const baseRefresh=refresh;refresh=function(){baseRefresh();permissions();};
  const baseRenderClass=renderClass;renderClass=function(){baseRenderClass();permissions();};
  const baseShow=show;show=function(id){if(mode==='cloud'&&id==='adminView'&&!isEditor())id='studentView';baseShow(id);permissions();};
@@ -213,6 +258,22 @@
  if(config?.preview){
   if(!window.AcademyAdminPreviewService){loginStatus.textContent='A prévia não carregou. Recarregue a página.';return;}
   service=window.AcademyAdminPreviewService.create();
+  const inviteParam=typeof window.location?.href==='string'?new URL(window.location.href).searchParams.get('staffInvite'):null;
+  if(inviteParam){
+   document.getElementById('staffInviteBox').hidden=false;
+   document.getElementById('staffAcceptForm').onsubmit=async event=>{
+    event.preventDefault();
+    const status=document.getElementById('staffAcceptStatus'),button=event.currentTarget.querySelector('button');
+    button.disabled=true;status.textContent='Validando convite…';
+    try{
+     await enterCloud(await service.acceptContentInvite(inviteParam,document.getElementById('staffAcceptPassword').value));
+     document.getElementById('staffInviteBox').hidden=true;
+     window.history?.replaceState?.({},'',window.location.pathname);
+    }catch(error){status.textContent=errorText(error);}
+    finally{button.disabled=false;}
+   };
+  }
+
   const testAccess=document.createElement('div');testAccess.className='preview-login-note';
   testAccess.innerHTML='<b>ÁREA DO ALUNO · CONTA DE TESTE</b><p>Entre como Aluno de teste pelo botão abaixo, sem e-mail ou senha. Três cursos já vêm prontos, incluindo desafios por aula e prova final com caso prático. Basta entrar e abrir um curso. Seu progresso, provas e certificados ficam salvos aqui.</p><button type="button" id="previewStudentEntry" class="outline">Entrar como aluno de teste →</button><p>Não precisa cadastrar aulas nem informar vídeo. Para conferir a administração dos cursos, clique em Sair e abra o painel ADM de teste.</p><p id="previewStudentStatus" role="status" aria-live="polite"></p>';
   form.before(testAccess);
