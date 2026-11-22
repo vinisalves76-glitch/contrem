@@ -128,9 +128,19 @@
       if(after.status==='published'&&JSON.stringify(after)!==JSON.stringify(before))throw Error('Alterações de cursos publicados precisam ser salvas como rascunho para aprovação do ADM Master.');
      }
      for(const course of courses)if(!db.workspace.courses.some(c=>c.id===course.id)&&course.status==='published')throw Error('Somente o ADM Master publica cursos.');
+     if(courses.some(c=>c._unpublishRequested&&!db.workspace.courses.find(b=>b.id===c.id)?._unpublishRequested))throw Error('Somente o ADM Master pode despublicar cursos.');
     }
-    db.workspace={courses:copy(courses),revision:revision+1};
-    if(current===ADMIN)db.catalog={courses:copy(courses),revision:db.catalog.revision+1};
+    db.workspace={courses:copy(courses).map(c=>{delete c._unpublishRequested;return c;}),revision:revision+1};
+    if(current===ADMIN){
+     // Uma revisão editorial de curso já publicado não é publicada automaticamente
+     // quando o Master salva outro rascunho. Publicar é uma decisão explícita.
+     const byId=new Map(db.catalog.courses.map(c=>[c.id,c]));
+     const published=courses.map(c=>{
+      const previous=byId.get(c.id);
+      return previous?.status==='published'&&c.status!=='published'&&!c._unpublishRequested?copy(previous):copy(c);
+     }).map(c=>{delete c._unpublishRequested;return c;});
+     db.catalog={courses:published,revision:db.catalog.revision+1};
+    }
     commit(db);return copy(db.workspace);
    },
    async writeState(value,revision){
