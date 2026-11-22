@@ -16,6 +16,7 @@
  const students=()=>courseDb().students.map(s=>({id:s.id,name:s.name,email:s.email,active:s.active}));
  const courses=()=>user()?.role==='admin'&&typeof window.CONTREM_PROGRAM_COURSE_ACCESS==='function'?window.CONTREM_PROGRAM_COURSE_ACCESS():courseDb().catalog.courses||[];
  const uniqueId=prefix=>prefix+'-'+crypto.randomUUID();
+ const learningState=(id,db)=>id===user()?.userId&&user()?.role==='student'&&typeof window.CONTREM_PROGRAM_STATE_ACCESS==='function'?window.CONTREM_PROGRAM_STATE_ACCESS():(db.states[id]||{progress:{}});
  function upsert(value){
   admin();const data=load(),existing=data.academies.find(a=>a.id===value.id);
   const a={id:value.id||uniqueId('academy'),title:String(value.title||'').trim(),description:String(value.description||'').trim().slice(0,4000),
@@ -51,7 +52,7 @@
   return e?core.copy(e):null;
  }
  function studentPrograms(id=student()){
-  const data=load(),db=courseDb(),state=db.states[id]||{progress:{}};
+  const data=load(),db=courseDb(),state=learningState(id,db);
   return {items:data.enrollments.filter(e=>e.studentId===id).map(e=>{
     const a=data.academies.find(a=>a.id===e.academyId);
     if(!a||a.status!=='published')return null;
@@ -75,7 +76,7 @@
   const id=student(),db=courseDb(),allCourses=db.catalog.courses||[],
    course=allCourses.find(c=>c.id===courseId&&c.academyId),data=load(),
    a=course&&data.academies.find(a=>a.id===course.academyId&&a.status==='published'),
-   e=a&&data.enrollments.find(e=>e.studentId===id&&e.academyId===a.id),state=db.states[id]||{progress:{}};
+   e=a&&data.enrollments.find(e=>e.studentId===id&&e.academyId===a.id),state=learningState(id,db);
   if(!a||!core.activeEnrollment(e))throw Error('Matrícula não permite esta ação.');
   const current=core.buildMap(a,allCourses,state,e,data.requests,id).find(m=>m.id===courseId);
   if(!current?.canOpen)throw Error('O módulo está bloqueado.');
@@ -96,7 +97,7 @@
   const id=student(),db=courseDb(),allCourses=db.catalog.courses||[],
    course=allCourses.find(c=>c.id===courseId&&c.academyId),data=load(),
    a=course&&data.academies.find(a=>a.id===course.academyId&&a.status==='published'),
-   e=a&&data.enrollments.find(e=>e.studentId===id&&e.academyId===a.id),state=db.states[id]||{progress:{}};
+   e=a&&data.enrollments.find(e=>e.studentId===id&&e.academyId===a.id),state=learningState(id,db);
   if(!a||!core.activeEnrollment(e))return {allowed:false,reason:'Matrícula expirada ou indisponível.'};
   if(!core.buildMap(a,allCourses,state,e,data.requests,id).some(m=>m.id===courseId&&m.canOpen))return {allowed:false,reason:'Módulo bloqueado.'};
   return core.eligibleExam(course,state,data.requests,id);
