@@ -179,6 +179,10 @@
   }catch(error){status.textContent=error.message||'Não foi possível gerar o convite.';}
   finally{button.disabled=false;}
  };
+ document.getElementById('openStaffInvite').onclick=()=>{
+  const url=document.getElementById('staffInviteUrl').value;
+  if(url&&new URL(url).origin===new URL(window.location.href).origin)window.location.href=url;
+ };
  document.getElementById('copyStaffInvite').onclick=async()=>{
   const field=document.getElementById('staffInviteUrl');
   try{
@@ -260,13 +264,28 @@
   service=window.AcademyAdminPreviewService.create();
   const inviteParam=typeof window.location?.href==='string'?new URL(window.location.href).searchParams.get('staffInvite'):null;
   if(inviteParam){
+   // O link abre exclusivamente o passo "Definir senha"; outras entradas são ocultadas.
    document.getElementById('staffInviteBox').hidden=false;
+   document.getElementById('cloudLoginForm').hidden=true;
+   document.getElementById('demoAccess').hidden=true;
+   document.querySelectorAll('.preview-login-note,.preview-student-login,.cloud-login-note').forEach(el=>el.hidden=true);
    document.getElementById('staffAcceptForm').onsubmit=async event=>{
     event.preventDefault();
-    const status=document.getElementById('staffAcceptStatus'),button=event.currentTarget.querySelector('button');
-    button.disabled=true;status.textContent='Validando convite…';
+    const status=document.getElementById('staffAcceptStatus');
+    const button=event.currentTarget.querySelector('button');
+    const password=document.getElementById('staffAcceptPassword');
+    const confirmation=document.getElementById('staffAcceptConfirmPassword');
+    if(password.value.length<8||password.value.length>128){
+     status.textContent='Crie uma senha entre 8 e 128 caracteres.';return;
+    }
+    if(password.value!==confirmation.value){
+     status.textContent='As senhas não coincidem. Digite novamente para concluir o cadastro.';
+     confirmation.focus();return;
+    }
+    button.disabled=true;status.textContent='Ativando sua conta de funcionário…';
     try{
-     await enterCloud(await service.acceptContentInvite(inviteParam,document.getElementById('staffAcceptPassword').value));
+     await enterCloud(await service.acceptContentInvite(inviteParam,password.value));
+     password.value='';confirmation.value='';
      document.getElementById('staffInviteBox').hidden=true;
      window.history?.replaceState?.({},'',window.location.pathname);
     }catch(error){status.textContent=errorText(error);}
@@ -277,6 +296,7 @@
   const testAccess=document.createElement('div');testAccess.className='preview-login-note';
   testAccess.innerHTML='<b>ÁREA DO ALUNO · CONTA DE TESTE</b><p>Entre como Aluno de teste pelo botão abaixo, sem e-mail ou senha. Três cursos já vêm prontos, incluindo desafios por aula e prova final com caso prático. Basta entrar e abrir um curso. Seu progresso, provas e certificados ficam salvos aqui.</p><button type="button" id="previewStudentEntry" class="outline">Entrar como aluno de teste →</button><p>Não precisa cadastrar aulas nem informar vídeo. Para conferir a administração dos cursos, clique em Sair e abra o painel ADM de teste.</p><p id="previewStudentStatus" role="status" aria-live="polite"></p>';
   form.before(testAccess);
+  if(inviteParam)testAccess.hidden=true;
   document.getElementById('previewStudentEntry').onclick=async()=>{
    const button=document.getElementById('previewStudentEntry'),status=document.getElementById('previewStudentStatus');
    button.disabled=true;status.textContent='Preparando o aluno de teste…';
