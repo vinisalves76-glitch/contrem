@@ -7,3 +7,5 @@
 #studentNav,#adminNav{display:flex;flex-direction:column;gap:6px}[hidden]{display:none!important}#adminView.show-students>.admin,#adminView.show-students>.panel:not(#adminStudents),#adminView.show-students>.notice{display:none!important}#adminView:not(.show-students)>#adminStudents{display:none!important}
 
 #adminBackup,#cloudBackup,#migrateLocalCatalog{display:none!important}
+
+@media(max-width:760px){#studentNav,#adminNav{flex-direction:row;flex-wrap:nowrap;gap:6px;min-width:max-content}}
