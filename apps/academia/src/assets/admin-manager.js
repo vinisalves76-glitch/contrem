@@ -142,8 +142,12 @@
  const stats=document.createElement('div');stats.id='admStats';stats.className='adm-stats';
  grid.before(stats);
  byId('adminView').querySelector(':scope > .notice').textContent='Ambiente de teste: cursos, logins e liberações ficam somente neste navegador. A publicação aqui libera o curso apenas aos alunos de teste.';
- byId('adminStudents').querySelector(':scope > .muted').textContent='Crie um login de teste com dados fictícios e uma senha de pelo menos 8 caracteres. Depois libere os cursos desejados. O aluno entra por esta mesma prévia e neste navegador.';
- byId('demoAccess').hidden=true;
+ byId('adminStudents').querySelector(':scope > .muted').textContent=window.CONTREM_ACADEMY_CONFIG?.mode==='connected'
+  ?'Cadastre os alunos reais e conceda acesso aos cursos publicados. Cada aluno entra com sua conta da Academia.'
+  :'Crie um login de teste com dados fictícios e uma senha de pelo menos 8 caracteres. Depois libere os cursos desejados. O aluno entra por esta mesma prévia e neste navegador.';
+ // A release de produção não possui o formulário de acesso fictício.
+ // Nunca interromper o construtor quando este elemento não existir.
+ if(byId('demoAccess'))byId('demoAccess').hidden=true;
  byId('cloudImportHint').hidden=true;
  function chooseTab(value){
   tab=value;

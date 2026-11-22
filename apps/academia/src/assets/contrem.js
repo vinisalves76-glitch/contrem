@@ -1,5 +1,5 @@
 // CONTREM Academia — institucional carregado antes dos scripts de interface.
-;(()=>{const video='hXZZcG4J01eIXscxjSGGKtkfkQjbttFu1P01raXQinZ500',view=document.getElementById('studentView'),entry=document.getElementById('enter');if(!view||!entry)return;
+;(()=>{const video='hXZZcG4J01eIXscxjSGGKtkfkQjbttFu1P01raXQinZ500',view=document.getElementById('studentView'),entry=document.getElementById('enter');if(!view)return;
 const css=document.createElement('style');
 css.textContent='#contremIntro{display:grid;grid-template-columns:1fr 1fr;background:#102A43;border-radius:16px;overflow:hidden;margin:24px 0 27px;color:white;box-shadow:0 12px 28px #102a4322}#contremIntro .body{padding:30px;align-self:center}#contremIntro small{color:#ffb477;font-weight:800;letter-spacing:.1em}#contremIntro h2{color:#fff;font-size:clamp(24px,3vw,34px);margin:12px 0}#contremIntro p{color:#dce8ef;line-height:1.5}#contremIntro .thumb{background:linear-gradient(90deg,#102a4322,#102a4355),url(https://image.mux.com/'+video+'/thumbnail.jpg?time=1&width=960) center/cover;min-height:270px;display:grid;place-items:center;cursor:pointer}#contremIntro button,#contremIntroOverlay button{background:#F47B20;color:white;border:0;border-radius:9px;font-weight:800;padding:12px 18px;cursor:pointer}#contremIntro .thumb button{width:74px;height:74px;border-radius:50%;font-size:25px}#contremIntroOverlay{position:fixed;inset:0;z-index:999999;background:#07121cdb;backdrop-filter:blur(7px);padding:16px;display:flex;justify-content:center;align-items:center}#contremIntroOverlay .dialog{width:min(900px,100%);background:#fff;color:#102a43;border-radius:16px;overflow:hidden;box-shadow:0 25px 80px #0007}#contremIntroOverlay .head,#contremIntroOverlay .foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 23px}#contremIntroOverlay h2{font-size:clamp(19px,3vw,26px);margin:6px 0;color:#102a43}#contremIntroOverlay .video{aspect-ratio:16/9;background:#081824}#contremIntroOverlay iframe{height:100%;width:100%;border:0}#contremIntroOverlay button.skip{background:#e9eef2;color:#102a43}#contremIntroOverlay .buttons{display:flex;gap:9px;flex-wrap:wrap}#contremIntroOverlay .foot span{font-size:13px;color:#576b78}@media(max-width:720px){#contremIntro{grid-template-columns:1fr}#contremIntro .thumb{grid-row:1;min-height:215px}#contremIntro .body{padding:22px}#contremIntroOverlay .head,#contremIntroOverlay .foot{padding:14px;flex-wrap:wrap}#contremIntroOverlay .buttons{width:100%}#contremIntroOverlay .buttons button{flex:1}}';
 document.head.appendChild(css);
@@ -23,7 +23,7 @@ function openOnDemoEntry(){
  if(view.classList.contains('hidden'))show('studentView');
  open();
 }
-entry.addEventListener('click',()=>{
+entry?.addEventListener('click',()=>{
  demoEntryPending=true;
  queueMicrotask(openOnDemoEntry);
  setTimeout(openOnDemoEntry,160);
@@ -50,10 +50,10 @@ show = function(id) {
 };
 document.getElementById('studentTab').addEventListener('click', () => window.scrollTo({top:0,behavior:'instant'}));
 document.getElementById('adminTab').addEventListener('click', () => window.scrollTo({top:0,behavior:'instant'}));
-document.getElementById('enter').addEventListener('click', () => {
+document.getElementById('enter')?.addEventListener('click', () => {
  show('studentView'); window.scrollTo({top:0,behavior:'instant'});
 });
-document.getElementById('displayName').addEventListener('keydown', event => {
+document.getElementById('displayName')?.addEventListener('keydown', event => {
  if(event.key === 'Enter') { event.preventDefault(); document.getElementById('enter').click(); }
 });
 // Add the same exit action to the mobile shell, keeping the original exit behavior.
