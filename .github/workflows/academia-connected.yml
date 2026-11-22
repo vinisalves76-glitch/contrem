@@ -1,0 +1,33 @@
+name: Academia — Developer conectado (homologação)
+on:
+  pull_request:
+    branches: [develop]
+    paths:
+      - "apps/academia/**"
+      - "scripts/**"
+      - "tests/academia-develop-connected.test.mjs"
+      - ".github/workflows/academia-connected.yml"
+  push:
+    branches: [feature/academia-develop-conectada-v2]
+permissions:
+  contents: read
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: npm ci --prefix apps/academia
+      - run: npm run check
+      - run: npm test
+      - name: Montar a versão conectada, sem demo
+        run: npm run build
+        env:
+          ACADEMY_MODE: connected
+      - run: npm run test:central
+      - run: node --test tests/academia-develop-connected.test.mjs
+      - run: git diff --check
