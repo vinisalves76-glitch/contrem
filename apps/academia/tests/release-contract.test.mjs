@@ -55,7 +55,7 @@ test('Materiais privados, vídeo autorizado e atualização de PWA',async()=>{
  assert.match(ui,/service\.playback\(lesson\.videoId\)/);
  assert.match(media,/academy-materials/);
  assert.match(media,/createSignedUrl/);
- assert.match(sw,/20261122-developer-prod-v2/);
+ assert.match(sw,/20261122-developer-prod-v3/);
  assert.doesNotMatch(sw,/admin-preview-service\.js|assessment-demo\.js|assessment-student\.js/);
  assert.match(author,/mode==='connected'/);
 });
@@ -73,4 +73,21 @@ test('Build entrega o mesmo código sem alterar outras rotas',async t=>{
  for(const path of ['dist/index.html','dist/contremtec/index.html','dist/contremtec/guia/index.html']){
   assert.ok(await exists(path),path);
  }
+});
+
+test('Barra de conta removida visualmente, mantendo autosave e alertas de falha',async()=>{
+ const [html,css,ui]=await Promise.all([
+  read('apps/academia/src/index.html'),
+  read('apps/academia/src/assets/cloud.css'),
+  read('apps/academia/src/assets/cloud-ui.js')
+ ]);
+ for(const id of ['cloudBar','cloudStatus','syncNow','reloadCloud','cloudSyncAlert']){
+  assert.ok(html.includes('id="'+id+'"'),'Elemento interno preservado: '+id);
+ }
+ assert.match(css,/#cloudBar\{display:none!important\}/,'Barra não pode aparecer');
+ assert.match(css,/\.cloud-sync-alert\[hidden\]\{display:none!important\}/);
+ assert.match(ui,/function scheduleSync\(\)\{clearTimeout\(timer\);timer=setTimeout\(flush,250\)/,'Salvamento automático preservado');
+ assert.match(ui,/syncAlert\.hidden=!error/,'Erro de sincronização precisa aparecer');
+ assert.match(ui,/syncAlert\.textContent=error\?status\.textContent:''/);
+ assert.match(ui,/syncAlert\.hidden=true;syncAlert\.textContent=''/,'Aviso deve sumir ao sair');
 });
