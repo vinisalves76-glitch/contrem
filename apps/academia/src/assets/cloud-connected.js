@@ -122,12 +122,12 @@
    epoch++;stopPlayer();identity=data;revision=data.state.revision;dirty=false;conflict=false;
    courses=copy(data.catalog.courses);progress=copy(data.state.progress||{});activity=copy(data.state.activity||{});profile=copy(data.state.profile||{});certificates=[];selectedCourse=null;
    window.AcademySession={role:data.member.role,preview:false,userId:data.user.id};studentName=profile.fullName||data.member.display_name;byId('hello').textContent=studentName;
-   byId('accountName').textContent=data.member.display_name;byId('studentNav').hidden=false;byId('adminNav').hidden=!owner();byId('adminTab').hidden=!owner();
+   byId('accountName').textContent=data.member.display_name;byId('studentNav').hidden=owner();byId('adminNav').hidden=!owner();byId('adminTab').hidden=!owner();
    byId('adminHeading').textContent='Alunos e acessos';document.querySelector('#adminView > .muted').textContent='Gerencie os acessos reais da Academia. A autoria conectada de cursos aguarda integração.';
    document.querySelector('#adminView > .notice').textContent='Somente contas administrativas autorizadas podem gerenciar alunos.';
-   document.querySelector('.demo-chip').textContent='CONTA CONECTADA · ACADEMIA';
+   document.querySelector('.demo-chip').textContent=owner()?'ADMINISTRADOR · ACADEMIA':'ALUNO · ACADEMIA';
    document.querySelector('#adminStudents > .muted').textContent='Cadastre contas reais somente para alunos autorizados e libere os cursos necessários.';
-   byId('app').classList.remove('hidden');byId('login').classList.add('hidden');bar.hidden=false;loadProfile();refresh();show('studentView');message('Conta conectada. Progresso das aulas autodeclarado; avaliação e certificação ainda indisponíveis.');
+   byId('app').classList.remove('hidden');byId('login').classList.add('hidden');bar.hidden=false;loadProfile();refresh();show(owner()?'adminView':'studentView');if(owner())roster();message(owner()?'Painel administrativo conectado. Gestão de alunos e acessos disponível.':'Conta conectada. Progresso das aulas autodeclarado; avaliação e certificação ainda indisponíveis.');
   }
   byId('adminTab').onclick=()=>{if(owner()){show('adminView');roster();}};
   byId('studentsTab').onclick=()=>{if(owner()){show('adminView');roster();}};
