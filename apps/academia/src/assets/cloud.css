@@ -14,3 +14,16 @@
 .cloud-sync-alert{margin:8px 42px 0;color:#b42318;font-size:13px;font-weight:600;line-height:1.4}
 .cloud-sync-alert[hidden]{display:none!important}
 @media(max-width:720px){.cloud-sync-alert{margin:8px 16px 0}}
+/* Staff administration is visible only to ADM Master. */
+#adminView.show-staff>.admin,
+#adminView.show-staff>.panel:not(#adminStaff),
+#adminView.show-staff>.notice{display:none!important}
+#adminView:not(.show-staff)>#adminStaff{display:none!important}
+#adminView.show-staff>#adminStaff{display:block}
+#adminView.content-admin [data-course-delete],
+#adminView.content-admin [data-lesson-delete],
+#adminView.content-admin #adminPublish,
+#adminView.content-admin #adminUnpublish,
+#adminView.content-admin #studentForm{display:none!important}
+#staffCreateForm input[type=password]{width:100%;min-width:0}
+#staffFormStatus:not(:empty){margin:14px 0;line-height:1.5}
