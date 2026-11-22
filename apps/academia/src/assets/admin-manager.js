@@ -7,9 +7,9 @@
  const externalEdits=new Map();
  window.AcademyAdminEdits={register(name,check,discard){externalEdits.set(name,{check,discard});},canLeave:()=>confirmDiscard(),changed:()=>updateEditStatus()};
  let filter='',statusFilter='all',tab='details',courseBaseline=null,lessonBaseline=null,selectedPhoto='',selectedMaterials=[],selectedLinks=[],uploading=false,attachmentGeneration=0,materialScope='lesson',courseMaterialsBaseline=null;
- const courseFields=['courseName','courseCategory','courseDescription','courseHours','courseFormat'];
+ const courseFields=['courseName','courseCategory','courseDescription','courseHours','courseFormat','coursePrice','courseCertificate'];
  const lessonFields=['lessonName','lessonUrl','lessonDescription','lessonMaterialTitle','lessonMaterialUrl','lessonMinutes'];
- const fingerprint=fields=>JSON.stringify({values:fields.map(id=>byId(id).value),photo:fields===courseFields?selectedPhoto:null,material:fields===lessonFields?selectedMaterials:null,links:fields===lessonFields?selectedLinks:null});
+ const fingerprint=fields=>JSON.stringify({values:fields.map(id=>byId(id).type==='checkbox'?byId(id).checked:byId(id).value),photo:fields===courseFields?selectedPhoto:null,material:fields===lessonFields?selectedMaterials:null,links:fields===lessonFields?selectedLinks:null});
  const materialsFingerprint=()=>JSON.stringify({files:selectedMaterials,links:selectedLinks,title:byId('lessonMaterialTitle').value,url:byId('lessonMaterialUrl').value});
  function pendingEdits(){
   return {
@@ -83,6 +83,7 @@
  byId('courseName').maxLength=150;byId('courseCategory').maxLength=100;byId('courseDescription').maxLength=4000;
  byId('courseHours').min='0.25';byId('courseHours').step='0.25';
  byId('courseHours').parentElement.insertAdjacentHTML('afterend','<div class="field"><label for="courseFormat">Formato do curso</label><select id="courseFormat"><option value="series">Série de aulas</option><option value="single">Aula única</option></select><small class="muted">Aula única para um conteúdo direto; série para uma sequência de aulas.</small></div>');
+ byId('courseFormat').parentElement.insertAdjacentHTML('afterend','<div class="field"><label for="coursePrice">Preço de referência (R$, opcional)</label><input type="number" id="coursePrice" min="0" max="10000000" step="0.01" value="0"><small class="muted">Informativo nesta prévia. O pagamento não está integrado.</small></div><div class="field"><label><input type="checkbox" id="courseCertificate"> Permitir certificado deste curso</label><small class="muted">Módulos internos da Academia não emitem certificado individual.</small></div>');
  courseForm.querySelector('button.primary').textContent='Salvar informações';
  byId('resetForm').textContent='Novo curso';
  byId('lessonUrl').required=false;
@@ -154,6 +155,7 @@
   byId('editingStatus').classList.toggle('published',c?.status==='published');
   byId('newAdminLesson').disabled=false;
   byId('lessonHint').textContent=c?c.name+' · '+(typeOf(c)==='single'?'Aula única':'Série de aulas'):'Preencha e salve as informações do curso para começar a adicionar aulas.';
+  if(c?.academyId)byId('formTitle').textContent='Editar módulo da Academia';
   byId('adminLessonOrder').innerHTML=c?.lessons.length?c.lessons.map((l,i)=>'<li><span class="adm-order">'+(i+1)+'</span><div class="adm-lesson-info"><b>'+esc(l.name)+'</b><small>'+ (videoId(l.url)?'Vídeo Mux cadastrado':'Link do Mux pendente')+((l.previewMaterials?.length||l.previewMaterial)?' · Materiais anexados':'')+(l.minutes?' · '+Number(l.minutes)+' min':'')+'</small></div><div class="adm-lesson-actions"><button type="button" class="primary" data-lesson-materials="'+i+'">Materiais de apoio</button><button type="button" class="outline" data-lesson-edit="'+i+'">Editar aula</button><button type="button" class="outline" data-move="'+i+':-1" aria-label="Subir aula '+(i+1)+'" '+(i===0?'disabled':'')+'>↑</button><button type="button" class="outline" data-move="'+i+':1" aria-label="Descer aula '+(i+1)+'" '+(i===c.lessons.length-1?'disabled':'')+'>↓</button><button type="button" class="danger" data-lesson-delete="'+i+'" aria-label="Remover aula '+(i+1)+'">Remover</button></div></li>').join(''):'<li class="adm-empty"><b>A sequência começa aqui.</b><span>Adicione a primeira aula e organize o conteúdo do curso.</span></li>';
   byId('adminReviewContent').innerHTML=c?'<div class="adm-review-title"><span class="adm-badge">'+(typeOf(c)==='single'?'Aula única':'Série de aulas')+'</span><h3>'+esc(c.name)+'</h3><p>'+esc(c.description)+'</p></div><dl class="adm-review-meta"><div><dt>Categoria</dt><dd>'+esc(c.category||'Sem categoria')+'</dd></div><div><dt>Carga horária</dt><dd>'+Number(c.hours||8)+' horas</dd></div><div><dt>Conteúdo</dt><dd>'+c.lessons.length+' aula(s)</dd></div></dl><p class="'+(readiness(c)?'notice':'adm-ready')+'">'+esc(readiness(c)||'Tudo pronto. Publique e libere o acesso no módulo Alunos.')+'</p><button type="button" id="adminStudentPreview" class="outline">Visualizar sala do aluno →</button>':'<div class="adm-empty">Salve um curso para revisar e publicar.</div>';
   byId('adminPublish').disabled=!c||!!readiness(c)||c.status==='published';
@@ -162,8 +164,8 @@
   updateEditStatus();
  }
  function renderLibrary(){
-  byId('admStats').innerHTML=[['Cursos',courses.length],['Rascunhos',courses.filter(c=>c.status!=='published').length],['Publicados na prévia',courses.filter(c=>c.status==='published').length],['Aulas',courses.reduce((n,c)=>n+c.lessons.length,0)]].map(([label,n])=>'<div><small>'+label+'</small><strong>'+n+'</strong></div>').join('');
-  const list=courses.filter(c=>(statusFilter==='all'||(c.status||'draft')===statusFilter)&&(c.name+' '+(c.category||'')).toLocaleLowerCase('pt-BR').includes(filter));
+  byId('admStats').innerHTML=[['Cursos avulsos',courses.filter(c=>!c.academyId).length],['Rascunhos',courses.filter(c=>!c.academyId&&c.status!=='published').length],['Publicados na prévia',courses.filter(c=>!c.academyId&&c.status==='published').length],['Aulas',courses.filter(c=>!c.academyId).reduce((n,c)=>n+c.lessons.length,0)]].map(([label,n])=>'<div><small>'+label+'</small><strong>'+n+'</strong></div>').join('');
+  const list=courses.filter(c=>!c.academyId&&(statusFilter==='all'||(c.status||'draft')===statusFilter)&&(c.name+' '+(c.category||'')).toLocaleLowerCase('pt-BR').includes(filter));
   byId('adminCourses').innerHTML=list.length?list.map(c=>'<article class="adm-course-card '+(current()?.id===c.id?'editing':'')+'">'+(c.photo?'<img class="adm-course-thumb" src="'+esc(c.photo)+'" alt="">':'')+'<div class="row"><span class="adm-badge '+(c.status==='published'?'published':'')+'">'+(c.status==='published'?'Publicado':'Rascunho')+'</span><small>'+ (typeOf(c)==='single'?'Aula única':'Série de aulas')+'</small></div><h3>'+esc(c.name)+'</h3><p>'+esc(c.category||'Sem categoria')+' · '+c.lessons.length+' aula(s) · '+Number(c.hours||8)+'h</p><div class="adm-card-actions"><button type="button" class="outline" data-course-edit="'+esc(c.id)+'">Gerenciar curso →</button><button type="button" class="outline" data-course-copy="'+esc(c.id)+'" aria-label="Duplicar '+esc(c.name)+'">Duplicar</button><button type="button" class="danger" data-course-delete="'+esc(c.id)+'">Excluir</button></div></article>').join(''):'<div class="adm-empty"><b>'+ (courses.length?'Nenhum resultado.':'Seu primeiro curso começa aqui.')+'</b><span>'+ (courses.length?'Ajuste a busca ou o filtro.':'Clique em Novo curso e organize seu treinamento.')+'</span></div>';
   renderEditor();
  }
@@ -181,13 +183,15 @@
   if(!discardChecked&&!confirmDiscard())return false;
   selectedCourse=c;byId('editId').value=c.id;byId('courseName').value=c.name;byId('courseCategory').value=c.category||'';
   byId('courseDescription').value=c.description||'';byId('courseHours').value=c.hours||8;
+  byId('coursePrice').value=Number(c.price)||0;byId('courseCertificate').checked=!c.academyId&&c.certificateEnabled!==false;
+  byId('courseCertificate').disabled=!!c.academyId;
   selectedPhoto=c.photo||'';showCoverPreview(selectedPhoto);byId('coursePhotoFile').value='';byId('courseIcon').value=c.icon||'⚙️';byId('courseFormat').value=typeOf(c);
   byId('formTitle').textContent='Editar curso';lessonForm.classList.add('hidden');resetLessonForm();renderQuestionAdmin();notice('');savedBaseline();chooseTab(section);renderLibrary();return true;
  }
  editCourse=id=>openEditor(id);
  selectLessons=id=>openEditor(id,'lessons');
  const oldReset=resetForm;resetForm=function(){
-  oldReset();byId('courseFormat').value='series';selectedPhoto='';showCoverPreview('');byId('coursePhotoFile').value='';selectedCourse=null;lessonForm.classList.add('hidden');byId('lessonMinutes').value='';notice('');savedBaseline();chooseTab('details');renderLibrary();
+  oldReset();byId('courseFormat').value='series';byId('coursePrice').value='0';byId('courseCertificate').checked=false;byId('courseCertificate').disabled=false;selectedPhoto='';showCoverPreview('');byId('coursePhotoFile').value='';selectedCourse=null;lessonForm.classList.add('hidden');byId('lessonMinutes').value='';notice('');savedBaseline();chooseTab('details');renderLibrary();
  };
  function newCourse(){if(isAdmin()&&confirmDiscard()){resetForm();byId('courseName').focus();}}
  byId('resetForm').onclick=newCourse;byId('newAdminCourse').onclick=newCourse;
@@ -200,7 +204,11 @@
   if(!name){notice('Informe o nome do curso.',true);return;}
   const hours=Number(byId('courseHours').value);
   if(!Number.isFinite(hours)||hours<0.25||hours>500||!Number.isInteger(hours*4)){notice('Informe uma carga horária de 0,25 a 500 horas, em intervalos de 0,25.',true);return;}
-  const data={name,category:byId('courseCategory').value.trim(),description:byId('courseDescription').value.trim(),hours:Number(byId('courseHours').value),photo,icon:'⚙️',format,status:'draft'};
+  const price=Number(byId('coursePrice').value||0);
+  if(!Number.isFinite(price)||price<0||price>10000000){notice('Informe um preço válido, ou deixe zero.',true);return;}
+  const data={name,category:byId('courseCategory').value.trim(),description:byId('courseDescription').value.trim(),
+   hours:Number(byId('courseHours').value),photo,icon:'⚙️',format,status:'draft',price,
+   certificateEnabled:c?.academyId?false:byId('courseCertificate').checked};
   const id=c?.id||makeId('course');
   if(c)Object.assign(c,data);else courses.push({id,...data,lessons:[]});
   save();openEditor(id,'lessons',true);refresh();notice('Informações salvas como rascunho. Adicione as aulas e revise antes de publicar.');
