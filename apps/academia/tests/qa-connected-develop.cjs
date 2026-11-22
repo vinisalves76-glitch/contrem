@@ -18,7 +18,7 @@ const run=code=>vm.runInContext(code,context);
 const asset=name=>run(fs.readFileSync('src/assets/'+name,'utf8'));
 
 asset('cloud-store.js');
-for(const code of html.matchAll(/<script>([\\s\\S]*?)<\\/script>/g))run(code[1]);
+for(const code of html.matchAll(/<script>([\s\S]*?)<\/script>/g))run(code[1]);
 asset('contrem.js');asset('assessment-core.js');
 context.CONTREM_ACADEMY_CONFIG={mode:'connected',preview:false,url:'https://vwvesygsudhbaqmayhsz.supabase.co',publishableKey:'sb_publishable_contract_only',playbackFunction:'academy-playback'};
 const accountId='b53f0dfd-7f55-459d-bd49-0991384860a8',memberId='bf8dd26c-2dab-422e-bf49-8ed659495b44';
