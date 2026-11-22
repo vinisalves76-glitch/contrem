@@ -1,8 +1,16 @@
 import {cp,mkdir,rm,readFile,writeFile,access} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 async function exists(path){try{await access(path);return true;}catch{return false;}}
-const admin=(await readFile('apps/academia/src/assets/cloud-config.js','utf8')).includes('preview:true');
-if(process.env.VERCEL_ENV==='production' && admin) throw Error('A produção não pode usar o sandbox ADM da homologação. Publique main.');
+const academyConfig=await readFile('apps/academia/src/assets/cloud-config.js','utf8');
+const admin=/\bpreview\s*:\s*true\b/.test(academyConfig);
+if(process.env.VERCEL_ENV==='production'){
+ if(admin)throw Error('A produção não pode usar o sandbox ADM da homologação.');
+ if(!academyConfig.includes('"url":"https://')||!academyConfig.includes('.supabase.co"')||!academyConfig.includes('"publishableKey":"sb_publishable_'))throw Error('Configuração autenticada da Academia ausente na release.');
+ const loginSource=await readFile('apps/academia/src/index.html','utf8');
+ const cloudUi=await readFile('apps/academia/src/assets/cloud-ui.js','utf8');
+ const intro=await readFile('apps/academia/src/assets/contrem.js','utf8');
+ if(/id="(?:demoAccess|enter|displayName)"/.test(loginSource)||/getElementById\('enter'\)/.test(cloudUi+intro))throw Error('A release contém acesso à demonstração local.');
+}
 await rm('dist',{recursive:true,force:true});await mkdir('dist',{recursive:true});
 const sourceFilter=path=>!path.endsWith('.md')&&!path.includes('/docs/')&&!path.endsWith('/docs');
 await cp('apps/institucional/src','dist',{recursive:true,filter:sourceFilter});
