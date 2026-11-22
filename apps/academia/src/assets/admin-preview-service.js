@@ -98,7 +98,7 @@
     if(name.length<2||name.length>100||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||password.length<8)throw Error('Informe nome, e-mail válido e senha com pelo menos 8 caracteres.');
     if(email==='vinicius.alves@irmen.com.br')throw Error('Use um e-mail fictício diferente da conta administrativa.');
     const salt=crypto.randomUUID(),passwordHash=await digest(password,salt),db=load();
-    admin();if(db.students.some(s=>s.email===email))throw Error('Já existe um aluno de teste com esse e-mail.');
+    admin();if(db.students.some(s=>s.email===email)||db.staff.some(s=>s.email===email))throw Error('Já existe uma conta cadastrada com esse e-mail.');
     db.students.push({id:crypto.randomUUID(),name,email,active:true,courses:[],salt,passwordHash});commit(db);return {name};
    },
    async listStudents(){
