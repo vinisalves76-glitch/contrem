@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "test": "node tests/qa-assessment-core.cjs && node tests/qa-assessment-author.cjs && node tests/qa-assessment-student.cjs && node tests/qa-admin-preview.cjs && node tests/qa-admin-dom.cjs && node tests/qa-media.cjs && node tests/qa-video-migration.cjs && node --test tests/playback.test.mjs tests/mux-provider.test.mjs",
+    "test": "node tests/qa-assessment-core.cjs && node tests/qa-assessment-author.cjs && node tests/qa-assessment-student.cjs && node tests/qa-admin-preview.cjs && node tests/qa-admin-dom.cjs && node tests/qa-media.cjs && node tests/qa-video-migration.cjs && node --test tests/playback.test.mjs tests/mux-provider.test.mjs && node --test tests/cloud-service.test.mjs && node tests/qa-connected-develop.cjs",
     "build": "node scripts/build.mjs"
   },
   "devDependencies": {

@@ -5,7 +5,7 @@
  const status=document.getElementById('cloudStatus'),bar=document.getElementById('cloudBar');
  const form=document.getElementById('cloudLoginForm'),loginStatus=document.getElementById('cloudLoginStatus');
  const keys=['va-academia-catalog-v1','va-academia-progress-v1','va-academia-certificates-v1','va-academia-profile-v1','va-academia-activity-v1'];
- let mode='demo',identity=null,service=null,client=null,catalogRevision=0,stateRevision=0;
+ let mode=config?.preview?'demo':'guest',identity=null,service=null,client=null,catalogRevision=0,stateRevision=0;
  let catalogSaved='',stateSaved='',dirtyCatalog=false,dirtyState=false,conflicted=false,timer=null,saving=null,epoch=0;
  const demoAdminNotice=document.querySelector('#adminView > .notice').textContent;
  const pendingKey=id=>(config?.preview?'contrem-adm-preview-pending:':'contrem-academia:')+id+':pending';
@@ -25,7 +25,7 @@
   document.getElementById('sidebarContext').textContent=admin?'GESTÃO DA ACADEMIA':'AMBIENTE DE APRENDIZAGEM';
   document.getElementById('adminTab').hidden=!admin;
   document.getElementById('adminStudents').hidden=!admin;
-  document.getElementById('migrateLocalCatalog').hidden=true;
+  document.getElementById('migrateLocalCatalog').hidden=!admin;
   document.getElementById('downloadPending').hidden=!readPending();
   for(const selector of ['#adminView input','#adminView textarea','#adminView select','#adminView form button','#adminCourses button','#markDone','#assessmentContent input','#assessmentContent button','#certificateActions button','#my-profile input','#saveProfile']){
    document.querySelectorAll(selector).forEach(el=>{
@@ -65,7 +65,10 @@
   document.querySelector('#adminView > .muted').textContent='Organize seus treinamentos. As alterações são compartilhadas com os alunos da Academia.';
   document.querySelector('#adminView > .notice').textContent='Administração restrita aos administradores da Academia. Avaliações e certificados continuam demonstrativos nesta etapa.';
   document.querySelector('#assessmentPanel .row p').textContent='Responda às questões para registrar o resultado na sua conta. A avaliação continua demonstrativa.';
-  document.getElementById('cloudImportHint').hidden=false;
+  const importHint=document.getElementById('cloudImportHint');
+  importHint.hidden=identity.member.role!=='admin';
+  importHint.textContent='Cursos criados na prévia Developer ficam naquele navegador. Exporte o backup JSON na origem onde os cursos foram criados; depois use "Importar cursos do Developer" acima. Os cursos serão importados como rascunhos, sem apagar os existentes.';
+  document.getElementById('cloudBackup').hidden=identity.member.role!=='admin';
   show(identity.member.role==='admin'?'adminView':'studentView');setAdminSection('courses');permissions();
   if(identity.member.role==='admin')loadStudentRoster();
   message(conflicted?'Há alterações locais e alterações em outro acesso. Baixe a cópia pendente e recarregue os dados.':dirtyCatalog||dirtyState?'Enviando alterações pendentes deste aparelho…':'Conta conectada. Dados carregados.',conflicted);
@@ -109,19 +112,20 @@
   savePending();scheduleSync();
  });
  function resetToDemo(){
-  epoch++;clearTimeout(timer);mode='demo';window.AcademySession=null;identity=null;conflicted=false;dirtyState=false;dirtyCatalog=false;
+  epoch++;clearTimeout(timer);mode=config?.preview?'demo':'guest';window.AcademySession=null;identity=null;conflicted=false;dirtyState=false;dirtyCatalog=false;
   academyStorage.setScope(null);bar.hidden=true;
-  courses=read(KEY,demo);progress=read(PK,{});certificates=read(CK,[]);profile=read(PROFILE_KEY,{fullName:'',email:'',company:'',role:''});activity=read(ACTIVITY_KEY,{});
-  selectedCourse=null;studentName=profile.fullName||'Aluno demonstração';document.getElementById('hello').textContent=studentName;
-  document.getElementById('studentNav').hidden=false;document.getElementById('adminNav').hidden=false;document.getElementById('sidebarContext').textContent='AMBIENTE DE APRENDIZAGEM';document.getElementById('adminTab').hidden=false;document.getElementById('adminStudents').hidden=true;setAdminSection('courses');document.querySelector('.demo-chip').textContent='DEMONSTRAÇÃO · DADOS LOCAIS';
+  courses=config?.preview?read(KEY,demo):[];progress=config?.preview?read(PK,{}):{};certificates=config?.preview?read(CK,[]):[];profile=config?.preview?read(PROFILE_KEY,{fullName:'',email:'',company:'',role:''}):{fullName:'',email:'',company:'',role:''};activity=config?.preview?read(ACTIVITY_KEY,{}):{};
+  selectedCourse=null;studentName=profile.fullName||(config?.preview?'Aluno demonstração':'Aluno');document.getElementById('hello').textContent=studentName;
+  document.getElementById('studentNav').hidden=false;document.getElementById('adminNav').hidden=!config?.preview;document.getElementById('sidebarContext').textContent='AMBIENTE DE APRENDIZAGEM';document.getElementById('adminTab').hidden=!config?.preview;document.getElementById('adminStudents').hidden=true;setAdminSection('courses');document.querySelector('.demo-chip').textContent=config?.preview?'DEMONSTRAÇÃO · DADOS LOCAIS':'CONTREM ACADEMIA · CONECTADA';
   document.getElementById('player').src='about:blank';
   document.querySelector('#my-profile .row p').textContent='Nome e dados de exibição ficam salvos somente neste navegador.';
   document.querySelector('#adminView > .muted').textContent='Demonstração: as alterações são salvas somente neste navegador.';
   document.querySelector('#adminView > .notice').textContent=demoAdminNotice;
   document.querySelector('#assessmentPanel .row p').textContent='Responda às questões para registrar seu resultado neste navegador.';
   document.getElementById('cloudImportHint').hidden=true;
+  document.getElementById('cloudBackup').hidden=true;
   document.querySelectorAll('[data-cloud-disabled]').forEach(el=>{el.disabled=false;delete el.dataset.cloudDisabled;});
-  ['importBackupBtn','importBackupText'].forEach(id=>{document.getElementById(id).disabled=false;});
+  ['importBackupBtn','importBackupText'].forEach(id=>{document.getElementById(id).disabled=!config?.preview;});
   loadProfile();refresh();show('studentView');document.getElementById('app').classList.add('hidden');document.getElementById('login').classList.remove('hidden');
  }
  function errorText(error){
@@ -159,10 +163,37 @@
  document.getElementById('adminTab').addEventListener('click',()=>setAdminSection('courses'));
  document.getElementById('studentsTab').addEventListener('click',()=>{if(mode!=='cloud'||identity?.member.role!=='admin')return;show('adminView');setAdminSection('students');loadStudentRoster();window.scrollTo({top:0,behavior:'instant'});});
  const baseRefresh=refresh;refresh=function(){baseRefresh();permissions();};
- const baseRenderClass=renderClass;renderClass=function(){baseRenderClass();permissions();};
+ const baseRenderClass=renderClass;
+ let playbackGeneration=0;
+ renderClass=function(){
+  baseRenderClass();
+  if(config?.mode==='connected'&&config.preview===false&&mode==='cloud'&&identity?.member.role!=='admin'){
+   const sequence=++playbackGeneration,lesson=selectedCourse?.lessons?.[selectedLesson],session=identity;
+   const player=document.getElementById('player'),videoStatus=document.getElementById('lessonVideoStatus');
+   player.src='about:blank';document.getElementById('markDone').disabled=true;
+   if(lesson?.videoId && /^[a-f0-9-]{36}$/i.test(lesson.videoId)){
+    videoStatus.hidden=false;videoStatus.textContent='Autorizando vídeo privado no Mux...';
+    service.playback(lesson.videoId).then(value=>{
+     if(sequence!==playbackGeneration||identity!==session||mode!=='cloud'||selectedCourse?.lessons?.[selectedLesson]!==lesson)return;
+     player.src=value.iframeUrl;videoStatus.hidden=true;document.getElementById('markDone').disabled=false;
+    }).catch(()=>{if(sequence===playbackGeneration&&identity===session){videoStatus.hidden=false;videoStatus.textContent='Vídeo privado ainda não autorizado. Confira o vínculo Mux e sua matrícula.';}});
+   }else {videoStatus.hidden=false;videoStatus.textContent='Aula ainda sem vídeo privado vinculado no Mux.';}
+  }else{
+   playbackGeneration++;
+   if(config?.mode==='connected'&&mode==='cloud'&&identity?.member.role==='admin'&&selectedCourse){
+    const note=document.getElementById('lessonVideoStatus');
+    note.hidden=false;note.textContent='Prévia administrativa do link Mux cadastrado. O aluno usa somente reprodução privada autorizada.';
+   }
+  }
+  permissions();
+ };
  const baseShow=show;show=function(id){if(mode==='cloud'&&id==='adminView'&&(identity?.member.role!=='admin'||identity.user.email?.toLowerCase()!=='vinicius.alves@irmen.com.br'))id='studentView';baseShow(id);permissions();};
- const demoEnter=document.getElementById('enter').onclick;
- document.getElementById('enter').onclick=()=>{if(mode==='cloud')return;demoEnter();};
+ const demoButton=document.getElementById('enter'),demoPanel=document.getElementById('demoAccess');
+ if(!config?.preview){
+  if(demoPanel)demoPanel.hidden=true;
+  if(demoButton){demoButton.disabled=true;demoButton.onclick=()=>{};}
+  document.querySelectorAll('.preview-login-note,.preview-student-login').forEach(node=>node.remove());
+ } else {const demoEnter=demoButton.onclick;demoButton.onclick=()=>{if(mode==='cloud')return;demoEnter();};}
  document.getElementById('exit').onclick=async()=>{
   if(mode==='cloud'){
    await flush();
@@ -185,16 +216,28 @@
   if(readPending()&&!confirm('Recarregar substituirá as alterações pendentes deste aparelho pelos dados da conta. Baixe a cópia pendente antes, se precisar preservá-las. Continuar?'))return;
   try{const data=await service.reload();clearPending();await enterCloud(data);}catch(error){message(errorText(error),true);}
  };
- document.getElementById('migrateLocalCatalog').onclick=async()=>{
-  if(mode!=='cloud'||identity.member.role!=='admin'||conflicted||saving)return;
+ // Explicit import from a Developer backup. Never promotes local test identities or assessment results.
+ const migrate=document.getElementById('migrateLocalCatalog');
+ migrate.textContent='Importar cursos do Developer (arquivo JSON)';
+ const courseImport=document.createElement('input');courseImport.type='file';courseImport.accept='.json,application/json';courseImport.hidden=true;migrate.after(courseImport);
+ migrate.onclick=()=>{if(mode!=='cloud'||identity?.member.role!=='admin'||conflicted||saving)return;courseImport.value='';courseImport.click();};
+ courseImport.onchange=async()=>{
+  if(mode!=='cloud'||identity?.member.role!=='admin'||conflicted||saving)return;
   try{
-   const local=JSON.parse(academyStorage.getLegacy(keys[0])||'null');
-   if(!local){message('Não há catálogo local salvo neste navegador. Exporte o backup na versão anterior e importe-o na demonstração local desta URL primeiro.');return;}
-   validateCourses(local);
-   if(!confirm('Publicar o catálogo local substituirá o catálogo compartilhado da Academia. O progresso local não será importado. Continuar?'))return;
-   courses=copy(local);save();refresh();await flush();
+   const file=courseImport.files?.[0];if(!file)return;
+   if(file.size>15*1024*1024)throw Error('Backup muito grande (máximo 15 MB); divida a exportação antes de importar.');
+   const data=JSON.parse(await file.text());
+   if(data.app!=='VA Academia'||!Array.isArray(data.courses))throw Error('Selecione o backup exportado pela CONTREM Academia Developer.');
+   validateCourses(data.courses);
+   const ids=new Set(courses.map(c=>c.id));
+   const added=data.courses.filter(c=>!ids.has(c.id)).map(c=>({...copy(c),status:'draft'}));
+   if(!added.length){message('Todos os cursos do backup já estão no sistema. Nenhum foi substituído.');return;}
+   if(!confirm('Importar '+added.length+' cursos como rascunhos? Seus cursos existentes serão preservados. Os arquivos físicos e as notas dos alunos não serão importados.'))return;
+   courses=[...courses,...added];save();refresh();await flush();
+   if(!conflicted&&!dirtyCatalog)message(added.length+' cursos importados como rascunhos. Revise vídeos privados e materiais antes de publicar.');
   }catch(error){message(errorText(error),true);}
  };
+
  form.onsubmit=async event=>{
   event.preventDefault();if(!service)return;const submit=form.querySelector('button');submit.disabled=true;loginStatus.textContent='Entrando na sua conta…';
   try{const data=await service.signIn(document.getElementById('cloudEmail').value.trim(),document.getElementById('cloudPassword').value);document.getElementById('cloudPassword').value='';await enterCloud(data);loginStatus.textContent='';}
@@ -223,9 +266,10 @@
   service.restore().then(data=>data&&enterCloud(data)).catch(error=>{loginStatus.textContent=errorText(error);});
   return;
  }
- if(!config||!window.supabase||!window.AcademyCloudService){loginStatus.textContent='A conexão da conta não carregou. Você pode usar a demonstração local.';form.querySelector('button').disabled=true;return;}
+ if(!config||config.mode!=='connected'||config.preview!==false||config.url!=='https://vwvesygsudhbaqmayhsz.supabase.co'||!/^sb_publishable_[A-Za-z0-9_-]+$/.test(config.publishableKey||'')||!window.supabase||!window.AcademyCloudService){loginStatus.textContent='A conexão segura da Academia não está disponível. Não há acesso por demonstração.';form.querySelector('button').disabled=true;return;}
  client=window.supabase.createClient(config.url,config.publishableKey,{auth:{storageKey:'contrem-academia-auth-v1',persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
  service=window.AcademyCloudService.create(client);
+ window.AcademyCloudMediaClient=client; // publishable key only; Storage and Auth enforce RLS.
  client.auth.onAuthStateChange((event,session)=>{if(mode==='cloud'&&(event==='SIGNED_OUT'||(session?.user?.id&&session.user.id!==identity.user.id)))resetToDemo();});
  client.auth.getSession().then(async({data})=>{if(!data.session)return;loginStatus.textContent='Retomando sua conta…';try{const value=await service.restore();if(value)await enterCloud(value);loginStatus.textContent='';}catch(error){loginStatus.textContent=errorText(error);}});
 })();
