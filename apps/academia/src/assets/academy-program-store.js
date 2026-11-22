@@ -14,7 +14,7 @@
  const student=()=>{if(user()?.role!=='student'||!user().preview)throw Error('Entre como aluno de teste.');return user().userId;};
  const log=(data,verb,record)=>data.audit.push({verb,record,at:new Date().toISOString(),actor:user()?.userId||'none'});
  const students=()=>courseDb().students.map(s=>({id:s.id,name:s.name,email:s.email,active:s.active}));
- const courses=()=>courseDb().catalog.courses||[];
+ const courses=()=>user()?.role==='admin'&&typeof window.CONTREM_PROGRAM_COURSE_ACCESS==='function'?window.CONTREM_PROGRAM_COURSE_ACCESS():courseDb().catalog.courses||[];
  const uniqueId=prefix=>prefix+'-'+crypto.randomUUID();
  function upsert(value){
   admin();const data=load(),existing=data.academies.find(a=>a.id===value.id);
