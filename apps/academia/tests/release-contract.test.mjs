@@ -39,11 +39,13 @@ test('Autenticação real, sem acesso demonstrativo',async()=>{
  assert.doesNotMatch(config,/sb_secret_|service_role|preview:true/i);
  assert.match(ui,/signIn/);
  assert.match(ui,/mode=config\?\.preview\?'demo':'guest'/);
- assert.match(ui,/show\(identity\.member\.role==='admin'\?'adminView':'studentView'\)/);
+ assert.match(ui,/show\(isEditor\(\)\?'adminView':'studentView'\)/);
  assert.match(service,/signInWithPassword/);
  assert.match(service,/academy_my_catalog/);
  assert.match(service,/academy_save_learning/);
- assert.match(service,/academy_catalog'\)\.update\(\{courses\}\)/);
+ assert.match(service,/academy-workspace/);
+ assert.match(service,/content_admin/);
+ assert.doesNotMatch(service,/academy_catalog'\)\.update\(\{courses\}\)/);
 });
 test('Materiais privados, vídeo autorizado e atualização de PWA',async()=>{
  const [ui,media,sw,author]=await Promise.all([
@@ -55,7 +57,7 @@ test('Materiais privados, vídeo autorizado e atualização de PWA',async()=>{
  assert.match(ui,/service\.playback\(lesson\.videoId\)/);
  assert.match(media,/academy-materials/);
  assert.match(media,/createSignedUrl/);
- assert.match(sw,/20261122-developer-prod-v3/);
+ assert.match(sw,/20261122-staff-prod-v1/);
  assert.doesNotMatch(sw,/admin-preview-service\.js|assessment-demo\.js|assessment-student\.js/);
  assert.match(author,/mode==='connected'/);
 });
@@ -90,4 +92,36 @@ test('Barra de conta removida visualmente, mantendo autosave e alertas de falha'
  assert.match(ui,/syncAlert\.hidden=!error/,'Erro de sincronização precisa aparecer');
  assert.match(ui,/syncAlert\.textContent=error\?status\.textContent:''/);
  assert.match(ui,/syncAlert\.hidden=true;syncAlert\.textContent=''/,'Aviso deve sumir ao sair');
+});
+
+test('Funcionários com login real, rascunhos privados e aprovação do ADM Master',async()=>{
+ const [html,ui,service,editor,backend,migration]=await Promise.all([
+  read('apps/academia/src/index.html'),
+  read('apps/academia/src/assets/cloud-ui.js'),
+  read('apps/academia/src/assets/cloud-service.js'),
+  read('apps/academia/src/assets/admin-manager.js'),
+  read('apps/academia/supabase/functions/academy-workspace/index.ts'),
+  read('apps/academia/database/20261122_staff_real_auth_editor_catalog.sql')
+ ]);
+ for(const id of ['staffTab','adminStaff','staffCreateForm','staffName','staffEmail','staffPassword','staffRoster'])
+  assert.ok(html.includes('id="'+id+'"'),'Componente funcionário: '+id);
+ assert.match(html,/Criar login do funcionário/);
+ assert.doesNotMatch(html,/Convite de teste criado|Copiar link do convite/);
+ assert.match(service,/createContentAdmin/);
+ assert.match(service,/signInWithPassword/);
+ assert.match(service,/academy-workspace/);
+ assert.match(ui,/staffCreateForm/);
+ assert.match(ui,/isMaster\(\)/);
+ assert.match(editor,/content_admin/);
+ assert.match(editor,/Somente o ADM Master pode excluir cursos/);
+ assert.match(editor,/AcademyCloudPublishing\.publish/);
+ assert.match(editor,/AcademyCloudPublishing\.unpublish/);
+ assert.match(backend,/create_staff/);
+ assert.match(backend,/auth\.admin\.createUser/);
+ assert.match(backend,/safeStaffChanges/);
+ assert.match(backend,/Somente o ADM Master pode publicar/);
+ assert.match(backend,/action==='save'/);
+ assert.match(migration,/ENABLE ROW LEVEL SECURITY/);
+ assert.match(migration,/REVOKE ALL ON public\.academy_editor_catalog FROM PUBLIC, anon, authenticated/);
+ assert.match(migration,/role IN \('admin','student','content_admin'\)/);
 });
