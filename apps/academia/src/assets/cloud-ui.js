@@ -174,7 +174,7 @@
    const email=document.getElementById('staffEmail').value.trim();
    const password=document.getElementById('staffPassword').value;
    const created=await service.createContentAdmin(name,email,password);
-   form.reset();
+   form.reset();document.getElementById('staffPassword').value='';
    status.textContent='Login de '+created.name+' criado. O funcionário pode entrar usando o e-mail '+created.email+' e a senha inicial cadastrada nesta prévia.';
    await loadStaffRoster();
   }catch(error){status.textContent=error.message||'Não foi possível criar o login.';}
