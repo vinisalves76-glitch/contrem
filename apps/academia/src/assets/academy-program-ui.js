@@ -7,7 +7,7 @@
  const $=id=>document.getElementById(id),e=s=>esc(s??''),date=()=>core.today();
  window.CONTREM_PROGRAM_COURSE_ACCESS=()=>courses;
  window.CONTREM_PROGRAM_STATE_ACCESS=()=>({progress});
- let selected=null,opened=null;
+ let selected=null,opened=null,returnToAcademy=null;
  const admin=$('adminView'),panel=document.createElement('section');
  panel.id='academiasAdminPanel';panel.className='panel program-main';
  panel.innerHTML=`
@@ -38,7 +38,13 @@
  <hr><h3>Solicitações de nova tentativa</h3><div id="programRetakeList"></div>`;
  $('adminStudents').append(enrollment);
  const studentPanel=document.createElement('section');studentPanel.id='myAcademies';studentPanel.className='panel program-student-panel';
- studentPanel.innerHTML='<div class="tag">MINHAS ACADEMIAS</div><div class="row"><div><h2>Minhas formações</h2><p class="muted">Trilhas completas, com etapas e módulos liberados conforme sua aprovação.</p></div><button type="button" class="outline" id="refreshAcademies">Atualizar progresso ↻</button></div><div id="studentAcademiesList"></div><div id="studentAcademyDetail" hidden></div>';
+ studentPanel.innerHTML='<div class="tag">MINHAS ACADEMIAS</div><div class="row"><div><h2>Minhas formações</h2><p class="muted">Trilhas completas, com etapas e módulos liberados conforme sua aprovação.</p></div><button type="button" class="outline" id="refreshAcademies">Atualizar progresso ↻</button></div><div id="studentAcademiesList"></div>';
+ const portal=document.createElement('main');
+ portal.id='academyPortalView';portal.className='wrap program-portal hidden';
+ portal.setAttribute('aria-label','Portal da Academia');
+ portal.innerHTML='<section class="program-portal-hero"><div class="program-portal-toolbar"><button type="button" id="programPortalBack" class="program-portal-back">← Minhas Academias</button><span class="program-portal-brand">CONTREM ACADEMIA · FORMAÇÃO</span></div><div class="program-portal-heading"><span class="tag">SEU AMBIENTE DE FORMAÇÃO</span><h1 id="programPortalTitle">Minha Academia</h1><p id="programPortalDescription">Acesse as etapas e continue sua formação.</p><div id="programPortalMeta" class="program-portal-meta"></div></div></section><section class="program-portal-content"><div id="studentAcademyDetail" hidden></div></section>';
+ $('studentView').after(portal);
+ portal.querySelector('#programPortalBack').onclick=()=>{show('studentView');$('myAcademies')?.scrollIntoView({block:'start'});};
  $('studentView').querySelector('.learning-banner')?.after(studentPanel);
  const studentNav=document.createElement('button');studentNav.type='button';studentNav.innerHTML='<span aria-hidden="true">◇</span> Minhas Academias';
  studentNav.setAttribute('data-jump','myAcademies');$('studentNav').insertBefore(studentNav,$('studentNav').querySelector('[data-jump="my-performance"]'));
@@ -252,16 +258,30 @@
   for(const item of items){
    const button=document.createElement('button');button.className='program-student-card';button.type='button';
    button.innerHTML='<div><span class="tag">'+(item.map.active?'MATRÍCULA ATIVA':'ACESSO EXPIRADO OU SUSPENSO')+'</span><h3>'+e(item.academy.title)+'</h3><p>'+e(item.academy.description)+'</p><small>'+item.map.approved+' de '+item.map.total+' módulos aprovados · '+(item.enrollment.validUntil?'Válido até '+e(item.enrollment.validUntil):'Sem prazo')+'</small></div><span class="program-arrow">→</span>';
-   button.onclick=()=>{opened=item.academy.id;renderStudentDetail();};
+   button.onclick=()=>openAcademyPortal(item.academy.id);
    box.append(button);
   }
   if(!opened||!items.some(i=>i.academy.id===opened))opened=items[0].academy.id;
   renderStudentDetail();
  }
+ function openAcademyPortal(academyId){
+  if(!enrolled())return;
+  const item=store.studentPrograms().items.find(entry=>entry.academy.id===academyId);
+  if(!item)return;
+  opened=academyId;
+  renderStudentDetail();
+  show('academyPortalView');
+  window.scrollTo({top:0,behavior:'auto'});
+ }
  function renderStudentDetail(){
   if(!enrolled()||!opened)return;
   const data=store.studentPrograms(),item=data.items.find(i=>i.academy.id===opened),root=$('studentAcademyDetail');
-  if(!item){root.hidden=true;return;}root.hidden=false;root.replaceChildren();
+  if(!item){root.hidden=true;return;}
+  root.hidden=false;root.replaceChildren();
+  $('programPortalTitle').textContent=item.academy.title;
+  $('programPortalDescription').textContent=item.academy.description||'Sua jornada de aprendizagem organizada em etapas e módulos.';
+  const validity=item.enrollment.validUntil?'Válido até '+item.enrollment.validUntil.split('-').reverse().join('/'):'Acesso sem prazo';
+  $('programPortalMeta').textContent=item.academy.stages.length+' etapa(s) · '+item.map.total+' módulo(s) · '+validity;
   const heading=document.createElement('div');heading.className='program-student-heading';
   heading.innerHTML='<div><span class="tag">MAPA DA FORMAÇÃO</span><h3>'+e(item.academy.title)+'</h3><p>'+item.map.approved+' de '+item.map.total+' módulos aprovados</p></div><span class="program-progress-pct">'+(item.map.total?Math.round(100*item.map.approved/item.map.total):0)+'%</span>';root.append(heading);
   const progressBar=document.createElement('div');progressBar.className='program-progress-track';const fill=document.createElement('span');fill.style.width=(item.map.total?Math.round(100*item.map.approved/item.map.total):0)+'%';progressBar.append(fill);root.append(progressBar);
@@ -313,6 +333,7 @@
   if(!selected?.map.active||!selected.map.items.find(m=>m.id===moduleId&&m.canOpen))return alert('Módulo bloqueado ou matrícula sem acesso.');
   if(!courses.some(c=>c.id===moduleId))await window.CONTREM_PREVIEW_SYNC?.reload?.();
   if(!courses.some(c=>c.id===moduleId))return alert('Atualize a sessão do aluno para carregar este módulo.');
+  returnToAcademy=academyId;
   openCourse(moduleId);
  }
  function printCert(c){
@@ -345,7 +366,25 @@
  const originalRefresh=refresh;
  refresh=function(){originalRefresh();if(enrolled())renderStudent();};
  const originalShow=show;
- show=function(id){const result=originalShow(id);if(id==='studentView'&&enrolled())renderStudent();return result;};
+ show=function(id){
+  const result=originalShow(id==='academyPortalView'?'studentView':id);
+  portal.classList.toggle('hidden',id!=='academyPortalView');
+  if(id==='academyPortalView')$('studentView').classList.add('hidden');
+  if(id==='studentView'&&enrolled())renderStudent();
+  return result;
+ };
+ const previousBack=$('back').onclick;
+ $('back').onclick=function(event){
+  if(returnToAcademy&&selectedCourse?.academyId===returnToAcademy&&enrolled()){
+   const academyId=returnToAcademy;
+   returnToAcademy=null;
+   $('player').src='about:blank';
+   openAcademyPortal(academyId);
+   return;
+  }
+  returnToAcademy=null;
+  return previousBack?.call(this,event);
+ };
  // External guard used by assessment-student.js. All checks are re-evaluated.
  window.CONTREM_PROGRAM_UI={canAttempt:courseId=>store.canAttempt(courseId),consumeRetry:id=>store.consumeRetry(id),requestRetake:id=>store.requestRetake(id),render:renderStudent};
  const search=new URLSearchParams(location.search);
