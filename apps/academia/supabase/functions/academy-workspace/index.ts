@@ -54,7 +54,7 @@ Deno.serve(async req=>{
  }
  const reply=(status:number,data:unknown)=>new Response(JSON.stringify(data),{status,headers});
  if(origin&&!permittedOrigin(origin))return reply(403,{error:'Origem não permitida.'});
- if(req.method==='OPTIONS')return reply(204,{ok:true});
+ if(req.method==='OPTIONS')return new Response(null,{status:204,headers});
  if(req.method!=='POST')return reply(405,{error:'Método não permitido.'});
  const token=req.headers.get('authorization')?.match(/^Bearer (.+)$/i)?.[1];
  if(!token)return reply(401,{error:'Entre na sua conta da CONTREM Academia.'});
