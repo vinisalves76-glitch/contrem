@@ -59,7 +59,8 @@ test('Materiais privados, vídeo autorizado e atualização de PWA',async()=>{
  assert.doesNotMatch(sw,/admin-preview-service\.js|assessment-demo\.js|assessment-student\.js/);
  assert.match(author,/mode==='connected'/);
 });
-test('Build entrega o mesmo código sem alterar outras rotas',async()=>{
+test('Build entrega o mesmo código sem alterar outras rotas',async t=>{
+ if(!await exists('dist/build-info.json')){t.skip('Build ainda não executado nesta suíte; o workflow de produção testa após compilar.');return;}
  const [html,config,info]=await Promise.all([
   read('dist/academia/index.html'),
   read('dist/academia/assets/cloud-config.js'),
