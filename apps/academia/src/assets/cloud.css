@@ -9,3 +9,8 @@
 #adminBackup,#cloudBackup,#migrateLocalCatalog{display:none!important}
 
 @media(max-width:760px){#studentNav,#adminNav{flex-direction:row;flex-wrap:nowrap;gap:6px;min-width:max-content}}
+/* O estado da conta e os comandos manuais continuam internos para a sincronização automática. */
+#cloudBar{display:none!important}
+.cloud-sync-alert{margin:8px 42px 0;color:#b42318;font-size:13px;font-weight:600;line-height:1.4}
+.cloud-sync-alert[hidden]{display:none!important}
+@media(max-width:720px){.cloud-sync-alert{margin:8px 16px 0}}
