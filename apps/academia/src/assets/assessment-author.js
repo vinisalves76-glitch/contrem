@@ -1,7 +1,7 @@
 // Authoring for the isolated Academia preview; the production editor is untouched.
 (() => {
  'use strict';
- if(!window.CONTREM_ACADEMY_CONFIG?.preview||!window.AcademyAssessment)return;
+ if(!window.AcademyAssessment||!(window.CONTREM_ACADEMY_CONFIG?.preview||window.CONTREM_ACADEMY_CONFIG?.mode==='connected'))return;
  const byId=id=>document.getElementById(id),core=window.AcademyAssessment;
  const admin=()=>window.AcademySession?.role==='admin';
  const copy=value=>JSON.parse(JSON.stringify(value));
