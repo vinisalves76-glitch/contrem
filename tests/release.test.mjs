@@ -90,3 +90,29 @@ test('Academia: build conecta o app e preserva módulos centrais sem demo',async
  assert.match(config,/"mode":"connected"/);
  assert.match(connected,/AcademyConnectedUI/);
 });
+
+test('ADM: redirecionamento por perfil comprovado sem promover alunos',async()=>{
+ const {runInNewContext}=await import('node:vm');
+ const connected=await source('apps/academia/src/assets/cloud-connected.js');
+ const navigation=connected.match(/show\(owner\(\)\?'adminView':'studentView'\)/)?.[0];
+ assert.ok(navigation,'A decisão de rota deve depender do papel autenticado');
+ const nav=connected.match(/byId\('studentNav'\)\.hidden=owner\(\);byId\('adminNav'\)\.hidden=!owner\(\);byId\('adminTab'\)\.hidden=!owner\(\);/)?.[0];
+ assert.ok(nav,'Menus administrativo e do aluno devem ser mutuamente exclusivos');
+ assert.match(connected,/if\(owner\(\)\)roster\(\)/,'ADM deve carregar alunos na entrada');
+ assert.match(connected,/identity\?\.member\.role==='admin'&&identity\.member\.active===true/,'ADM depende de membro ativo com papel admin');
+ const outputs=[];
+ for(const admin of [true,false]){
+  const controls={studentNav:{hidden:null},adminNav:{hidden:null},adminTab:{hidden:null}};
+  let destination=null;
+  runInNewContext(navigation+';'+nav,{owner:()=>admin,show:view=>{destination=view;},byId:id=>controls[id]});
+  outputs.push({destination,controls});
+ }
+ assert.equal(outputs[0].destination,'adminView');
+ assert.equal(outputs[0].controls.studentNav.hidden,true);
+ assert.equal(outputs[0].controls.adminNav.hidden,false);
+ assert.equal(outputs[0].controls.adminTab.hidden,false);
+ assert.equal(outputs[1].destination,'studentView');
+ assert.equal(outputs[1].controls.studentNav.hidden,false);
+ assert.equal(outputs[1].controls.adminNav.hidden,true);
+ assert.equal(outputs[1].controls.adminTab.hidden,true);
+});
