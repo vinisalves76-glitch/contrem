@@ -25,7 +25,7 @@
   document.getElementById('sidebarContext').textContent=admin?'GESTÃO DA ACADEMIA':'AMBIENTE DE APRENDIZAGEM';
   document.getElementById('adminTab').hidden=!admin;
   document.getElementById('adminStudents').hidden=!admin;
-  document.getElementById('migrateLocalCatalog').hidden=!admin;
+  document.getElementById('migrateLocalCatalog').hidden=true;
   document.getElementById('downloadPending').hidden=!readPending();
   for(const selector of ['#adminView input','#adminView textarea','#adminView select','#adminView form button','#adminCourses button','#markDone','#assessmentContent input','#assessmentContent button','#certificateActions button','#my-profile input','#saveProfile']){
    document.querySelectorAll(selector).forEach(el=>{
@@ -66,7 +66,7 @@
   document.querySelector('#adminView > .notice').textContent='Administração restrita aos administradores da Academia. Avaliações e certificados continuam demonstrativos nesta etapa.';
   document.querySelector('#assessmentPanel .row p').textContent='Responda às questões para registrar o resultado na sua conta. A avaliação continua demonstrativa.';
   const importHint=document.getElementById('cloudImportHint');
-  importHint.hidden=identity.member.role!=='admin';
+  importHint.hidden=true;
   importHint.textContent='Cursos criados na prévia Developer ficam naquele navegador. Exporte o backup JSON na origem onde os cursos foram criados; depois use "Importar cursos do Developer" acima. Os cursos serão importados como rascunhos, sem apagar os existentes.';
   document.getElementById('cloudBackup').hidden=identity.member.role!=='admin';
   show(identity.member.role==='admin'?'adminView':'studentView');setAdminSection('courses');permissions();
