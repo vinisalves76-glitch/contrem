@@ -59,7 +59,11 @@
     // Explicit entry into a fictitious local account; never calls production Auth.
     const salt=crypto.randomUUID(),passwordHash=await digest(crypto.randomUUID(),salt),db=load();
     const additions=[...buildTestCourses(),...(window.AcademyAssessmentDemo?[window.AcademyAssessmentDemo.build()]:[])].filter(c=>!db.catalog.courses.some(existing=>existing.id===c.id));
-    if(additions.length){db.catalog.courses.push(...additions);db.catalog.revision+=1;}
+    if(additions.length){
+     db.catalog.courses.push(...additions);db.catalog.revision+=1;
+     const missing=additions.filter(c=>!db.workspace.courses.some(existing=>existing.id===c.id));
+     if(missing.length){db.workspace.courses.push(...missing);db.workspace.revision+=1;}
+    }
     let student=db.students.find(s=>s.id===TEST_STUDENT);
     if(!student){student={id:TEST_STUDENT,name:'Aluno de teste',email:'aluno-teste@academia.example.invalid',active:true,courses:[],salt,passwordHash};db.students.push(student);}
     student.active=true;
