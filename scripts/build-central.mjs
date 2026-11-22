@@ -1,12 +1,21 @@
 import {cp,mkdir,rm,readFile,writeFile,access} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
+import {createAcademiaConfig} from './academia-config.mjs';
 async function exists(path){try{await access(path);return true;}catch{return false;}}
-const admin=(await readFile('apps/academia/src/assets/cloud-config.js','utf8')).includes('preview:true');
-if(process.env.VERCEL_ENV==='production' && admin) throw Error('A produção não pode usar o sandbox ADM da homologação. Publique main.');
+const academyConfig=createAcademiaConfig();
+const admin=academyConfig.preview;
 await rm('dist',{recursive:true,force:true});await mkdir('dist',{recursive:true});
 const sourceFilter=path=>!path.endsWith('.md')&&!path.includes('/docs/')&&!path.endsWith('/docs');
 await cp('apps/institucional/src','dist',{recursive:true,filter:sourceFilter});
 await cp('apps/academia/src','dist/academia',{recursive:true,filter:sourceFilter});
+await writeFile('dist/academia/assets/cloud-config.js','window.CONTREM_ACADEMY_CONFIG = '+JSON.stringify(academyConfig)+';\n');
+if(!admin){
+ // Production caches retain the legacy namespace; never read the preview account cache.
+ const storage=await readFile('dist/academia/assets/cloud-store.js','utf8');
+ await writeFile('dist/academia/assets/cloud-store.js',storage.replace("'contrem-adm-preview-v1:'","''"));
+ const worker=await readFile('dist/academia/sw.js','utf8');
+ await writeFile('dist/academia/sw.js',worker.replace(/(const CACHE_NAME = PREFIX \+ '[^']+)';/,"$1-connected';"));
+}
 const tec=await exists('apps/tec/index.html'),guide=await exists('apps/guia/src/index.html');
 const placeholder=title=>`<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#102A43"><title>${title} | CONTREM</title><link rel="stylesheet" href="/styles.css"><body><main class="container section"><a class="brand" href="/"><img src="/assets/logo.svg" width="49" height="49" alt=""><strong>CONTREM</strong></a><p class="eyebrow" style="margin-top:60px">TECNOLOGIA DE MANUTENÇÃO</p><h1 style="color:#102A43;font-size:60px">${title}</h1><p style="margin:28px 0;max-width:560px">Estamos preparando este ambiente. Em breve, mais recursos para conectar conhecimento técnico e manutenção.</p><a class="button" href="/">Voltar à CONTREM <span>→</span></a> <a class="text-link dark" href="/academia/">Conhecer a Academia →</a></main></body></html>`;
 if(tec){
@@ -19,5 +28,5 @@ if(guide)await cp('apps/guia/src','dist/contremtec/guia',{recursive:true,filter:
 else await writeFile('dist/contremtec/guia/index.html',placeholder('Guia de equipamentos'));
 const files=['dist/index.html','dist/academia/index.html','dist/contremtec/index.html'];
 const hash=createHash('sha256');for(const file of files)hash.update(await readFile(file));
-await writeFile('dist/build-info.json',JSON.stringify({project:'CONTREM',commit:process.env.VERCEL_GIT_COMMIT_SHA||null,branch:process.env.VERCEL_GIT_COMMIT_REF||null,mode:admin?'homologacao':'estavel',modules:{academia:admin?'adm-sandbox':'conectada',contremtec:tec?'demonstracao':'em-preparacao',guia:guide?'prototipo':'em-preparacao'},sourceHash:hash.digest('hex')},null,2));
+await writeFile('dist/build-info.json',JSON.stringify({project:'CONTREM',commit:process.env.VERCEL_GIT_COMMIT_SHA||null,branch:process.env.VERCEL_GIT_COMMIT_REF||null,mode:admin?'homologacao':'conectado',modules:{academia:admin?'adm-sandbox':'conectada',contremtec:tec?'demonstracao':'em-preparacao',guia:guide?'prototipo':'em-preparacao'},sourceHash:hash.digest('hex')},null,2));
 console.log('CONTREM pronta em dist/: /, /academia/, /contremtec/ e /contremtec/guia/.');

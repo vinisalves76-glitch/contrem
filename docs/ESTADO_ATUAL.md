@@ -1,5 +1,9 @@
 # CONTREM — organização central, 15/11/2026
 
+## Atualização de 22/11/2026 — Academia integrada
+
+O proprietário autorizou iniciar o sistema real com Supabase e Mux, substituindo a demonstração somente após concluir a integração. Branch `feature/academia-integracao-producao`, base `develop` `7b41fb2`. Primeiro incremento: modo conectado sem fallback demonstrativo, Auth/membership, progresso/perfil e playback privado; a autoria, materiais e provas/certificados ainda precisam de backend próprio. Catálogo do aluno endurecido no Supabase, gestão de alunos com CORS central e endpoint de playback publicados no servidor; segredos Mux não foram configurados/ativados pelo agente. A produção web e `main` permanecem na versão anterior. Detalhes, mudanças remotas, testes e próximos passos em `ACADEMIA_INTEGRACAO_PRODUCAO.md`.
+
 Atualização da frente ADM: fluxo de edições pendentes corrigido na feature/academia-adm, para integração em develop e preview pelo projeto central contrem. Testes do módulo e da distribuição central passaram; QA visual real segue pendente. Main e produção não foram alteradas por este ciclo. Detalhes e commit de implementação em `continuidade/academia-adm.md` e `../apps/academia/docs/QA_ADM_EDICAO_2026-11-15.md`. O código de produção da Academia continua separado do ADM local.
 
 Em 15/11/2026: foto de capa anexada ao curso implementada e integrada em `develop` no commit `b42f5946db8b68b76e9d6f78341a0d8e3693cd35`; preview Vercel `dpl_EW1DHM8MuGofSE34XVfevcTM8kKX` READY. Build central, testes da Academia e check de sintaxe passaram. O fluxo continua no sandbox; `main` e produção seguem preservadas. Detalhes em `continuidade/academia-adm.md`.

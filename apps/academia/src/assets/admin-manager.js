@@ -1,6 +1,7 @@
 // Course authoring UI shared with the existing Academy shell.
 (() => {
  'use strict';
+ if(!window.CONTREM_ACADEMY_CONFIG?.preview)return;
  const byId=id=>document.getElementById(id);
  const isAdmin=()=>window.AcademySession?.role==='admin';
  const makeId=prefix=>prefix+'-'+crypto.randomUUID();

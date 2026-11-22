@@ -1,6 +1,18 @@
 (() => {
  'use strict';
  const config=window.CONTREM_ACADEMY_CONFIG;
+ if(!config?.preview){
+  // Keep the legacy demo closed even when the connected module fails to load.
+  window.AcademySession=null;
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('login').classList.remove('hidden');
+  document.getElementById('demoAccess').hidden=true;
+  const entry=document.getElementById('enter');entry.disabled=true;entry.onclick=()=>{};
+  document.querySelectorAll('.preview-login-note,.preview-student-login').forEach(node=>node.remove());
+  if(window.AcademyConnectedUI)window.AcademyConnectedUI.initialize(config);
+  else{document.getElementById('cloudLoginStatus').textContent='A conexão segura da Academia não carregou. Recarregue a página.';document.getElementById('cloudLoginForm').querySelector('button').disabled=true;}
+  return;
+ }
  window.AcademySession=null;
  const status=document.getElementById('cloudStatus'),bar=document.getElementById('cloudBar');
  const form=document.getElementById('cloudLoginForm'),loginStatus=document.getElementById('cloudLoginStatus');

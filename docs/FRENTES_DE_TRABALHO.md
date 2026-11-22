@@ -5,6 +5,7 @@
 | Empresa e infraestrutura | raiz, `docs/`, `.github/`, `apps/institucional/` | `chore/organizacao-contrem` | Organização e sincronização |
 | Academia estável | `apps/academia/src/` | correção isolada a partir da base estável | Produção Mux preservada em `main` |
 | ADM da Academia | `apps/academia/src/`, `tests/`, `server/`, `database/` dentro do módulo | `feature/academia-adm` | Sandbox local, integração real pendente |
+| Academia integrada | `apps/academia/`, build central e configuração pública | `feature/academia-integracao-producao` | Integração real iniciada em 22/11; release completa pendente |
 | ContremTec | `apps/tec/` | `feature/contremtec` | Demonstração isolada; banco não conectado |
 | Guia tipo Volvo | `apps/guia/` | `feature/guia-equipamentos` | Protótipo visual; integração operacional pendente |
 
