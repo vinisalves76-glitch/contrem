@@ -23,6 +23,13 @@
 - Catálogo não possui curso publicado real e não há vídeos em `academy_videos`; não preencher com conteúdo fictício.
 - Mux privado não foi habilitado nem houve leitura/colagem de segredos. A conexão do player será testável apenas depois de configurar credenciais, playback restrito, IDs signed e vínculo vídeo-aula.
 
+## CORS em homologação
+
+- Foram versionadas as fontes **atuais** de `academy-students` v4 e `academy-playback` v2, adicionando apenas a nova origem exata de Preview à allowlist.
+- **Não foi realizado redeploy das Edge Functions ativas**. Consequentemente, na URL nova de preview, cadastro/matrícula via `academy-students` e requisições de `academy-playback` podem retornar CORS 403 até homologar e publicar as fontes correspondentes.
+- A alteração na allowlist de playback exigirá que a restrição Mux reconheça exatamente os mesmos domínios; seu servidor verifica a igualdade das listas. Fazer a atualização coordenada antes de usar vídeo protegido.
+- Aplicar a atualização das funções somente em ciclo autorizado de backend; não liberar wildcard nem modificar `STREAM_ENABLED` sem as configurações Mux testadas.
+
 ## Gates antes da publicação
 - CI: `npm run check`, `npm test`, `VERCEL_ENV=production npm run build`, `npm run test:central`, `node --test tests/release.test.mjs` (incluindo `cloud-service.test.mjs`).
 - Preview do commit exato e revisão do build-info. **READY não certifica login/streaming real**.
