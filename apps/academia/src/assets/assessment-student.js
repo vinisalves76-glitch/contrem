@@ -30,6 +30,10 @@
  }
  function start(ctx){
   if(!alive(ctx))return;
+  if(!ctx.checkpoint&&ctx.course.academyId){
+   try{const ui=window.CONTREM_PROGRAM_UI;if(!ui)throw Error('Regras da Academia não carregadas.');ui.consumeRetry(ctx.course.id);}
+   catch(error){root.append(el('p',error.message||'Não é possível iniciar a prova.','notice'));return;}
+  }
   const previous=recordFor(ctx),record={version:1,fingerprint:ctx.fingerprint,snapshot:clone(ctx.config),choiceOrders:ctx.config.questions.map(q=>shuffled(q.choices.length)),answers:ctx.config.questions.map(()=>null),locked:[],flags:[],index:0,xp:0,status:'active',startedAt:new Date().toISOString(),history:Array.isArray(previous?.history)?previous.history.slice(-100):[]};
   persist(ctx,record);renderAssessment();
  }
@@ -40,6 +44,7 @@
   record.result=result;record.status='result';record.history=[...(record.history||[]),clone(result)];
   if(!ctx.checkpoint){progress['assessment:'+ctx.course.id]=[...getAttempts(ctx.course.id),clone(result)];save();}
   persist(ctx,record);renderCourseCertificates();refresh();renderAssessment();
+  window.dispatchEvent(new CustomEvent('academia:assessment-completed',{detail:{courseId:ctx.course.id,passed:result.passed,score:result.score}}));
  }
  function questionVisual(q,holder){
   if(q.context)holder.append(el('p',q.context,'assessment-context'));
@@ -71,6 +76,20 @@
   root.append(el('p','Nota: '+result.score+'% · '+result.correct+'/'+result.total+' acertos'+(ctx.checkpoint?' · '+record.xp+' XP nesta tentativa.':''),'notice'));
   const summary=el('ul');Object.entries(result.competencies||{}).forEach(([name,c])=>summary.append(el('li',name+': '+c.score+'% ('+c.correct+'/'+c.total+')')));root.append(summary);
   record.snapshot.questions.forEach((q,i)=>{const detail=el('details'),heading=el('summary',(i+1)+'. '+(core.gradeQuestion(q,record.answers[i])?'Correta':'Revisar')+' · '+q.text);detail.append(heading,el('p','Sua resposta: '+describe(q,record.answers[i])),el('p','Resposta esperada: '+describe(q,q.correct)));if(q.explanation)detail.append(el('p',q.explanation));root.append(detail);});
+  if(ctx.course.academyId&&!ctx.checkpoint){
+   if(result.passed){root.append(el('p','Módulo aprovado. Continue sua formação.','notice'));return;}
+   const ui=window.CONTREM_PROGRAM_UI;
+   let can=null;try{can=ui?.canAttempt(ctx.course.id);}catch{}
+   if(can?.allowed)button('assessmentRetry','Iniciar nova tentativa autorizada',()=>start(ctx));
+   else{
+    root.append(el('p',can?.reason||'Solicite autorização ao ADM Master para refazer a prova.','notice'));
+    if(!/aguarde|pendente/i.test(can?.reason||''))button('assessmentRetry','Solicitar nova tentativa',async()=>{
+     try{await window.CONTREM_PREVIEW_SYNC?.flush?.();ui.requestRetake(ctx.course.id);renderAssessment();}
+     catch(error){root.append(el('p',error.message,'notice'));}
+    });
+   }
+   return;
+  }
   button('assessmentRetry','Tentar novamente',()=>start(ctx));
  }
  function showQuestion(ctx,record){
