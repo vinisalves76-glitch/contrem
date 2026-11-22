@@ -54,7 +54,11 @@ const ids=course=>[...(course||[]).map(c=>c.id)];
  const draft=(await master.reload()).catalog;
  const pending=draft.courses.find(c=>c.id==='course-electrics');
  assert.equal(pending.name,'Elétrica revisada');
- await master.writeCatalog(draft.courses.map(c=>c.id==='course-electrics'?{...c,status:'published'}:c),draft.revision);
+ // Salvar outro rascunho não pode publicar uma revisão pendente.
+ await master.writeCatalog([...draft.courses,{id:'course-diesel',name:'Diesel',status:'draft',lessons:[]}],draft.revision);
+ assert.equal(JSON.parse(data.get('contrem-adm-preview-db-v1')).catalog.courses.find(c=>c.id==='course-electrics').name,'Elétrica Básica');
+ const approved=(await master.reload()).catalog;
+ await master.writeCatalog(approved.courses.map(c=>c.id==='course-electrics'?{...c,status:'published'}:c),approved.revision);
  await student.reload();
  assert.equal((await student.reload()).catalog.courses[0].name,'Elétrica revisada','master approval publishes pending edit');
  await master.setStaffActive((await master.listStaff())[0].id,false);
