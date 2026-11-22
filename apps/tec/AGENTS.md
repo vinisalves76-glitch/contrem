@@ -1,5 +1,7 @@
 # CONTREM — organização atual de 15/11/2026
 
+Publicação atual autorizada: o proprietário pediu colocar a ContremTec em produção. A versão de demonstração será servida em `/contremtec/` no domínio central, com o guia em `/contremtec/guia/`. Isso substitui a restrição histórica de manter apenas a demonstração privada, sem autorizar conexão corporativa nem migrações. A Academia estável permanece preservada.
+
 Leia `../../AGENTS.md`, `../../docs/ESTADO_ATUAL.md` e a continuidade deste módulo. O repositório central único foi autorizado; instruções históricas de projetos independentes abaixo descrevem o ciclo de origem. O isolamento de dados e o escopo de edição por módulo permanecem.
 
 Fonte da aplicação preservada neste diretório. APIs preparadas ficam em `server/`; migrations históricas ficam em `database/historical-migrations/`. Nenhuma dessas pastas é publicada pelo build estático. As APIs não têm dependências/configuração para execução corporativa concluídas. Não criar uma pasta `api/` ativa nem executar SQL sem revisão e autorização no ciclo próprio.

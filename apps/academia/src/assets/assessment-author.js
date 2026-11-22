@@ -3,7 +3,7 @@
  'use strict';
  if(!window.CONTREM_ACADEMY_CONFIG?.preview||!window.AcademyAssessment)return;
  const byId=id=>document.getElementById(id),core=window.AcademyAssessment;
- const admin=()=>window.AcademySession?.role==='admin';
+ const admin=()=>['admin','content_admin'].includes(window.AcademySession?.role);
  const copy=value=>JSON.parse(JSON.stringify(value));
  let activeCourse='',activeScope='final',editingIndex=-1,baseline=null,settingsBaseline='',sessionAtOpen=null;
  const entry=document.createElement('div');entry.className='adm-assessment-entry';

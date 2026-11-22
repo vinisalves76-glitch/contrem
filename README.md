@@ -6,8 +6,8 @@ Código-fonte central da CONTREM, organizado em aplicações independentes. A em
 |---|---|---|
 | Institucional | `apps/institucional` | Apresentação da empresa |
 | Academia | `apps/academia` | Cursos e área do aluno; ADM novo em desenvolvimento |
-| ContremTec | `apps/tec` na homologação | Relatórios e gestão de manutenção |
-| Guia interativo | `apps/guia` na homologação | Guia visual de equipamentos da ContremTec |
+| ContremTec | `apps/tec` | Relatórios e gestão de manutenção |
+| Guia interativo | `apps/guia` | Guia visual de equipamentos da ContremTec |
 
 Comece por `00_LEIA_PRIMEIRO.md`. O estado real e as pendências estão em `docs/ESTADO_ATUAL.md`; o trabalho de cada chat está em `docs/FRENTES_DE_TRABALHO.md`.
 

@@ -6,4 +6,4 @@ Conteúdo demonstrativo: pontos e ampliações ilustram assuntos; não substitui
 
 Manter os dois modelos, busca, favoritos por equipamento, galeria e exportação offline. Favoritos locais pertencem à origem. Não conectar dados, autenticação ou ordens de serviço por inferência.
 
-Fonte em `src/index.html`, com imagens incorporadas. Build copia para `dist/`. O Site de origem continua privado; publicar na Vercel depende de conservar a proteção correspondente.
+Fonte em `src/index.html`, com imagens incorporadas. O pedido de publicação da ContremTec em 15/11/2026 autoriza servir o guia vinculado em `/contremtec/guia/`, mantendo sua indicação de conteúdo demonstrativo. O Site de origem continua preservado. Não apresentar o guia como documentação técnica aprovada.

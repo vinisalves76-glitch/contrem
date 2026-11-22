@@ -1,5 +1,9 @@
 # CONTREM — instruções para todos os chats e agentes
 
+## Publicação ContremTec autorizada — 15/11/2026
+
+O proprietário solicitou expressamente: “Coloque em produção o contremtec”. A versão demonstrativa atual da ContremTec e seu guia vinculado podem ser publicados em `/contremtec/` e `/contremtec/guia/`, a partir de uma release baseada na `main`. Preservar a Academia estável; o novo ADM continua somente na homologação. Essa publicação não conecta dados reais, Auth, APIs ou banco da ContremTec. Esta decisão atualiza as restrições históricas de publicação desses dois módulos abaixo.
+
 ## Autoridade e organização
 
 O pedido do proprietário em 15/11/2026 autoriza um único código-fonte CONTREM, organizado por setores e módulos, com GitHub para versionamento e Vercel para hospedagem. Esta decisão substitui instruções históricas que proibiam o compartilhamento de repositório entre Academia e ContremTec. A separação funcional, de dados e de permissões continua obrigatória.
@@ -28,7 +32,6 @@ O pedido do proprietário em 15/11/2026 autoriza um único código-fonte CONTREM
 ## Publicação central
 
 O único projeto principal da Vercel é `contrem`. Root Directory vazio, `npm run build`, saída `dist`. Não configurar raiz por aplicativo nem publicar fontes internas. Leia docs/VERCEL.md.
-
 
 ## Sincronização obrigatória entre ChatGPT, Codex local e GitHub (anti-retrocesso)
 

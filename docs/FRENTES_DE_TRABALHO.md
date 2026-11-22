@@ -5,8 +5,8 @@
 | Empresa e infraestrutura | raiz, `docs/`, `.github/`, `apps/institucional/` | `chore/organizacao-contrem` | Organização e sincronização |
 | Academia estável | `apps/academia/src/` | correção isolada a partir da base estável | Produção Mux preservada em `main` |
 | ADM da Academia | `apps/academia/src/`, `tests/`, `server/`, `database/` dentro do módulo | `feature/academia-adm` | Sandbox local, integração real pendente |
-| ContremTec | `apps/tec/` | `feature/contremtec` | Demonstração isolada; banco não conectado |
-| Guia tipo Volvo | `apps/guia/` | `feature/guia-equipamentos` | Protótipo visual; integração operacional pendente |
+| ContremTec | `apps/tec/` | `feature/contremtec` | Demonstração publicada por solicitação; banco não conectado |
+| Guia tipo Volvo | `apps/guia/` | `feature/guia-equipamentos` | Guia demonstrativo publicado com a ContremTec; integração operacional pendente |
 
 `develop` é a integração de homologação. Mudanças simultâneas no mesmo módulo exigem comparar commits, não copiar uma pasta antiga. Cada branch só existe remotamente depois do push confirmado; consultar `docs/ESTADO_ATUAL.md`.
 

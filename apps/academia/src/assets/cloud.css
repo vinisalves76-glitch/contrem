@@ -9,3 +9,18 @@
 #adminBackup,#cloudBackup,#migrateLocalCatalog{display:none!important}
 
 @media(max-width:760px){#studentNav,#adminNav{flex-direction:row;flex-wrap:nowrap;gap:6px;min-width:max-content}}
+
+/* Equipe: layout exclusivo do ADM Master, sem acesso a cadastros de usuários para editores. */
+#adminView.show-staff>.admin,
+#adminView.show-staff>.panel:not(#adminStaff),
+#adminView.show-staff>.notice{display:none!important}
+#adminView:not(.show-staff)>#adminStaff{display:none!important}
+#adminView.show-staff>#adminStaff{display:block}
+#adminView.content-admin [data-course-delete],
+#adminView.content-admin [data-lesson-delete],
+#adminView.content-admin #adminPublish,
+#adminView.content-admin #adminUnpublish,
+#adminView.content-admin #studentForm{display:none!important}
+#adminStaff .field{min-width:min(250px,100%)}
+#staffCreateForm input[type=password]{width:100%;min-width:0}
+#staffFormStatus:not(:empty){margin:14px 0;line-height:1.5}

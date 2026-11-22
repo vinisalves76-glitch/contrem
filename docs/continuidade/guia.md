@@ -1,3 +1,9 @@
+## Publicação autorizada — 15/11/2026
+
+O proprietário solicitou a publicação da ContremTec. ContremTec demonstrativa e guia vinculado entram na base estável, preservando a Academia e o novo ADM em homologação. Ler ../PUBLICACAO_CONTREMTEC_2026-11-15.md. Os registros de origem abaixo permanecem como histórico.
+
+---
+
 # Guia interativo de equipamentos
 
 Frente do chat “Criar guia interativo (Volvo)”. Branch: `feature/guia-equipamentos`; caminho: `apps/guia/`.
