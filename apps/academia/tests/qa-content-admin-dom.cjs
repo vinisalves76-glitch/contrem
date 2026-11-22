@@ -43,6 +43,18 @@ const answerFinal=async values=>{
 (async()=>{
  await click('previewAdminEntry');
  assert.equal(context.AcademySession.role,'admin');
+ await click('newAdminCourse');
+ set('courseName','Curso de matrícula');
+ set('courseDescription','Disponível para os alunos');
+ await submit('courseForm');
+ await click('newAdminLesson');
+ set('lessonName','Aula publicada');
+ set('lessonUrl',mux);
+ await submit('lessonForm');
+ await click('adminPublish');
+ await click('syncNow');
+ const releasedCourse=run('courses[0].id');
+ assert.equal(run('courses[0].status'),'published');
  assert.equal($('staffTab').hidden,false,'ADM Master sees Team');
  $('staffTab').dispatchEvent(new dom.Event('click',{bubbles:true}));await new Promise(r=>setTimeout(r,0));
  assert.equal($('adminStaff').hidden,false);
@@ -74,8 +86,8 @@ const answerFinal=async values=>{
  set('courseDescription','Curso editado pelo colaborador');
  set('courseFormat','series');
  await submit('courseForm');await click('syncNow');
- assert.equal(run('courses.length'),1);
- assert.equal(run('courses[0].status'),'draft');
+ assert.equal(run('courses.length'),2);
+ assert.equal(run('courses.find(c=>c.name===\"Elétrica básica - versão editorial\").status'),'draft');
  assert.ok(document.querySelector('[data-course-delete]'),'Original admin UI retains delete button for master');
  assert.equal($('adminView').classList.contains('content-admin'),true,'Staff role CSS masks deletion');
  const published=JSON.parse(memory.get('contrem-adm-preview-db-v1')).catalog.courses;
@@ -86,7 +98,9 @@ const answerFinal=async values=>{
  assert.ok(student,'Staff can see students');
  assert.equal(student.querySelector('[data-active]').hidden,true,'Staff cannot suspend student');
  assert.equal($('studentForm').hidden,true);
- const check=student.querySelector('[data-course]');assert.ok(check);
+ const check=student.querySelector('[data-course="'+releasedCourse+'"]');assert.ok(check);
+ assert.equal(check.disabled,false,'Matrícula em curso publicado deve estar disponível');
+ const draftCheckbox=student.querySelector('[data-course]:disabled');assert.ok(draftCheckbox,'Rascunho não pode receber matrícula pelo editor');
  check.checked=true;check.dispatchEvent(new dom.Event('change',{bubbles:true}));await new Promise(r=>setTimeout(r,0));
  const db=JSON.parse(memory.get('contrem-adm-preview-db-v1'));
  assert.equal(db.students[0].courses.length,1,'Staff may grant a course');
