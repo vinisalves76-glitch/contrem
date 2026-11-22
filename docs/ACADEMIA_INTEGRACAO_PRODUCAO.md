@@ -20,8 +20,8 @@ Autoria local, anexos IndexedDB, provas corrigidas no navegador e certificados l
 
 - Migração `academy_connected_catalog_projection`: substitui a projeção do catálogo para o aluno por whitelist, exige matrícula e `published`, remove questões/gabaritos, URLs públicas e metadados locais, e obtém UUIDs de vídeos publicados pelo banco. Helper privado não é executável por anon/authenticated; a RPC preserva seus grants. Revisada pelo coordenador, teste SQL sintético primeiro em transação revertida e depois repetido após aplicação. Membros e quantidade de cursos preservados; anônimo sem EXECUTE.
 - Migração `20261122165848_academy_connected_learning_merge`: adiciona `academy_save_learning` com identidade ativa, revisão otimista e merge somente dos cursos/aulas publicados autorizados. Preserva cursos ocultos, histórico de provas e a coluna de certificados. A proposta inicial teve erro de sintaxe no teste rollback (CASE); corrigido pelo coordenador e retestado antes de aplicar. Testes sintéticos e recusa de sessão anônima passaram após aplicação; nenhuma linha de aluno foi usada como fixture persistente. A migração do catálogo ficou registrada como `20261122165250_academy_connected_catalog_projection`.
-- Edge `academy-students` versão 3: fonte recuperada da versão remota 2 e adicionadas somente origens centrais exatas à allowlist CORS. Mantém `getUser(token)`, e-mail administrativo, associação ativa e isolamento `academy_*`.
-- Edge `academy-playback` versão 1: publica o handler existente com autorização por usuário/matrícula/RLS antes de leitura do vínculo privilegiado e assinatura Mux. Origem padrão `https://contrem.vercel.app`; `STREAM_ENABLED` não foi ativado. Segredos ficam no ambiente Supabase. `verify_jwt=false` usa a autenticação explícita do handler (o ramo de apresentação pública é separado).
+- Edge `academy-students` versão 4: fonte recuperada da versão remota 2 e adicionadas somente origens centrais exatas à allowlist CORS. Mantém `getUser(token)`, e-mail administrativo, associação ativa e isolamento `academy_*`.
+- Edge `academy-playback` versão 2: publica o handler existente com autorização por usuário/matrícula/RLS antes de leitura do vínculo privilegiado e assinatura Mux. Origens padrão: `https://contrem.vercel.app` e a origem exata da preview conectada registrada abaixo; `STREAM_ENABLED` não foi ativado. Segredos ficam no ambiente Supabase. `verify_jwt=false` usa a autenticação explícita do handler (o ramo de apresentação pública é separado).
 
 As fontes e testes SQL estão em `apps/academia/database/integration/`; a fonte de gestão de alunos está em `apps/academia/server/students/index.ts`. Não reaplicar o SQL histórico de streaming como bootstrap.
 
@@ -58,6 +58,18 @@ As variáveis Mux não foram obtidas pelo agente. Sua ausência não é contorna
 
 Testes de contrato/DOM usam mocks e não equivalem a login com conta real ou reprodução Mux. A rede do Codex atualmente permite package managers/GitHub, mas nega `vwvesygsudhbaqmayhsz.supabase.co`; o smoke HTTP direto parou em CONNECT 403 do proxy. Metadados e SQL foram verificados pelo conector Supabase. Para E2E, permitir o host do projeto e os hosts Mux necessários nas configurações de rede do ambiente; não contornar o proxy. Changelog/docs Supabase também tiveram bloqueio HTTP; documentação atual de Auth/Storage foi consultada via conector.
 
-Verificações finais: `npm run check` (54 scripts), `npm test` (25 testes Node de configuração, 89 Node da Academia e suítes DOM/contratos existentes), `npm run build` / `npm run test:central` (4/4), build conectado com `VERCEL_ENV=production` / testes centrais (4/4), `git diff --check`: aprovados. Segurança e testes revisaram independentemente o delta conectado; não aprovaram produção completa. Os testes SQL de projeção/merge passaram antes e após as migrações, com rollback dos testes.
+Verificações finais: `npm run check` (54 scripts), `npm test` (25 testes Node de configuração, 90 Node da Academia e suítes DOM/contratos existentes), `npm run build` / `npm run test:central` (4/4), build conectado com `VERCEL_ENV=production` / testes centrais (4/4), `git diff --check`: aprovados. Segurança e testes revisaram independentemente o delta conectado; não aprovaram produção completa. Os testes SQL de projeção/merge passaram antes e após as migrações, com rollback dos testes.
 
 O advisor sinaliza [RPCs SECURITY DEFINER executáveis por autenticados](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable). As RPCs da Academia são intencionais: têm `search_path` vazio, identidade ativa obrigatória, projeção/merge limitado, anônimo sem EXECUTE e helpers privados sem grants de cliente. Não tratar a auditoria como ausência de avisos; funções de manutenção preexistentes não foram alteradas.
+
+
+## Preview conectada para revisão
+
+- PR rascunho: https://github.com/vinisalves76-glitch/contrem/pull/11.
+- URL: https://contrem-git-feature-aca-7b7922-vinicius-alves-projects-fdea38e8.vercel.app/academia/.
+- Deployment: `dpl_EiWpaiQhzWRKcYaw7gbgEm9iGXQr`, READY, target preview/null, commit web `d77c3d75543d9d9267542906ef1379e3dcf38055`, modo `conectado` confirmado em build-info.json HTTP 200.
+- HTML, configuração pública `preview:false` e controlador conectado responderam HTTP 200 por fetch autenticado da Vercel; proteção de acesso preservada. Isto comprova distribuição, não login/playback real.
+- Variáveis públicas configuradas somente para a preview desta branch; produção e develop não foram alteradas. Nenhum segredo Mux foi lido/copiado.
+- CORS da gestão e default da allowlist de playback incluem essa origem exata (sem wildcard); atualização dos servidores nas versões 4 e 2, respectivamente. Se `STREAM_ALLOWED_ORIGINS` já existir nos segredos, esse valor explícito prevalece e precisa ser conferido pelo proprietário.
+- O commit posterior ao web deployment registra somente a origem de staging, teste CORS e evidências; os arquivos web são os mesmos do commit servido. Não gerar outro build apenas para documentação.
+- Main e develop continuam nos commits anteriores; não houve merge nem promoção da produção pública.
