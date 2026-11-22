@@ -59,6 +59,8 @@
   status.classList.toggle('error',!result.ok);
   render();
  });
+ const library=document.getElementById('adminCourses');
+ if(library)new MutationObserver(()=>{if(panel.open)render();}).observe(library,{childList:true,subtree:true});
  panel.addEventListener('toggle',()=>{if(panel.open)render();});
  window.addEventListener('focus',()=>{if(panel.open)render();});
  // Deep link from the visual preview opens the existing login; admin enters through
