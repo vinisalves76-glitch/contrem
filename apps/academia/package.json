@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "node --test tests/release-contract.test.mjs"
+    "test": "node --test tests/release-contract.test.mjs && node tests/qa-admin-production.cjs"
   },
   "devDependencies": {
     "linkedom": "0.18.12"
