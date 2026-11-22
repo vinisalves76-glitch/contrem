@@ -171,7 +171,7 @@
  const oldRefresh=refresh;refresh=function(){
   oldRefresh();renderLibrary();
   if(window.AcademySession?.preview){
-   document.querySelector('.demo-chip').textContent='PRÉVIA ISOLADA · '+(isAdmin()?'ADM':'ALUNO');
+   document.querySelector('.demo-chip').textContent='PRÉVIA ISOLADA · '+(isMaster()?'ADM MASTER':window.AcademySession?.role==='content_admin'?'ADM DE CONTEÚDO':'ALUNO');
    byId('cloudImportHint').hidden=true;
    byId('downloadPending').hidden=true;
   }
