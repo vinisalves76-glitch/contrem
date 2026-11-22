@@ -154,6 +154,7 @@
  }
  function editModule(id){
   if(!permitted())return;
+  if(store.list().enrollments.some(entry=>entry.academyId===selected&&entry.active))return notify('Formação com matrículas ativas: não edite módulos sem versionamento e revisão de impacto no progresso.',true);
   if(!courses.some(c=>c.id===id&&c.academyId===selected))return notify('Módulo indisponível.',true);
   leavePrograms();$('adminTab').click();show('adminView');editCourse(id);
   returnBtn.hidden=false;$('adminHeading').textContent='Módulo da Academia';
@@ -277,6 +278,19 @@
     if(m.canOpen&&m.status==='failed'){
      const request=document.createElement('button');request.type='button';request.className='outline';request.textContent='Solicitar nova tentativa';
      request.onclick=async()=>{try{await window.CONTREM_PREVIEW_SYNC?.flush?.();store.requestRetake(id);renderStudent();}catch(err){alert(err.message);}};actions.append(request);
+    }
+    if(a.stages.length>1){
+     const move=document.createElement('select');move.className='program-move-stage';
+     move.setAttribute('aria-label','Mover módulo para outra etapa');
+     for(const optionStage of a.stages){const opt=document.createElement('option');opt.value=optionStage.id;opt.textContent='Etapa: '+optionStage.title;opt.selected=stage.id===optionStage.id;move.append(opt);}
+     move.onchange=()=>{
+      const stages=core.copy(a.stages),src=stages.find(s=>s.id===stage.id),dest=stages.find(s=>s.id===move.value);
+      if(!src||!dest||src.id===dest.id)return;
+      src.moduleIds=src.moduleIds.filter(item=>item!==id);dest.moduleIds.push(id);
+      const result=updateProgram({...a,stages});
+      if(result){if(c)c.stageId=dest.id;save();refresh();}else move.value=stage.id;
+     };
+     actions.append(move);
     }
     row.append(actions);block.append(row);
    }
