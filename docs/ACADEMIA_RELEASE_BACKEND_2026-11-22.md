@@ -41,3 +41,11 @@
 
 ## Limites
 Os testes automatizados usam doubles e verificações de build e não provam acesso a uma conta real ou player privado em produção. Nenhuma conta, credencial, banco ou registro da ContremTec foi modificado por esta integração de código.
+
+## Correção do direcionamento ADM (22/11/2026)
+
+Verificação somente leitura no Supabase: a conta ADM original informada pelo proprietário permanece vinculada a `academy_members.role='admin'`, `active=true` e e-mail confirmado. Nenhuma alteração de perfil ou credencial no banco foi necessária.
+
+Causa: `cloud-connected.js` carregava sempre `studentView` na entrada após Auth, inclusive para o administrador. Agora o frontend abre `adminView` quando `owner()` é verdadeiro (papel `admin` ativo + identidade ADM já cadastrada), exibe apenas navegação administrativa e carrega alunos; perfis `student` continuam em `studentView`. A regra de autorização no servidor (`academy_private.is_admin`, RLS e `academy-students`) foi preservada sem flexibilizações. A mudança também se aplica ao restabelecer sessão e recarregar os dados, porque usa a função compartilhada `enter(data)`.
+
+A correção de interface não promove outras contas de aluno a administrador. Caso o login seja efetuado com outro e-mail, é preciso confirmar o perfil `academy_members` associado àquela conta antes de qualquer alteração de acesso. Teste automatizado de regressão em `tests/release.test.mjs`.
