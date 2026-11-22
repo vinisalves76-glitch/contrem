@@ -112,6 +112,7 @@
    async setCourseAccess(memberId,courseId,enabled){
     enrollment();const db=load(),s=db.students.find(s=>s.id===memberId);
     if(!s||!s.active||!db.catalog.courses.some(c=>c.id===courseId))throw Error('Aluno ou curso indisponível.');
+    if(current!==ADMIN&&!db.catalog.courses.some(c=>c.id===courseId&&c.status==='published'))throw Error('O ADM de Conteúdo só pode liberar matrículas de cursos publicados.');
     s.courses=enabled?[...new Set([...s.courses,courseId])]:s.courses.filter(id=>id!==courseId);commit(db);
    },
    async setStudentActive(id,active){admin();const db=load(),s=db.students.find(s=>s.id===id);if(!s)throw Error('Aluno não encontrado.');s.active=active;commit(db);},
