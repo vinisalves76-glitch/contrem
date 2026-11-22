@@ -29,7 +29,7 @@
  }
  function updateEditStatus(){
   const pending=pendingEdits(),dirty=pending.course||pending.lesson||pending.courseMaterials||pending.external,c=current();
-  byId('adminEditStatus').textContent=uploading?'Guardando materiais neste navegador…':dirty?(pending.courseMaterials?'Materiais do curso com alterações não salvas.':pending.course&&pending.lesson?'Curso e aula com alterações não salvas.':pending.course?'Informações do curso com alterações não salvas.':'Aula com alterações não salvas.'):'';
+  byId('adminEditStatus').textContent=uploading?'Guardando materiais no armazenamento…':dirty?(pending.courseMaterials?'Materiais do curso com alterações não salvas.':pending.course&&pending.lesson?'Curso e aula com alterações não salvas.':pending.course?'Informações do curso com alterações não salvas.':'Aula com alterações não salvas.'):'';
   byId('adminPublish').disabled=uploading||dirty||!c||!!readiness(c)||c.status==='published';
   byId('adminUnpublish').disabled=uploading||dirty;
   byId('saveLesson').disabled=uploading;byId('saveCourseMaterials').disabled=uploading;byId('lessonMaterialFile').disabled=uploading;
@@ -63,6 +63,11 @@
  testSetup.className='panel';
  testSetup.innerHTML='<summary>Criar aulas e provas de teste</summary><p>Cria dois cursos publicados nesta prévia: uma aula única e uma série com três aulas, com avaliações de quatro questões e nota mínima de 75%. O mesmo vídeo será usado nas quatro aulas.</p><label for="testMuxUrl">Link ou Playback ID público do Mux para o teste</label><input id="testMuxUrl" placeholder="https://player.mux.com/SEU_PLAYBACK_ID"><button type="button" class="outline" id="createTestCourses">Criar cursos de teste</button><p>Depois, em Alunos, crie um login fictício e libere os dois cursos. Os dados ficam neste navegador.</p>';
  grid.before(testSetup);
+ if(window.CONTREM_ACADEMY_CONFIG?.mode==='connected'){
+  testSetup.hidden=true;
+  byId('adminPublish').textContent='Publicar curso';
+  byId('adminStatusFilter').querySelector('option[value="published"]').textContent='Publicados';
+ }
  byId('createTestCourses').onclick=()=>{
   if(!isAdmin()||!window.AcademySession?.preview)return;
   if(hasPendingEdits()){notice('Salve as alterações em edição antes de criar os cursos de teste.',true);return;}
@@ -279,7 +284,7 @@
     if(expected!==attachmentGeneration||scope!==materialScope||!isAdmin()||current()?.id!==courseId||byId('editLessonId').value!==lessonId)return;
     selectedMaterials.push(metadata);renderAttachmentStatus();
    }
-   notice(materialScope==='course'?'Materiais guardados nesta prévia. Clique em Salvar materiais do curso.':'Materiais guardados nesta prévia. Salve a aula para vinculá-los ao curso.');
+   notice(window.CONTREM_ACADEMY_CONFIG?.mode==='connected'?(materialScope==='course'?'Materiais enviados ao armazenamento privado. Clique em Salvar materiais do curso.':'Materiais enviados ao armazenamento privado. Salve a aula para vinculá-los ao curso.'):(materialScope==='course'?'Materiais guardados nesta prévia. Clique em Salvar materiais do curso.':'Materiais guardados nesta prévia. Salve a aula para vinculá-los ao curso.'));
   }catch(error){if(expected===attachmentGeneration)notice(error.message||'O navegador não conseguiu guardar este anexo.',true);}
   finally{if(expected===attachmentGeneration){uploading=false;byId('lessonMaterialFile').value='';renderAttachmentStatus();updateEditStatus();}}
  }
@@ -338,7 +343,7 @@
   if(b.dataset.lessonDelete!==undefined){const n=c.lessons.length;deleteLesson(c.id,Number(b.dataset.lessonDelete));if(c.lessons.length!==n){c.status='draft';save();refresh();}return;}
   if(b.dataset.move){const [i,delta]=b.dataset.move.split(':').map(Number),to=i+delta;if(to<0||to>=c.lessons.length)return;[c.lessons[i],c.lessons[to]]=[c.lessons[to],c.lessons[i]];c.status='draft';save();refresh();notice('Ordem das aulas atualizada.');}
  });
- byId('adminPublish').onclick=()=>{const c=current();if(!isAdmin()||!c)return;if(hasPendingEdits()){notice('Salve as alterações do curso e da aula antes de publicar.',true);chooseTab(pendingEdits().course?'details':'lessons');return;}const error=readiness(c);if(error){notice(error,true);return;}c.status='published';save();refresh();notice('Curso publicado na prévia. Agora libere o acesso em Alunos.');};
+ byId('adminPublish').onclick=()=>{const c=current();if(!isAdmin()||!c)return;if(hasPendingEdits()){notice('Salve as alterações do curso e da aula antes de publicar.',true);chooseTab(pendingEdits().course?'details':'lessons');return;}const error=readiness(c);if(error){notice(error,true);return;}c.status='published';save();refresh();notice(window.CONTREM_ACADEMY_CONFIG?.mode==='connected'?'Curso publicado no catálogo. Libere o acesso em Alunos e confira o vídeo privado no Mux.':'Curso publicado na prévia. Agora libere o acesso em Alunos.');};
  byId('adminUnpublish').onclick=()=>{const c=current();if(!isAdmin()||!c||hasPendingEdits())return;c.status='draft';save();refresh();notice('Curso voltou a rascunho e não será listado na próxima entrada do aluno.');};
  byId('adminCourseSearch').oninput=e=>{filter=e.target.value.trim().toLocaleLowerCase('pt-BR');renderLibrary();};
  byId('adminStatusFilter').onchange=e=>{statusFilter=e.target.value;renderLibrary();};
