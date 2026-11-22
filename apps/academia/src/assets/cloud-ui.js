@@ -65,7 +65,10 @@
   document.querySelector('#adminView > .muted').textContent='Organize seus treinamentos. As alterações são compartilhadas com os alunos da Academia.';
   document.querySelector('#adminView > .notice').textContent='Administração restrita aos administradores da Academia. Avaliações e certificados continuam demonstrativos nesta etapa.';
   document.querySelector('#assessmentPanel .row p').textContent='Responda às questões para registrar o resultado na sua conta. A avaliação continua demonstrativa.';
-  document.getElementById('cloudImportHint').hidden=false;
+  const importHint=document.getElementById('cloudImportHint');
+  importHint.hidden=identity.member.role!=='admin';
+  importHint.textContent='Cursos criados na prévia Developer ficam naquele navegador. Exporte o backup JSON na origem onde os cursos foram criados; depois use "Importar cursos do Developer" acima. Os cursos serão importados como rascunhos, sem apagar os existentes.';
+  document.getElementById('cloudBackup').hidden=identity.member.role!=='admin';
   show(identity.member.role==='admin'?'adminView':'studentView');setAdminSection('courses');permissions();
   if(identity.member.role==='admin')loadStudentRoster();
   message(conflicted?'Há alterações locais e alterações em outro acesso. Baixe a cópia pendente e recarregue os dados.':dirtyCatalog||dirtyState?'Enviando alterações pendentes deste aparelho…':'Conta conectada. Dados carregados.',conflicted);
@@ -120,6 +123,7 @@
   document.querySelector('#adminView > .notice').textContent=demoAdminNotice;
   document.querySelector('#assessmentPanel .row p').textContent='Responda às questões para registrar seu resultado neste navegador.';
   document.getElementById('cloudImportHint').hidden=true;
+  document.getElementById('cloudBackup').hidden=true;
   document.querySelectorAll('[data-cloud-disabled]').forEach(el=>{el.disabled=false;delete el.dataset.cloudDisabled;});
   ['importBackupBtn','importBackupText'].forEach(id=>{document.getElementById(id).disabled=!config?.preview;});
   loadProfile();refresh();show('studentView');document.getElementById('app').classList.add('hidden');document.getElementById('login').classList.remove('hidden');
@@ -163,7 +167,7 @@
  let playbackGeneration=0;
  renderClass=function(){
   baseRenderClass();
-  if(config?.mode==='connected'&&config.preview===false&&mode==='cloud'){
+  if(config?.mode==='connected'&&config.preview===false&&mode==='cloud'&&identity?.member.role!=='admin'){
    const sequence=++playbackGeneration,lesson=selectedCourse?.lessons?.[selectedLesson],session=identity;
    const player=document.getElementById('player'),videoStatus=document.getElementById('lessonVideoStatus');
    player.src='about:blank';document.getElementById('markDone').disabled=true;
@@ -174,7 +178,13 @@
      player.src=value.iframeUrl;videoStatus.hidden=true;document.getElementById('markDone').disabled=false;
     }).catch(()=>{if(sequence===playbackGeneration&&identity===session){videoStatus.hidden=false;videoStatus.textContent='Vídeo privado ainda não autorizado. Confira o vínculo Mux e sua matrícula.';}});
    }else {videoStatus.hidden=false;videoStatus.textContent='Aula ainda sem vídeo privado vinculado no Mux.';}
-  }else{playbackGeneration++;}
+  }else{
+   playbackGeneration++;
+   if(config?.mode==='connected'&&mode==='cloud'&&identity?.member.role==='admin'&&selectedCourse){
+    const note=document.getElementById('lessonVideoStatus');
+    note.hidden=false;note.textContent='Prévia administrativa do link Mux cadastrado. O aluno usa somente reprodução privada autorizada.';
+   }
+  }
   permissions();
  };
  const baseShow=show;show=function(id){if(mode==='cloud'&&id==='adminView'&&(identity?.member.role!=='admin'||identity.user.email?.toLowerCase()!=='vinicius.alves@irmen.com.br'))id='studentView';baseShow(id);permissions();};
