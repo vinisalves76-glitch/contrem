@@ -27,6 +27,7 @@
   if(a.price<0||a.price>10000000)throw Error('Preço inválido.');
   core.guardProgram(a,courses(),data.academies,a.id);
   if(existing){if(existing.status==='archived')throw Error('Formação arquivada não pode ser editada.');
+   if(existing.status==='published'&&data.enrollments.some(e=>e.academyId===existing.id&&e.active))throw Error('Esta Academia possui matrículas ativas. A edição exige versionamento de conteúdo para preservar o progresso dos alunos.');
    a.status='draft';data.academies[data.academies.findIndex(x=>x.id===a.id)]=a;
   }else data.academies.push(a);
   log(data,'save-academy',a.id);write(data);return core.copy(a);
@@ -35,6 +36,7 @@
   admin();if(!['draft','published','archived'].includes(status))throw Error('Estado inválido.');
   const data=load(),a=data.academies.find(a=>a.id===id);
   if(!a)throw Error('Academia não encontrada.');
+  if(status!=='published'&&data.enrollments.some(e=>e.academyId===id&&e.active))throw Error('A Academia possui matrículas ativas. Não é seguro despublicar ou arquivar sem tratar os acessos.');
   if(status==='published'){core.guardProgram(a,courses(),data.academies,id);const problem=core.publishReady(a,courses());if(problem)throw Error(problem);}
   a.status=status;a.updatedAt=new Date().toISOString();log(data,'academy-'+status,id);write(data);return core.copy(a);
  }
