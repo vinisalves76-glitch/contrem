@@ -77,3 +77,23 @@ Esta seção substitui a informação anterior de que a branch continha apenas o
 Entre como ADM Master. No menu lateral, escolha Academias, abra Formação de Mecânicos e use Visualizar portal. É possível publicar a formação, controlar Ativar/Desativar por módulo e liberar uma matrícula real de teste. O aluno matriculado verá Minhas Academias e o painel original, com as aulas ainda em preparação.
 
 A main e o domínio contrem.vercel.app permanecem intactos.
+
+
+## Correção do construtor de Academias novas — 23/11/2026
+
+**Problema reportado:** na aba Academias, ao criar uma formação do zero, o ADM não encontrava como montar as etapas, módulos e aulas para publicar. A versão anterior só possuía edição limitada de aulas pertencentes à Formação de Mecânicos previamente semeada.
+
+**Correção na branch de integração a partir da main (Preview):**
+
+1. Na formação selecionada, em **1. Etapas do aprendizado**, o campo **Nova etapa da Academia** e o botão **+ Adicionar etapa** criam uma etapa de ensino.
+2. Na seção **2. Módulos e aulas da Academia**, cada etapa mostra o campo **Novo módulo nesta etapa** e **+ Adicionar módulo**. O módulo começa inativo, sem vídeo Mux e sem liberar alunos.
+3. Abaixo de cada módulo, **Gerenciar aulas** permite editar nome/carga horária/descrição e adicionar aulas com **+ Adicionar aula**. Cada aula permite título, descrição e duração prevista. Os IDs das aulas existentes são preservados; não foi criado botão de exclusão.
+4. **Salvar configurações** ou **Salvar módulo e aulas** grava as mudanças pelo backend `academy-programs` com verificação de usuário/role e controle de revisão.
+5. **Publicar Academia completa** exige pelo menos uma etapa com um módulo, mas **não exige vídeos Mux**, aulas concluídas, avaliações ou conteúdo pronto. Mensagens de validação agora indicam exatamente qual etapa falta.
+6. O ADM Master continua controlando publicação, matrícula e Ativar/Desativar individual. ADM de Conteúdo edita apenas formações em rascunho.
+7. Vídeos, atividades e progresso autenticado **ainda não estão prontos nesta frente**, de modo que as aulas sem Mux continuam visíveis como conteúdo em preparação, sem conclusão manual nem desbloqueio automático. Não promover ao domínio de produção enquanto essas regras não forem concluídas.
+8. O novo `academy-programs` Edge Function foi atualizado para v2 (ACTIVE) somente para alterar as mensagens/requisitos de publicação. Não foram modificados dados, tabelas, senhas ou a API antiga de cursos avulsos.
+
+**Regressão:** `apps/academia/tests/qa-academy-builder-connected.cjs` — 6 cenários de criação de etapas, módulos, aulas, persistência de campos, URLs Mux opcionais e prontidão de publicação passaram em execução simulada.
+
+**Deploy:** realizar apenas na mesma branch `release/academia-formacoes-main-base-20261122` e URL estável de Preview; preservar `main`, `develop` e `contrem.vercel.app`.
