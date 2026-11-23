@@ -121,7 +121,8 @@ test('Atividades por aula e prova do módulo persistem sem misturar com Cursos A
  assert.equal(f.saved.at(-1).lessons[0].questions.length,1);
  assert.equal(f.saved.at(-1).lessons[0].questions[0].correct,0);
  const scope=f.root.querySelector('#academyFullQuestionScope');
- scope.value='module';scope.dispatchEvent(new f.window.Event('change',{bubbles:true}));
+ for(const opt of scope.querySelectorAll('option'))opt.toggleAttribute('selected',opt.getAttribute('value')==='module');
+ scope.dispatchEvent(new f.window.Event('change',{bubbles:true}));
  f.set('questionText','Qual é o objetivo da manutenção preventiva?');
  f.set('choices','Reduzir falhas\nSubstituir todas as peças');
  f.set('correct','1');
