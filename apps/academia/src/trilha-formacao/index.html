@@ -8,7 +8,9 @@
   <title>Formação de Mecânicos | CONTREM Academia — Prévia</title>
   <link rel="icon" type="image/svg+xml" href="../assets/logo.svg">
   <link rel="stylesheet" href="./style.css">
-  <script defer src="./catalog.js"></script><script defer src="./app.js"></script>
+  <link rel="stylesheet" href="./integrated.css">
+  <script>if(new URLSearchParams(location.search).get("integrated")==="1")document.documentElement.dataset.portalIntegrated="waiting";</script>
+  <script defer src="./catalog.js"></script><script defer src="./app.js"></script><script defer src="./integrated.js"></script>
 </head>
 <body>
   <div class="shell">
