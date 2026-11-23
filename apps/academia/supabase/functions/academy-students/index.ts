@@ -73,13 +73,15 @@ Deno.serve(async req=>{
   }
   if(payload.action!=='create')return reply(400,{error:'Ação inválida.'});
   const email=String(payload.email||'').trim().toLowerCase(),name=String(payload.name||'').trim(),password=String(payload.password||'');
+  const company=String(payload.company||'').trim(),jobTitle=String(payload.jobTitle||'').trim();
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254||name.length<2||name.length>100||password.length<8||password.length>128)return reply(400,{error:'Informe nome, e-mail válido e senha inicial de 8 a 128 caracteres.'});
+  if(company.length>100||jobTitle.length>100)return reply(400,{error:'Empresa e cargo devem ter até 100 caracteres.'});
   if(email==='vinicius.alves@irmen.com.br')return reply(400,{error:'Este e-mail já é do administrador.'});
   const {data:created,error:createError}=await admin.auth.admin.createUser({email,password,email_confirm:true,user_metadata:{name}});
   if(createError||!created.user)return reply(409,{error:'Não foi possível criar a conta. Se o e-mail já existe no sistema, use outro ou entre em contato com o suporte.'});
   const {data:memberCreated,error:insertError}=await admin.from('academy_members').insert({user_id:created.user.id,display_name:name,role:'student',active:true}).select('id').single();
   if(insertError||!memberCreated?.id){await admin.auth.admin.deleteUser(created.user.id);return reply(500,{error:'Não foi possível liberar o acesso do aluno. Tente novamente.'});}
-  const {error:learningError}=await admin.from('academy_learning_state').insert({member_id:memberCreated.id,profile:{fullName:name,email,company:'',role:''},progress:{},activity:{},certificates:[]});
+  const {error:learningError}=await admin.from('academy_learning_state').insert({member_id:memberCreated.id,profile:{fullName:name,email,company,role:jobTitle},progress:{},activity:{},certificates:[]});
   if(learningError){
    await admin.from('academy_members').delete().eq('id',memberCreated.id);
    await admin.auth.admin.deleteUser(created.user.id);
