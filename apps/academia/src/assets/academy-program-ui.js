@@ -91,6 +91,31 @@
   const head=document.createElement('div');head.className='program-edit-head';
   head.innerHTML='<div><span class="tag">EDITOR DE ACADEMIA</span><h3>'+e(a.title)+'</h3><small>'+e(a.status==='published'?'Publicada na prévia':'Rascunho')+' · '+core.moduleIds(a).length+' módulos</small></div><div class="program-edit-actions"><button type="button" data-program-action="publish" class="primary">'+(a.status==='published'?'Republicar':'Publicar Academia')+'</button><button type="button" data-program-action="archive" class="outline">Arquivar</button></div>';
   root.append(head);
+  // Um único checklist explica quais módulos estão prontos para publicação conjunta.
+  const inspection=core.inspectModules(a,courses);
+  const validCount=inspection.filter(item=>item.ready).length;
+  const alreadyPublished=inspection.filter(item=>item.ready&&item.status==='published').length;
+  const problems=inspection.filter(item=>!item.ready);
+  const checklist=document.createElement('section');checklist.className='program-readiness';
+  const summary=document.createElement('div');summary.className='program-readiness-summary';
+  const heading=document.createElement('strong');
+  heading.textContent='Publicação da Academia · '+validCount+' de '+inspection.length+' módulos preparados';
+  const hint=document.createElement('p');
+  hint.textContent=problems.length?
+   'Corrija os módulos indicados abaixo. Nenhum módulo incompleto será publicado.':
+   (inspection.length?'Todos os módulos têm aulas, vídeos Mux e prova. Ao publicar a Academia, os '+(inspection.length-alreadyPublished)+' módulo(s) ainda em rascunho serão publicados juntos.':'Adicione módulos e aulas para preparar a formação.');
+  summary.append(heading,hint);checklist.append(summary);
+  const pending=document.createElement('div');pending.className='program-readiness-list';
+  problems.forEach(item=>{
+   const row=document.createElement('div');row.className='program-readiness-item';
+   const detail=document.createElement('div'),name=document.createElement('b'),reason=document.createElement('p');
+   name.textContent=item.name;reason.textContent=item.issues.join(' ');detail.append(name,reason);
+   const button=document.createElement('button');button.type='button';button.className='outline';
+   button.textContent='Corrigir módulo →';button.dataset.moduleEdit=item.id;
+   row.append(detail,button);pending.append(row);
+  });
+  if(problems.length)checklist.append(pending);
+  root.append(checklist);
   const form=document.createElement('form');form.className='program-settings';form.id='programSettings';
   form.innerHTML=`<div class="program-form-grid"><label>Nome da formação<input name="title" maxlength="150" required value="${e(a.title)}"></label>
    <label>Preço de referência (R$)<input name="price" type="number" min="0" step=".01" max="10000000" value="${Number(a.price)||0}"></label>
@@ -220,8 +245,35 @@
   root.onclick=event=>{
    const button=event.target.closest('button');if(!button)return;
    const action=button.dataset.programAction;
-   if(action){try{if(action==='archive'&&!confirm('Arquivar esta Academia? Matrículas e histórico serão preservados.'))return;
-      const updated=store.setStatus(a.id,action==='archive'?'archived':'published');selected=updated.id;notify('Estado da formação: '+updated.status);renderAdmin();}catch(err){notify(err.message,true);}return;}
+   if(action){
+    if(action==='publish'){
+     const diagnostics=core.inspectModules(a,courses),invalid=diagnostics.filter(item=>!item.ready);
+     if(invalid.length){
+      notify('Não foi possível publicar. '+invalid.length+' módulo(s) com pendências; confira a lista de requisitos no editor.',true);
+      root.querySelector('.program-readiness')?.scrollIntoView({block:'center',behavior:'smooth'});
+      return;
+     }
+     if(!diagnostics.length){notify('Cadastre pelo menos um módulo na Academia.',true);return;}
+     const ids=new Set(core.moduleIds(a)),original=courses.filter(course=>ids.has(course.id)).map(course=>({course,status:course.status}));
+     try{
+      for(const entry of original)entry.course.status='published';
+      const updated=store.setStatus(a.id,'published');
+      save();refresh();selected=updated.id;
+      notify('Academia publicada na prévia com '+original.length+' módulos. Matrículas continuam sob controle do ADM Master.');
+      renderAdmin();
+     }catch(err){
+      for(const entry of original)entry.course.status=entry.status;
+      save();refresh();notify('Publicação não concluída: '+err.message,true);
+     }
+     return;
+    }
+    try{
+     if(action==='archive'&&!confirm('Arquivar esta Academia? Matrículas e histórico serão preservados.'))return;
+     const updated=store.setStatus(a.id,'archived');selected=updated.id;
+     notify('Estado da formação: '+updated.status);renderAdmin();
+    }catch(err){notify(err.message,true);}
+    return;
+   }
    const edit=button.dataset.moduleEdit;if(edit)return editModule(edit);
    const rename=button.dataset.stageRename;if(rename!==undefined){
     const field=document.createElement('input');field.value=a.stages[Number(rename)].title;field.maxLength=100;field.setAttribute('aria-label','Novo nome da etapa');
