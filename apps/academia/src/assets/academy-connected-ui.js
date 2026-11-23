@@ -342,7 +342,7 @@
   const source=draft?.modules.find(m=>m.id===moduleId),programId=selected;
   if(!editor||!source){message('Não foi possível abrir o construtor completo. Atualize o navegador.',true);return;}
   editor.open({
-   programTitle:draft.title,module:source,canEdit,
+   programId,programTitle:draft.title,module:source,canEdit,
    async onSave(updatedModule){
     if(programId!==selected)throw Error('A Academia selecionada mudou. Volte aos módulos e tente novamente.');
     const newDefinition=copy(draft),index=newDefinition.modules.findIndex(m=>m.id===moduleId);
