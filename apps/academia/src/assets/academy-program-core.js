@@ -10,7 +10,7 @@
   const activeEnrollment=(enrollment,date=today())=>!!enrollment&&enrollment.active===true&&(!enrollment.validUntil||validDate(enrollment.validUntil)&&enrollment.validUntil>=date);
   const validMux=url=>/^https:\/\/player\.mux\.com\/[A-Za-z0-9_-]{20,255}(?:[/?#].*)?$/.test(String(url||''));
   // Explicit toggles override legacy module records; legacy published modules stay enabled for compatibility.
-  const moduleActive=course=>!!course&&(typeof course.moduleEnabled==='boolean'?course.moduleEnabled:course.status==='published');
+  const moduleActive=course=>!!course&&course.status==='published'&&course.moduleEnabled!==false;
   const firstVideoReady=course=>!!course?.lessons?.length&&validMux(course.lessons[0].url);
   const lessonCheckpointKey=(courseId,lessonId)=>'lesson-assessment:'+courseId+':'+lessonId;
   function lessonCompleted(course,lesson,state){
