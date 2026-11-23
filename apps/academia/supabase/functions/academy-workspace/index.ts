@@ -5,7 +5,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2.119.0';
 const url=Deno.env.get('SUPABASE_URL')||'';
 const serviceKey=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||'';
 const db=createClient(url,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
-const permittedOrigin=(origin:string)=>origin==='https://contrem.vercel.app'||origin==='https://contrem-academia.vercel.app'||origin==='https://contrem-git-release-aca-bcdaf7-vinicius-alves-projects-fdea38e8.vercel.app'||/^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin);
+const permittedOrigin=(origin:string)=>origin==='https://contrem-git-fix-academi-3f153d-vinicius-alves-projects-fdea38e8.vercel.app'||origin==='https://contrem.vercel.app'||origin==='https://contrem-academia.vercel.app'||origin==='https://contrem-git-release-aca-bcdaf7-vinicius-alves-projects-fdea38e8.vercel.app'||/^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin);
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const COURSE_ID=/^[A-Za-z0-9_-]{1,160}$/;
 type Course={id:string;status?:string;lessons?:Array<{id:string;[key:string]:unknown}>;[key:string]:unknown};
