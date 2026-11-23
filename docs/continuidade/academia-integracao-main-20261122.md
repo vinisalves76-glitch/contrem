@@ -136,3 +136,24 @@ Implementação no ramo de integração:
 - Interface aplicada apenas na preview da branch `release/academia-formacoes-main-base-20261122`; domínio production `contrem.vercel.app` e branch `main` continuam intocados.
 
 **Atenção:** redefinir senha é operação deliberada pelo ADM Master; nunca executar automaticamente, nem disponibilizar a senha antiga, nem enviar senha em logs, JSON de resposta ou banco.
+
+
+## Corrigir matrícula confirmada que não aparecia no portal do aluno (23/11/2026)
+
+**Evidências:** nas capturas de ADM, as duas Academias estavam selecionadas para a conta de aluno; o portal conectado retornava "Você ainda não tem matrícula em Academias". Consulta somente de leitura ao Supabase confirmou que ambas as formações tinham exatamente uma matrícula ativa e status `draft`: `academy-efm-formacao-de-mecanico` com **2 etapas e 0 módulos**, e `academy-formacao-mecanicos` com **3 etapas e 12 módulos**.
+
+**Causa:** na Edge Function `academy-programs`, a ação `my` exigia `eq('status','published')`, excluindo as pré-matrículas que o próprio ADM podia conceder a Academias em rascunho.
+
+**Correção:**
+
+- Ação `my` consulta exclusivamente matrículas **ativas do usuário autenticado** (`member_id=m.id`, `active=true`) e recupera Academias relacionadas sem filtrar por publicação.
+- Para formações `draft` e `archived`, retorna projeção **mínima**: ID, título e status, sem `definition`, descrição da formação, estrutura de etapas, módulos, aulas, mídias ou URLs. Nenhum conteúdo não publicado é entregue ao navegador.
+- Para `published`, mantém a projeção atual com matrícula, sequência, disponibilidade e cursos permitidos, acrescida do campo `publicationStatus`.
+- `Minhas Academias` mostra todas as matrículas ativas: publicado e válido permite abrir o portal; em rascunho mostra **Matrícula confirmada · Aguardando publicação** com botão desativado; arquivada ou matrícula vencida não abre.
+- A matrícula suspensa continua fora da lista. Publicar a Academia continua sendo ação do ADM Master, e Ativar/Desativar módulos é independente da publicação.
+- O ADM não deve publicar automaticamente uma formação só porque existe matrícula. A formação EFM ainda precisa receber ao menos um módulo antes de ser publicada, conforme a validação já existente.
+- O banco, suas matrículas, usuários, logins e os Cursos Avulsos **não foram modificados**. O conserto está no código de leitura do backend e na exibição do aluno.
+- Testes adicionados em `qa-academy-enrollment-visibility.cjs`: consulta por usuário e matrícula, não vazamento de conteúdo `draft`, botão desabilitado e matriz de estados. **32 regressões** passaram com mocks.
+- Deploy Supabase `academy-programs` v5 ACTIVE, verificado como diff exato do código previamente ativo; frontend restrito à mesma branch de preview `release/academia-formacoes-main-base-20261122`, preservando `main` e produção.
+
+**Pendente:** concluir QA autenticado em navegador com a conta matriculada, verificar publicação da formação e abrir o painel original após ativação do primeiro módulo. Não confundir visualizar pré-matrícula com autorização para assistir a aulas não publicadas.
