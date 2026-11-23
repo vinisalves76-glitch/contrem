@@ -8,7 +8,7 @@
  const state=()=>({progress});
  const current=()=>isAcademy()?window.CONTREM_PROGRAM_STORE?.studentPrograms()?.items.find(item=>item.academy.id===selectedCourse.academyId)?.map.items.find(item=>item.id===selectedCourse.id):null;
  const firstPending=()=>core.nextLessonIndex(selectedCourse,state());
- const canSelect=i=>!isAcademy()||Number.isInteger(i)&&i>=0&&i<=firstPending();
+ const canSelect=i=>!isAcademy()||!!current()?.canOpen&&Number.isInteger(i)&&i>=0&&i<=firstPending();
  let token=0;
  const originalRender=renderClass,originalChoose=chooseLesson,originalMark=$('markDone').onclick;
  const watchFor=(courseId,lessonId)=>{
@@ -84,6 +84,10 @@
    $('player').src='about:blank';
    $('markDone').disabled=true;
    $('markDone').textContent='Módulo não liberado';
+   $('nextLesson').disabled=true;
+   $('lessonList').querySelectorAll('button').forEach(button=>{button.disabled=true;button.setAttribute('aria-disabled','true');});
+   $('lessonVideoStatus').hidden=false;
+   $('lessonVideoStatus').textContent='Este módulo ainda não está ativo ou sua matrícula não permite acesso.';
    return;
   }
   const index=firstPending();
