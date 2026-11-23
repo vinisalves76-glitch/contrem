@@ -87,7 +87,10 @@
   if(isMaster())loadStaffRoster();
   message(conflicted?'Há alterações locais e alterações em outro acesso. Baixe a cópia pendente e recarregue os dados.':dirtyCatalog||dirtyState?'Enviando alterações pendentes deste aparelho…':'Conta conectada. Dados carregados.',conflicted);
   if(!conflicted&&(dirtyCatalog||dirtyState))scheduleSync();
-  window.dispatchEvent(new CustomEvent('contrem:academy-session-ready',{detail:{role:data.member.role,memberId:data.member.id,name:data.member.display_name||'Aluno'}}));
+  window.dispatchEvent(new CustomEvent('contrem:academy-session-ready',{detail:{
+   role:data.member.role,memberId:data.member.id,name:data.member.display_name||'Aluno',
+   email:data.user.email||'',company:profile.company||'',jobTitle:profile.role||''
+  }}));
  }
  async function flush(){
   if(saving)return saving;
@@ -275,7 +278,9 @@
  document.getElementById('studentForm').onsubmit=async event=>{
   event.preventDefault();if(mode!=='cloud'||!isMaster())return;
   const form=event.currentTarget,status=document.getElementById('studentFormStatus'),button=form.querySelector('button');button.disabled=true;status.textContent='Criando acesso…';
-  try{const result=await service.createStudent(document.getElementById('studentFullName').value.trim(),document.getElementById('studentEmail').value.trim(),document.getElementById('studentPassword').value);form.reset();status.textContent='Aluno '+result.name+' cadastrado. Entregue o e-mail e a senha inicial a ele.';await loadStudentRoster();}catch(error){status.textContent=error.message||'Não foi possível cadastrar o aluno.';}finally{button.disabled=false;}
+  try{const result=await service.createStudent(document.getElementById('studentFullName').value.trim(),
+   document.getElementById('studentEmail').value.trim(),document.getElementById('studentPassword').value,
+   document.getElementById('studentCompany').value.trim(),document.getElementById('studentJobTitle').value.trim());form.reset();status.textContent='Aluno '+result.name+' cadastrado. Entregue o e-mail e a senha inicial a ele.';await loadStudentRoster();}catch(error){status.textContent=error.message||'Não foi possível cadastrar o aluno.';}finally{button.disabled=false;}
  };
  async function loadStaffRoster(){
   if(!isMaster())return;
