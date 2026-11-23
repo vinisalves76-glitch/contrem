@@ -57,3 +57,14 @@
  .program-portal-heading p{font-size:12px}
  .program-portal-content{padding-top:13px}
 }
+
+
+/* Portal integrado ocupa toda a viewport e substitui visualmente o painel geral,
+   sem encerrar a sessão. A navegação é restaurada ao voltar ao perfil. */
+body.academy-immersive{overflow:hidden!important}
+body.academy-immersive > :not(#contremAcademyIntegratedFrame):not(script):not(style){display:none!important}
+#contremAcademyIntegratedFrame{position:fixed!important;inset:0!important;z-index:2147480000!important;
+  width:100%!important;height:100vh!important;height:100dvh!important;border:0!important;
+  border-radius:0!important;margin:0!important;padding:0!important;display:block!important;
+  background:#f6f7f9;color-scheme:light}
+#contremAcademyIntegratedFrame[hidden]{display:none!important}
