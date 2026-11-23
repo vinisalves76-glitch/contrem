@@ -149,7 +149,7 @@
    action('Salvar tudo no Supabase','save',false,!canEdit()||busy);
  }
  function collect(){
-  if(!ctx||!root.hidden===false)return;
+  if(!ctx||root.hidden)return;
   const get=name=>root.querySelector('[data-field="'+name+'"]');
   const val=name=>get(name)?.value;
   if(tab==='lessons'){
