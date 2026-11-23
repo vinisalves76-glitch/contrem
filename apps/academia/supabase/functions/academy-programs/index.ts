@@ -118,7 +118,7 @@ function clean(data:unknown,programId:string){
    lessonIds.add(lessonId);
    const videoId=muxId(val.url||val.videoId);
    if(videoId===null)return null;
-   const folder='academy-asset-'+id.replace(/[^A-Za-z0-9_-]/g,'');
+   const folder=('academy-asset-'+programId+'-'+id).replace(/[^A-Za-z0-9_-]/g,'');
    const supportLinks=cleanLinks(val.supportLinks),previewMaterials=cleanAttachments(val.previewMaterials,folder),
     questions=cleanQuestions(val.questions);
    if(!supportLinks||!previewMaterials||!questions)return null;
@@ -127,7 +127,7 @@ function clean(data:unknown,programId:string){
      minutes:Math.min(600,Math.max(0,Number(val.minutes)||0)),
      supportLinks,previewMaterials,questions});
   }
-  const folder='academy-asset-'+id.replace(/[^A-Za-z0-9_-]/g,'');
+  const folder=('academy-asset-'+programId+'-'+id).replace(/[^A-Za-z0-9_-]/g,'');
   const links=cleanLinks(m.supportLinks),files=cleanAttachments(m.previewMaterials,folder),
    questions=cleanQuestions(m.questions);
   if(!links||!files||!questions)return null;
@@ -234,7 +234,7 @@ Deno.serve(async(req)=>{
   }
   if(action==='save'){
    if(!editor)return reply(403,error(403,'Você não tem permissão para editar Academias.'));
-   const id=short(input.id,160),revision=input.revision,definition=clean(input.definition);
+   const id=short(input.id,160),revision=input.revision,definition=clean(input.definition,id);
    if(!idPattern.test(id)||!definition||definition.title.length<3)return reply(400,error(400,'Verifique os campos da Academia.'));
    const {data:existing,error:readError}=await db.from('academy_programs')
     .select('id,status,revision').eq('id',id).maybeSingle();
