@@ -320,7 +320,10 @@
  });
  function open(options){
   if(!options?.module||typeof options.onSave!=='function')throw Error('Selecione um módulo da Academia.');
-  if(ctx)close();
+  if(ctx){close();if(ctx)return;}
+  const lessons=Array.isArray(options.module.lessons)?options.module.lessons:[];
+  const lessonIndex=options.lessonId?lessons.findIndex(l=>l.id===options.lessonId):0;
+  if(options.lessonId&&lessonIndex<0)throw Error('Aula não encontrada neste módulo. Atualize o painel.');
   ctx=options;module=copy(options.module);
   module.lessons=Array.isArray(module.lessons)?module.lessons:[];
   module.previewMaterials=module.previewMaterials||[];
@@ -331,9 +334,10 @@
    l.supportLinks=l.supportLinks||[];
    l.questions=l.questions||[];
   }
-  selected=0;tab='lessons';questionScope='lesson';dirty=false;busy=false;uncommitted=false;status='';statusError=false;
+  selected=lessonIndex;tab='lessons';questionScope='lesson';dirty=false;busy=false;uncommitted=false;status='';statusError=false;
   root.hidden=false;document.body.classList.add('academy-full-editor-open');reRender();
-  root.querySelector('[data-action="close"]')?.focus();
+  if(options.createLesson&&options.canEdit)newLesson();
+  else root.querySelector('[data-field="lessonName"]')?.focus();
  }
  window.CONTREM_ACADEMY_LESSON_EDITOR={open,close,isOpen:()=>!root.hidden};
 })();
