@@ -21,11 +21,23 @@ Deno.serve(async req=>{
   if(memberError||!member)return reply(403,{error:'Acesso restrito ao administrador da Academia.'});
   const payload=await req.json();
   if(payload.action==='list'){
-   const {data:members,error:e}=await admin.from('academy_members').select('id,display_name,active,created_at').eq('role','student').order('created_at',{ascending:false});
+   const {data:members,error:e}=await admin.from('academy_members')
+    .select('id,user_id,display_name,active,created_at').eq('role','student').order('created_at',{ascending:false});
    if(e)return reply(500,{error:'Não foi possível carregar alunos.'});
    const {data:grants,error:g}=await admin.from('academy_course_access').select('member_id,course_id');
    if(g)return reply(500,{error:'Não foi possível carregar liberações.'});
-   return reply(200,{members,grants});
+   // E-mail vem da conta Auth (fonte oficial), nunca de texto informado pelo navegador.
+   // Chamadas agrupadas para evitar excesso de requisições em bases com muitos alunos.
+   const enriched: Array<{id:string;display_name:string;active:boolean;created_at:string;email:string}>=[];
+   for(let i=0;i<(members||[]).length;i+=15){
+    const batch=await Promise.all((members||[]).slice(i,i+15).map(async item=>{
+     const {data:auth,error:authError}=await admin.auth.admin.getUserById(item.user_id);
+     return {id:item.id,display_name:item.display_name,active:item.active,created_at:item.created_at,
+      email:authError?'':String(auth?.user?.email||'')};
+    }));
+    enriched.push(...batch);
+   }
+   return reply(200,{members:enriched,grants});
   }
   if(payload.action==='access'){
    const memberId=String(payload.memberId||''),courseId=String(payload.courseId||'');
@@ -46,6 +58,18 @@ Deno.serve(async req=>{
    const {error:e}=await admin.from('academy_members').update({active:payload.active===true}).eq('id',memberId);
    if(e)return reply(500,{error:'Não foi possível alterar o acesso.'});
    return reply(200,{memberId,active:payload.active===true});
+  }
+  if(payload.action==='password_reset'){
+   const memberId=String(payload.memberId||''),password=String(payload.password||'');
+   if(!/^[a-f0-9-]{36}$/.test(memberId)||password.length<8||password.length>128)
+    return reply(400,{error:'Selecione um aluno e informe uma nova senha de 8 a 128 caracteres.'});
+   const {data:student,error:studentError}=await admin.from('academy_members')
+    .select('user_id').eq('id',memberId).eq('role','student').maybeSingle();
+   if(studentError||!student?.user_id)return reply(404,{error:'Aluno não encontrado.'});
+   const {error:changeError}=await admin.auth.admin.updateUserById(student.user_id,{password});
+   if(changeError)return reply(500,{error:'Não foi possível redefinir a senha. Tente novamente.'});
+   // Nunca devolva a senha nem guarde a nova senha em tabela ou log.
+   return reply(200,{memberId,passwordUpdated:true});
   }
   if(payload.action!=='create')return reply(400,{error:'Ação inválida.'});
   const email=String(payload.email||'').trim().toLowerCase(),name=String(payload.name||'').trim(),password=String(payload.password||'');
