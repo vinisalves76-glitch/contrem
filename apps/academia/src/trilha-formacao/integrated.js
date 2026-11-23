@@ -8,11 +8,12 @@
  const $=id=>document.getElementById(id),query=selector=>document.querySelector(selector);
  const safeText=value=>String(value??'');
  const root=document.documentElement;
+ const request=new URLSearchParams(location.search).get('request');
  const labels={blocked:'BLOQUEADO',expired:'ACESSO INDISPONÍVEL',approved:'APROVADO',
   available:'DISPONÍVEL','awaiting-exam':'PROVA DISPONÍVEL',failed:'AGUARDANDO NOVA TENTATIVA',
   'retry-pending':'AGUARDANDO ADM MASTER','retry-approved':'TENTATIVA AUTORIZADA'};
  let data=null,current='overview',selectedModule=null;
- const ask=(action,more={})=>{if(window.parent===window)return;window.parent.postMessage({type:'contrem:academy-action',action,...more},location.origin);};
+ const ask=(action,more={})=>{if(window.parent===window||!request)return;window.parent.postMessage({type:'contrem:academy-action',request,action,...more},location.origin);};
  function element(tag,text,className){const node=document.createElement(tag);if(text!==undefined)node.textContent=safeText(text);if(className)node.className=className;return node;}
  function tab(name){
   if(!data)return;
@@ -168,7 +169,7 @@
  function onMessage(event){
   if(event.origin!==location.origin||event.source!==window.parent)return;
   const msg=event.data;
-  if(msg?.type!=='contrem:academy-data'||msg.payload?.academy?.id!==msg.academyId)return;
+  if(msg?.type!=='contrem:academy-data'||msg.request!==request||msg.payload?.academy?.id!==msg.academyId)return;
   const payload=msg.payload;
   if(!payload.map||!Array.isArray(payload.map.items)||!Array.isArray(payload.academy.stages))return;
   data=payload;
@@ -176,6 +177,7 @@
   if(selectedModule&&findModule(selectedModule))showModule(selectedModule);
   else tab(current==='detail'?'modules':current);
   root.dataset.portalIntegrated='ready';
+  window.parent.postMessage({type:'contrem:academy-displayed',request,academyId:payload.academy.id},location.origin);
  }
  function start(){
   if(window.parent===window){document.body.textContent='Acesse esta formação pelo seu login na CONTREM Academia.';root.dataset.portalIntegrated='ready';return;}
@@ -201,7 +203,7 @@
   $('menuToggle').onclick=()=>{const menu=$('sidebar'),next=!menu.classList.contains('open');menu.classList.toggle('open',next);$('menuToggle').setAttribute('aria-expanded',String(next));};
   document.addEventListener('keydown',event=>{if(event.key==='Escape'){$('sidebar').classList.remove('open');$('menuToggle').setAttribute('aria-expanded','false');}});
   window.addEventListener('message',onMessage);
-  window.parent.postMessage({type:'contrem:academy-ready'},location.origin);
+  window.parent.postMessage({type:'contrem:academy-ready',request},location.origin);
  }
  start();
 })();
