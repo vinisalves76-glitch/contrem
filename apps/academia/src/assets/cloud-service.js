@@ -79,7 +79,9 @@
    async restore(){const version=clearIdentity(),data=unwrap(await client.auth.getUser());current(version);return data.user?load(data.user,version):null;},
    async reload(){if(!identity)throw Error('Entre novamente.');const version=clearIdentity(),data=unwrap(await client.auth.getUser());return load(data.user,version);},
    async signOut(){clearIdentity();const result=await client.auth.signOut({scope:'local'});if(result.error)throw result.error;},
-   async createStudent(name,email,password){return manage('create',{name,email,password});},
+   async createStudent(name,email,password,company='',jobTitle=''){
+    return manage('create',{name,email,password,company,jobTitle});
+   },
    async resetStudentPassword(memberId,password){
     if(!admin())throw Error('Somente o ADM Master redefine a senha de alunos.');
     return manage('password_reset',{memberId,password});
