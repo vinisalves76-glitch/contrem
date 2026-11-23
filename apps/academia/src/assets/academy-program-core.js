@@ -8,26 +8,47 @@
   const moduleIds=academy=>(academy.stages||[]).flatMap(stage=>stage.moduleIds||[]);
   const validDate=x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)&&!Number.isNaN(new Date(x+'T12:00:00').valueOf())&&new Date(x+'T12:00:00').toISOString().slice(0,10)===x;
   const activeEnrollment=(enrollment,date=today())=>!!enrollment&&enrollment.active===true&&(!enrollment.validUntil||validDate(enrollment.validUntil)&&enrollment.validUntil>=date);
-  function lessonDone(course,state) {return !!course&&course.lessons?.length>0&&course.lessons.every(l=>(state?.progress?.[course.id]||[]).includes(l.id));}
+  const validMux=url=>/^https:\/\/player\.mux\.com\/[A-Za-z0-9_-]{20,255}(?:[/?#].*)?$/.test(String(url||''));
+  // Explicit toggles override legacy module records; legacy published modules stay enabled for compatibility.
+  const moduleActive=course=>!!course&&(typeof course.moduleEnabled==='boolean'?course.moduleEnabled:course.status==='published');
+  const firstVideoReady=course=>!!course?.lessons?.length&&validMux(course.lessons[0].url);
+  const lessonCheckpointKey=(courseId,lessonId)=>'lesson-assessment:'+courseId+':'+lessonId;
+  function lessonCompleted(course,lesson,state){
+    if(!course||!lesson||(state?.progress?.[course.id]||[]).includes(lesson.id)===false)return false;
+    if(!Array.isArray(lesson.questions)||!lesson.questions.length)return true;
+    return (state?.progress?.[lessonCheckpointKey(course.id,lesson.id)]||[]).some(a=>a?.passed===true);
+  }
+  function lessonDone(course,state){return !!course?.lessons?.length&&course.lessons.every(lesson=>lessonCompleted(course,lesson,state));}
+  function nextLessonIndex(course,state){
+    if(!course?.lessons?.length)return -1;
+    const next=course.lessons.findIndex(lesson=>!lessonCompleted(course,lesson,state));
+    return next<0?course.lessons.length-1:next;
+  }
   function attempts(courseId,state){return Array.isArray(state?.progress?.['assessment:'+courseId])?state.progress['assessment:'+courseId]:[];}
-  function passed(course,state){return lessonDone(course,state)&&attempts(course.id,state).some(a=>a.passed===true);}
+  function passed(course,state){return lessonDone(course,state)&&(!course.questions?.length||attempts(course.id,state).some(a=>a.passed===true));}
   function requestStatus(requests,studentId,courseId,n){
     const last=(requests||[]).filter(r=>r.studentId===studentId&&r.courseId===courseId&&r.forAttempt===n).slice(-1)[0];
     return last?.status||null;
   }
   function buildMap(academy,courses,state,enrollment,requests=[],studentId=''){
     const ordered=moduleIds(academy),courseMap=new Map(courses.map(c=>[c.id,c]));
-    let unlocked=activeEnrollment(enrollment),finished=0;
+    let unlocked=activeEnrollment(enrollment);
     return ordered.map((id,index)=>{
-      const course=courseMap.get(id),priorClear=unlocked,done=lessonDone(course,state),history=attempts(id,state),approved=!!course&&done&&history.some(a=>a.passed===true);
-      const retry=requestStatus(requests,studentId,id,history.length+1);
+      const course=courseMap.get(id),priorClear=unlocked,done=lessonDone(course,state),history=attempts(id,state);
+      const approved=!!course&&passed(course,state),retry=requestStatus(requests,studentId,id,history.length+1);
+      const enabled=moduleActive(course),hasVideo=firstVideoReady(course),canOpen=priorClear&&activeEnrollment(enrollment)&&enabled&&hasVideo;
       let status='blocked';
       if(!activeEnrollment(enrollment))status='expired';
-      else if(priorClear&&approved){status='approved';finished++;}
-      else if(priorClear&&history.some(a=>!a.passed)&&!approved)status=retry==='approved'?'retry-approved':retry==='pending'?'retry-pending':'failed';
-      else if(priorClear)status=done?'awaiting-exam':'available';
+      else if(priorClear&&approved)status='approved';
+      else if(priorClear&&!enabled)status='inactive';
+      else if(priorClear&&!hasVideo)status='preparing';
+      else if(priorClear&&course?.questions?.length&&history.some(a=>!a.passed)&&!approved)
+        status=retry==='approved'?'retry-approved':retry==='pending'?'retry-pending':'failed';
+      else if(priorClear)status=done&&course?.questions?.length?'awaiting-exam':'available';
       unlocked=unlocked&&approved;
-      return {id,index,status,name:course?.name||'Módulo em preparação',hours:Number(course?.hours)||0,lessons:course?.lessons?.length||0,done:!!done,passed:approved,attempts:history.length,canOpen:priorClear&&activeEnrollment(enrollment),retake:retry};
+      return {id,index,status,name:course?.name||'Módulo em preparação',hours:Number(course?.hours)||0,
+        lessons:course?.lessons?.length||0,done:!!done,passed:approved,attempts:history.length,
+        enabled,hasVideo,canOpen,retake:retry};
     });
   }
   function programState(academy,courses,state,enrollment,requests=[],studentId=''){
@@ -54,26 +75,20 @@
     const byId=new Map(courses.map(c=>[c.id,c]));
     return moduleIds(academy).map(id=>{
       const course=byId.get(id),issues=[];
-      if(!course){issues.push('Módulo não encontrado no construtor de cursos.');return {id,name:'Módulo ausente',status:'missing',ready:false,issues};}
+      if(!course)return {id,name:'Módulo não encontrado',status:'missing',ready:false,enabled:false,issues:['Módulo não encontrado.']};
       const name=String(course.name||'').trim()||'Módulo sem nome';
       if(!String(course.name||'').trim()||!String(course.description||'').trim())issues.push('Informe nome e descrição do módulo.');
-      if(!Array.isArray(course.lessons)||!course.lessons.length)issues.push('Cadastre pelo menos uma aula.');
-      else {
-        const incomplete=course.lessons.filter(l=>!String(l.name||'').trim()||!/^(https:\/\/player\.mux\.com\/[A-Za-z0-9_-]+(?:\?.*)?)$/.test(String(l.url||'')));
-        if(incomplete.length)issues.push('Vídeo Mux ausente ou inválido em '+incomplete.length+' aula(s).');
-      }
-      if(!Array.isArray(course.questions)||!course.questions.length)issues.push('Cadastre a prova do módulo.');
-      if(!Number.isFinite(Number(course.passScore))||Number(course.passScore)<0||Number(course.passScore)>100)issues.push('Revise a nota mínima (0 a 100).');
-      return {id,name,status:course.status||'draft',ready:issues.length===0,issues};
+      if(!course.lessons?.length)issues.push('Cadastre a primeira aula para liberar este módulo.');
+      else if(!firstVideoReady(course))issues.push('Cadastre um vídeo Mux válido na primeira aula para liberar o módulo.');
+      // Subsequent lessons can remain in preparation. Each is automatically gated until its Mux video exists.
+      const missing=(course.lessons||[]).slice(1).filter(l=>!validMux(l.url)).length;
+      return {id,name,status:course.status||'draft',ready:issues.length===0,enabled:moduleActive(course),
+        missingLessons:missing,issues};
     });
   }
+  // Publishing a formation publishes the plan; lesson/module access is controlled separately.
   function publishReady(academy,courses){
-    const modules=inspectModules(academy,courses);
-    if(!modules.length)return 'Adicione pelo menos um módulo.';
-    const invalid=modules.find(item=>!item.ready);
-    if(invalid)return invalid.name+': '+invalid.issues[0];
-    const draft=modules.find(item=>item.status!=='published');
-    if(draft)return draft.name+': módulo pronto, mas ainda em rascunho. Publique-o no construtor ou use a publicação conjunta da Academia.';
+    if(!moduleIds(academy).length)return 'Cadastre pelo menos um módulo para organizar a formação.';
     return '';
   }
   function eligibleExam(course,state,requests,studentId){
@@ -85,7 +100,7 @@
     if(status==='approved')return {allowed:true,initial:false};
     return {allowed:false,reason:status==='pending'?'Solicitação enviada. Aguarde a autorização do ADM Master.':'Após reprovação, solicite uma nova tentativa ao ADM Master.'};
   }
-  const api={MOD,copy,today,moduleIds,validDate,activeEnrollment,lessonDone,attempts,passed,requestStatus,buildMap,programState,guardProgram,inspectModules,publishReady,eligibleExam};
+  const api={MOD,copy,today,moduleIds,validDate,activeEnrollment,validMux,moduleActive,firstVideoReady,lessonCheckpointKey,lessonCompleted,lessonDone,nextLessonIndex,attempts,passed,requestStatus,buildMap,programState,guardProgram,inspectModules,publishReady,eligibleExam};
   root.CONTREM_PROGRAM_CORE=api;
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);
