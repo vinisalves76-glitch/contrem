@@ -172,12 +172,16 @@
   if(msg?.type!=='contrem:academy-data'||msg.request!==request||msg.payload?.academy?.id!==msg.academyId)return;
   const payload=msg.payload;
   if(!payload.map||!Array.isArray(payload.map.items)||!Array.isArray(payload.academy.stages))return;
-  data=payload;
-  updateOverview();updateModules();updateAbout();updateLab();
-  if(selectedModule&&findModule(selectedModule))showModule(selectedModule);
-  else tab(current==='detail'?'modules':current);
-  root.dataset.portalIntegrated='ready';
-  window.parent.postMessage({type:'contrem:academy-displayed',request,academyId:payload.academy.id},location.origin);
+  try{
+   data=payload;
+   updateOverview();updateModules();updateAbout();updateLab();
+   if(selectedModule&&findModule(selectedModule))showModule(selectedModule);
+   else tab(current==='detail'?'modules':current);
+   root.dataset.portalIntegrated='ready';
+   window.parent.postMessage({type:'contrem:academy-displayed',request,academyId:payload.academy.id},location.origin);
+  }catch(error){
+   window.parent.postMessage({type:'contrem:academy-error',request,message:String(error?.message||error)},location.origin);
+  }
  }
  function start(){
   if(window.parent===window){document.body.textContent='Acesse esta formação pelo seu login na CONTREM Academia.';root.dataset.portalIntegrated='ready';return;}
@@ -205,5 +209,9 @@
   window.addEventListener('message',onMessage);
   window.parent.postMessage({type:'contrem:academy-ready',request},location.origin);
  }
- start();
+ try{start();}
+ catch(error){
+  root.dataset.portalIntegrated='ready';
+  if(window.parent!==window)window.parent.postMessage({type:'contrem:academy-error',request,message:String(error?.message||error)},location.origin);
+ }
 })();
