@@ -83,11 +83,26 @@
   studentSection.innerHTML='<div class="connected-program-heading"><div><div class="tag">JORNADA DE FORMAÇÃO</div><h2>Minhas Academias</h2><p>Programas de aprendizagem com trilhas e módulos próprios.</p></div><button type="button" class="outline" id="refreshConnectedAcademies">Atualizar</button></div><div id="connectedAcademyCards" class="connected-program-grid"></div>';
   $('refreshConnectedAcademies').onclick=reloadStudent;
   const list=$('connectedAcademyCards');
-  if(!myPrograms.length){list.innerHTML='<div class="connected-program-empty">Você ainda não tem matrícula em Academias. Os Cursos Avulsos continuam disponíveis acima.</div>';return;}
+  if(!myPrograms.length){list.innerHTML='<div class="connected-program-empty">Você ainda não tem nenhuma matrícula ativa em Academias. Os Cursos Avulsos continuam disponíveis acima.</div>';return;}
   for(const payload of myPrograms){
    const a=payload.academy,card=document.createElement('article');card.className='connected-program-card';
-   card.innerHTML='<span class="connected-program-eyebrow">CONTREM ACADEMIA · FORMAÇÃO</span><h3>'+esc(a.title)+'</h3><p>'+esc(a.heroDescription||a.description||'')+'</p><div class="connected-program-meta">'+a.stages.length+' etapas · '+payload.map.items.length+' módulos</div><button class="primary" type="button">Abrir minha Academia →</button>';
-   card.querySelector('button').onclick=()=>openPortal(payload);
+   const published=payload.publicationStatus==='published';
+   const enrolled=payload.enrollment?.active===true&&payload.map?.active===true;
+   const ready=published&&enrolled;
+   const status=published?(enrolled?'PUBLICADA · ACESSO LIBERADO':'MATRÍCULA VENCIDA'):
+    payload.publicationStatus==='archived'?'ACADEMIA INDISPONÍVEL':'MATRÍCULA CONFIRMADA · AGUARDANDO PUBLICAÇÃO';
+   card.classList.toggle('awaiting-publication',!ready);
+   const notice=ready?(a.heroDescription||a.description||''):
+    published?'Sua matrícula está vencida ou indisponível. Entre em contato com o ADM Master.':
+    payload.publicationStatus==='archived'?'Esta Academia está arquivada pelo ADM.':
+    'Sua pré-matrícula está confirmada. O acesso ao painel e às aulas será liberado após a publicação pelo ADM Master.';
+   card.innerHTML='<span class="connected-program-eyebrow">CONTREM ACADEMIA · FORMAÇÃO</span>'+
+    '<span class="connected-program-state">'+esc(status)+'</span>'+
+    '<h3>'+esc(a.title)+'</h3><p>'+esc(notice)+'</p>'+
+    (ready?'<div class="connected-program-meta">'+a.stages.length+' etapas · '+payload.map.items.length+' módulos</div>':'')+
+    '<button class="primary" type="button" '+(!ready?'disabled ':'')+'>'+
+    (ready?'Abrir minha Academia →':published?'Acesso indisponível':'Aguardando publicação')+'</button>';
+   if(ready)card.querySelector('button').onclick=()=>openPortal(payload);
    list.append(card);
   }
  }
