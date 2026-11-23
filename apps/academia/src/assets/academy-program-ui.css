@@ -125,3 +125,21 @@ body.academy-immersive > :not(#contremAcademyIntegratedFrame):not(#academyPortal
 .program-module-switch:has(input:checked){background:#e6f5ed;border-color:#b4ddc7;color:#216343}
 .program-module-switch input:disabled{cursor:not-allowed}
 .program-readiness-item p{color:#697d8d}
+
+
+/* Área de liberação: ações explícitas e estado persistido, não um checkbox ambíguo. */
+.program-module-access{display:inline-flex;align-items:center;gap:3px;background:#f0f4f7;
+  border:1px solid #d4dee7;border-radius:9px;padding:3px;white-space:nowrap}
+.program-module-actions .program-access-choice{border:1px solid transparent!important;
+  border-radius:7px;padding:8px 10px;font-size:11px;font-weight:800;
+  color:#4e657b;background:transparent;min-height:34px}
+.program-module-actions .program-access-choice.selected[data-access-value="true"]{
+  color:#1e6a48;background:#e3f5eb;border-color:#9acfb2!important}
+.program-module-actions .program-access-choice.selected[data-access-value="false"]{
+  color:#8a4c34;background:#fff0e7;border-color:#efc7b2!important}
+.program-module-actions .program-access-choice:not(.selected):hover{
+  background:#fff;color:#233a53}
+.program-module-actions .program-access-choice:focus-visible{outline:2px solid #ef8b33;outline-offset:2px}
+.program-module-actions .program-access-choice:disabled{opacity:.65;cursor:wait}
+@media(max-width:640px){.program-module-access{width:100%}
+ .program-module-actions .program-access-choice{flex:1}}
