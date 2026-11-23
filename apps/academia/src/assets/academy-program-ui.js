@@ -91,30 +91,31 @@
   const head=document.createElement('div');head.className='program-edit-head';
   head.innerHTML='<div><span class="tag">EDITOR DE ACADEMIA</span><h3>'+e(a.title)+'</h3><small>'+e(a.status==='published'?'Publicada na prévia':'Rascunho')+' · '+core.moduleIds(a).length+' módulos</small></div><div class="program-edit-actions"><button type="button" data-program-action="publish" class="primary">'+(a.status==='published'?'Republicar':'Publicar Academia')+'</button><button type="button" data-program-action="archive" class="outline">Arquivar</button></div>';
   root.append(head);
-  // Um único checklist explica quais módulos estão prontos para publicação conjunta.
+  // A publicação libera o programa visual, enquanto cada módulo mantém seu próprio controle de acesso.
   const inspection=core.inspectModules(a,courses);
-  const validCount=inspection.filter(item=>item.ready).length;
-  const alreadyPublished=inspection.filter(item=>item.ready&&item.status==='published').length;
-  const problems=inspection.filter(item=>!item.ready);
+  const enabledCount=inspection.filter(item=>item.enabled).length;
+  const inactiveCount=inspection.length-enabledCount;
   const checklist=document.createElement('section');checklist.className='program-readiness';
   const summary=document.createElement('div');summary.className='program-readiness-summary';
   const heading=document.createElement('strong');
-  heading.textContent='Publicação da Academia · '+validCount+' de '+inspection.length+' módulos preparados';
+  heading.textContent='Liberação progressiva · '+enabledCount+' módulo(s) ativo(s) de '+inspection.length;
   const hint=document.createElement('p');
-  hint.textContent=problems.length?
-   'Corrija os módulos indicados abaixo. Nenhum módulo incompleto será publicado.':
-   (inspection.length?'Todos os módulos têm aulas, vídeos Mux e prova. Ao publicar a Academia, os '+(inspection.length-alreadyPublished)+' módulo(s) ainda em rascunho serão publicados juntos.':'Adicione módulos e aulas para preparar a formação.');
+  hint.textContent='Você pode publicar a Academia inteira sem aulas ou vídeos. Ela aparecerá aos alunos matriculados, mas os módulos permanecem fechados até serem ativados pelo ADM, respeitando a sequência de aulas e avaliações.';
   summary.append(heading,hint);checklist.append(summary);
-  const pending=document.createElement('div');pending.className='program-readiness-list';
-  problems.forEach(item=>{
-   const row=document.createElement('div');row.className='program-readiness-item';
-   const detail=document.createElement('div'),name=document.createElement('b'),reason=document.createElement('p');
-   name.textContent=item.name;reason.textContent=item.issues.join(' ');detail.append(name,reason);
-   const button=document.createElement('button');button.type='button';button.className='outline';
-   button.textContent='Corrigir módulo →';button.dataset.moduleEdit=item.id;
-   row.append(detail,button);pending.append(row);
-  });
-  if(problems.length)checklist.append(pending);
+  if(inactiveCount){
+   const pending=document.createElement('div');pending.className='program-readiness-list';
+   inspection.filter(item=>!item.enabled).forEach(item=>{
+    const row=document.createElement('div');row.className='program-readiness-item';
+    const detail=document.createElement('div'),name=document.createElement('b'),reason=document.createElement('p');
+    name.textContent=item.name;
+    reason.textContent=item.issues.length?item.issues.join(' '):'Pronto para liberação manual pelo ADM.';
+    detail.append(name,reason);
+    const button=document.createElement('button');button.type='button';button.className='outline';
+    button.textContent='Gerenciar aulas →';button.dataset.moduleEdit=item.id;
+    row.append(detail,button);pending.append(row);
+   });
+   checklist.append(pending);
+  }
   root.append(checklist);
   const form=document.createElement('form');form.className='program-settings';form.id='programSettings';
   form.innerHTML=`<div class="program-form-grid"><label>Nome da formação<input name="title" maxlength="150" required value="${e(a.title)}"></label>
@@ -183,7 +184,13 @@
    stage.moduleIds.forEach((id,i)=>{
     const c=courses.find(c=>c.id===id);
     const row=document.createElement('div');row.className='program-module';
-    row.innerHTML='<div><b>'+String(i+1).padStart(2,'0')+'. '+e(c?.name||'Módulo não encontrado')+'</b><small>'+Number(c?.hours||0)+'h · '+(c?.lessons?.length||0)+' aulas · '+e(c?.status==='published'?'Publicado':'Rascunho')+'</small></div><div class="program-module-actions"><button type="button" class="outline" data-module-up="'+idx+':'+i+'" '+(i===0?'disabled':'')+'>↑</button><button type="button" class="outline" data-module-down="'+idx+':'+i+'" '+(i===stage.moduleIds.length-1?'disabled':'')+'>↓</button><button type="button" class="primary" data-module-edit="'+e(id)+'">Gerenciar aulas →</button></div>';
+    row.innerHTML='<div><b>'+String(i+1).padStart(2,'0')+'. '+e(c?.name||'Módulo não encontrado')+'</b><small>'+Number(c?.hours||0)+'h · '+(c?.lessons?.length||0)+' aulas · '+e(core.moduleActive(c)?'ATIVO PARA ALUNOS':'INATIVO · EM PREPARAÇÃO')+'</small></div><div class="program-module-actions"><button type="button" class="outline" data-module-up="'+idx+':'+i+'" '+(i===0?'disabled':'')+'>↑</button><button type="button" class="outline" data-module-down="'+idx+':'+i+'" '+(i===stage.moduleIds.length-1?'disabled':'')+'>↓</button><button type="button" class="primary" data-module-edit="'+e(id)+'">Gerenciar aulas →</button></div>';
+    const toggle=document.createElement('label');toggle.className='program-module-switch';
+    const control=document.createElement('input');control.type='checkbox';control.dataset.moduleEnabled=id;
+    control.checked=core.moduleActive(c);control.disabled=!permitted();
+    const label=document.createElement('span');label.textContent=control.checked?'Ativo para alunos':'Inativo';
+    toggle.append(control,label);
+    row.querySelector('.program-module-actions').prepend(toggle);
     if(a.stages.length>1){
      const selector=document.createElement('select');
      selector.className='program-move-stage';
@@ -236,35 +243,48 @@
    const id='academy-module-'+crypto.randomUUID(),stage=a.stages.find(s=>s.id===f.dataset.createModule);
    if(!stage)return;
    courses.push({id,name,description:'Módulo exclusivo da formação '+a.title,category:'Academia · '+a.title,hours,
-    academyId:a.id,stageId:stage.id,catalogType:core.MOD,format:'series',status:'draft',certificateEnabled:false,
+    academyId:a.id,stageId:stage.id,catalogType:core.MOD,format:'series',status:'draft',moduleEnabled:false,certificateEnabled:false,
     icon:'⚙️',lessons:[],questions:[],passScore:70});
    const stages=core.copy(a.stages),s=stages.find(s=>s.id===stage.id);s.moduleIds.push(id);
    const result=updateProgram({...a,stages});if(result){save();refresh();notify('Módulo criado. Clique em Gerenciar aulas para cadastrar vídeos, materiais e prova.');}
    else courses.splice(courses.findIndex(c=>c.id===id),1);
+  });
+  root.addEventListener('change',async event=>{
+   const control=event.target.closest('input[data-module-enabled]');
+   if(!control||!permitted())return;
+   const course=courses.find(item=>item.id===control.dataset.moduleEnabled&&item.academyId===a.id);
+   if(!course){notify('Módulo não encontrado.',true);control.checked=false;return;}
+   const was={moduleEnabled:course.moduleEnabled,status:course.status};
+   if(control.checked&&!core.firstVideoReady(course)){
+    control.checked=false;
+    notify('Antes de ativar "'+course.name+'", cadastre o vídeo Mux da primeira aula. A Academia pode continuar publicada com este módulo inativo.',true);
+    return;
+   }
+   control.disabled=true;
+   try{
+    course.moduleEnabled=control.checked;
+    if(control.checked)course.status='published';
+    save();
+    await window.CONTREM_PREVIEW_SYNC?.flush?.();
+    renderAdmin();
+    notify(course.name+': '+(core.moduleActive(course)?'módulo liberado para os alunos que concluíram os anteriores.':'módulo desativado; o progresso anterior foi preservado.'));
+   }catch(error){
+    course.moduleEnabled=was.moduleEnabled;course.status=was.status;save();
+    control.disabled=false;control.checked=core.moduleActive(course);
+    notify('Não foi possível atualizar o módulo: '+error.message,true);
+   }
   });
   root.onclick=event=>{
    const button=event.target.closest('button');if(!button)return;
    const action=button.dataset.programAction;
    if(action){
     if(action==='publish'){
-     const diagnostics=core.inspectModules(a,courses),invalid=diagnostics.filter(item=>!item.ready);
-     if(invalid.length){
-      notify('Não foi possível publicar. '+invalid.length+' módulo(s) com pendências; confira a lista de requisitos no editor.',true);
-      root.querySelector('.program-readiness')?.scrollIntoView({block:'center',behavior:'smooth'});
-      return;
-     }
-     if(!diagnostics.length){notify('Cadastre pelo menos um módulo na Academia.',true);return;}
-     const ids=new Set(core.moduleIds(a)),original=courses.filter(course=>ids.has(course.id)).map(course=>({course,status:course.status}));
      try{
-      for(const entry of original)entry.course.status='published';
       const updated=store.setStatus(a.id,'published');
-      save();refresh();selected=updated.id;
-      notify('Academia publicada na prévia com '+original.length+' módulos. Matrículas continuam sob controle do ADM Master.');
+      selected=updated.id;
+      notify('Academia publicada! Seus módulos permanecem na configuração Ativo/Inativo escolhida pelo ADM. Acesso apenas por matrícula.');
       renderAdmin();
-     }catch(err){
-      for(const entry of original)entry.course.status=entry.status;
-      save();refresh();notify('Publicação não concluída: '+err.message,true);
-     }
+     }catch(err){notify('Publicação não concluída: '+err.message,true);}
      return;
     }
     try{
@@ -293,7 +313,8 @@
  }
  function editModule(id){
   if(!permitted())return;
-  if(store.list().enrollments.some(entry=>entry.academyId===selected&&entry.active))return notify('Formação com matrículas ativas: não edite módulos sem versionamento e revisão de impacto no progresso.',true);
+  // Aulas ainda não lançadas podem receber vídeos enquanto há alunos matriculados.
+  // Evitar exclusão/reordenação de aulas já concluídas continua sendo requisito da futura persistência versionada.
   if(!courses.some(c=>c.id===id&&c.academyId===selected))return notify('Módulo indisponível.',true);
   leavePrograms();$('adminTab').click();show('adminView');editCourse(id);
   returnBtn.hidden=false;$('adminHeading').textContent='Módulo da Academia';
@@ -321,7 +342,7 @@
    if(exists?.academyId&&exists.academyId!==id)return notify('Um módulo existente pertence a outra Academia.',true);
    if(exists){exists.academyId=id;exists.catalogType=core.MOD;exists.stageId=stages[m.stage-1].id;exists.certificateEnabled=false;}
    else courses.push({id:cid,name:m.name,category:'Academia · Formação de Mecânicos',description:m.description,
-    hours:m.hours,status:'draft',format:'series',icon:'⚙️',catalogType:core.MOD,academyId:id,stageId:stages[m.stage-1].id,
+    hours:m.hours,status:'draft',moduleEnabled:false,format:'series',icon:'⚙️',catalogType:core.MOD,academyId:id,stageId:stages[m.stage-1].id,
     certificateEnabled:false,lessons:m.lessons.map((name,i)=>({id:cid+'-aula-'+String(i+1).padStart(2,'0'),name,url:'',
      description:'Conteúdo técnico em preparação.',minutes:15,supportLinks:[],previewMaterials:[]})),questions:[],passScore:75});
    stages[m.stage-1].moduleIds.push(cid);
