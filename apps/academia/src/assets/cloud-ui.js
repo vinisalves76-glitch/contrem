@@ -191,18 +191,29 @@
        const status=program.status==='published'?'Publicada':program.status==='archived'?'Arquivada':'Rascunho';
        return '<label class="access-roster-option"><input type="checkbox" data-member="'+esc(member.id)+
         '" data-academy="'+esc(program.id)+'" data-expires="'+esc(enrollment?.expires_on||'')+'" '+
-        (granted?'checked ':'')+(!member.active||!published?'disabled ':'')+
+        (granted?'checked ':'')+(!member.active||program.status==='archived'?'disabled ':'')+
         '><span>'+esc(program.title)+'<small class="'+(published?'roster-published':'roster-draft')+'">'+
         esc(status)+(expired?' · matrícula vencida; revise a validade em Academias':'')+
-        (!published?' · publique para liberar acesso':'')+'</small></span></label>';
+        (program.status==='draft'?' · pré-matrícula; acesso somente após publicar':'')+
+        (program.status==='archived'?' · sem novas matrículas':'')+'</small></span></label>';
       }).join(''):'<p class="access-roster-empty">Nenhuma Academia cadastrada.</p>')+'</div></section>';
    };
    roster.innerHTML=rows.length?rows.map(member=>
      '<article class="student-roster-row"><div class="student-roster-heading"><div><b>'+esc(member.display_name)+'</b>'+
-     (member.email?'<small class="roster-email">'+esc(member.email)+'</small>':'')+
+     '<small class="roster-email">'+(member.email?esc(member.email):'E-mail indisponível')+'</small>'+
      '<span class="student-roster-status">'+(member.active?'Ativo':'Inativo')+'</span></div>'+
-     '<button type="button" class="outline" '+(!isMaster()?'hidden ':'')+'data-member="'+esc(member.id)+
-     '" data-active="'+(!member.active)+'">'+(member.active?'Desativar aluno':'Reativar aluno')+'</button></div>'+
+     '<div class="student-roster-actions"><button type="button" class="outline" '+(!isMaster()?'hidden ':'')+'data-member="'+esc(member.id)+
+     '" data-active="'+(!member.active)+'">'+(member.active?'Desativar aluno':'Reativar aluno')+'</button>'+
+     (isMaster()?'<button type="button" class="outline" data-password-member="'+esc(member.id)+'">Redefinir senha</button>':'')+
+     '</div></div>'+
+     (isMaster()?'<div class="student-password-panel" data-password-panel="'+esc(member.id)+'" hidden>'+
+       '<p>A senha atual não pode ser consultada. Defina uma nova senha para o aluno.</p>'+
+       '<div class="student-password-fields"><label>Nova senha<input type="password" data-new-password autocomplete="new-password" minlength="8" maxlength="128" placeholder="Mínimo de 8 caracteres"></label>'+
+       '<label>Confirmar nova senha<input type="password" data-confirm-password autocomplete="new-password" minlength="8" maxlength="128"></label></div>'+
+       '<div class="student-password-actions"><button type="button" class="outline" data-show-password="'+esc(member.id)+'">Mostrar/Ocultar</button>'+
+       '<button type="button" class="primary" data-submit-password="'+esc(member.id)+'">Salvar nova senha</button></div>'+
+       '<p class="student-password-result" role="status" data-password-status="'+esc(member.id)+'"></p>'+
+      '</div>':'')+
      '<div class="access-roster-groups">'+courseList(member)+academyList(member)+'</div></article>'
     ).join(''):'Nenhum aluno cadastrado.';
   }catch(error){
@@ -226,6 +237,38 @@
  });
  document.getElementById('studentRoster').addEventListener('click',async event=>{
   if(event.target.closest('[data-retry-academy]')){await loadStudentRoster();return;}
+  const resetButton=event.target.closest('[data-password-member]');
+  const revealButton=event.target.closest('[data-show-password]');
+  const submitButton=event.target.closest('[data-submit-password]');
+  const memberId=resetButton?.dataset.passwordMember||revealButton?.dataset.showPassword||submitButton?.dataset.submitPassword;
+  if(memberId){
+   if(!isMaster()||mode!=='cloud')return;
+   const panel=document.querySelector('#studentRoster [data-password-panel="'+memberId+'"]');
+   if(!panel)return;
+   if(resetButton){panel.hidden=!panel.hidden;return;}
+   const password=panel.querySelector('[data-new-password]');
+   const confirmPassword=panel.querySelector('[data-confirm-password]');
+   const status=panel.querySelector('[data-password-status]');
+   if(revealButton){
+    const nextType=password.type==='password'?'text':'password';
+    password.type=nextType;confirmPassword.type=nextType;
+    return;
+   }
+   if(submitButton){
+    if(password.readOnly)return;
+    const value=password.value;
+    if(value.length<8||value.length>128){status.textContent='A nova senha deve ter entre 8 e 128 caracteres.';return;}
+    if(value!==confirmPassword.value){status.textContent='As senhas informadas não coincidem.';return;}
+    submitButton.disabled=true;status.textContent='Atualizando senha…';
+    try{
+     await service.resetStudentPassword(memberId,value);
+     password.readOnly=true;confirmPassword.value='';confirmPassword.disabled=true;
+     status.textContent='Senha redefinida. Ela ficará disponível neste campo apenas até atualizar ou sair desta página. Entregue-a diretamente ao aluno.';
+     submitButton.textContent='Senha atualizada';
+    }catch(error){status.textContent=error.message||'Não foi possível redefinir a senha.';submitButton.disabled=false;}
+    return;
+   }
+  }
   const el=event.target.closest('[data-active]');if(!el||mode!=='cloud'||!isMaster())return;
   el.disabled=true;try{await service.setStudentActive(el.dataset.member,el.dataset.active==='true');await loadStudentRoster();document.getElementById('studentFormStatus').textContent='Status do aluno atualizado.';}catch(error){document.getElementById('studentFormStatus').textContent=error.message;el.disabled=false;}
  });
