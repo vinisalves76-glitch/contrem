@@ -59,10 +59,11 @@
  adminNav.addEventListener('click',event=>{
   if(!event.target.closest('#academiasConnectedTab'))closeEditor();
  },true);
- studentBtn.onclick=()=>{
+ studentBtn.onclick=async()=>{
   if(!session||isEditor())return;
   closeEditor();show('studentView');
   studentSection.scrollIntoView({block:'start',behavior:'smooth'});
+  await reloadStudent(); // Reconsultar matrículas e publicação a cada abertura do menu.
  };
  async function reloadAdmin(){
   message('Carregando as formações…');
@@ -456,6 +457,9 @@
  window.addEventListener('contrem:academy-session-ended',()=>{
   session=null;programs=[];students=[];enrollments=[];myPrograms=[];selected=null;draft=null;
   closeEditor();mask();studentSection.innerHTML='';
+ });
+ window.addEventListener('focus',()=>{
+  if(session&&!isEditor()&&overlay.hidden)void reloadStudent();
  });
  window.CONTREM_CONNECTED_PROGRAMS={refreshAdmin:reloadAdmin,refreshStudent:reloadStudent};
 })();
