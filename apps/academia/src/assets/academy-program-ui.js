@@ -7,7 +7,7 @@
  const $=id=>document.getElementById(id),e=s=>esc(s??''),date=()=>core.today();
  window.CONTREM_PROGRAM_COURSE_ACCESS=()=>courses;
  window.CONTREM_PROGRAM_STATE_ACCESS=()=>({progress});
- let selected=null,opened=null,returnToAcademy=null,frameReady=false;
+ let selected=null,opened=null,returnToAcademy=null,frameReady=false,portalRequest=null;
  const admin=$('adminView'),panel=document.createElement('section');
  panel.id='academiasAdminPanel';panel.className='panel program-main';
  panel.innerHTML=`
@@ -292,6 +292,8 @@
  }
  function hidePortalFrame(){
   frame.hidden=true;
+  frameReady=false;
+  portalRequest=null;
   document.body.classList.remove('academy-immersive');
  }
  function preparePortalPayload(academyId){
@@ -319,26 +321,29 @@
   if(frame.hidden||!frameReady||!opened||!enrolled())return;
   const payload=preparePortalPayload(opened);
   if(!payload){hidePortalFrame();return;}
-  frame.contentWindow?.postMessage({type:'contrem:academy-data',academyId:opened,payload},location.origin);
+  frame.contentWindow?.postMessage({type:'contrem:academy-data',academyId:opened,request:portalRequest,payload},location.origin);
  }
  function openAcademyPortal(academyId){
   if(!enrolled())return;
   const payload=preparePortalPayload(academyId);
   if(!payload)return;
-  opened=academyId;
   show('studentView');
-  frame.hidden=false;
-  document.body.classList.add('academy-immersive');
-  if(!frame.getAttribute('src')){
-   frameReady=false;frame.setAttribute('src','./trilha-formacao/?integrated=1');
-  }else sendPortalData();
+  opened=academyId;
+  portalRequest=crypto.randomUUID();
+  frameReady=false;
+  frame.hidden=true;
+  frame.setAttribute('src','./trilha-formacao/?integrated=1&request='+encodeURIComponent(portalRequest));
   window.scrollTo({top:0,behavior:'auto'});
  }
  window.addEventListener('message',event=>{
   if(event.origin!==location.origin||event.source!==frame.contentWindow||!enrolled())return;
   const msg=event.data;
-  if(msg?.type==='contrem:academy-ready'){frameReady=true;sendPortalData();return;}
-  if(msg?.type!=='contrem:academy-action'||frame.hidden||!opened)return;
+  if(!portalRequest||msg?.request!==portalRequest)return;
+  if(msg.type==='contrem:academy-ready'){frameReady=true;sendPortalData();return;}
+  if(msg.type==='contrem:academy-displayed'&&msg.academyId===opened){
+   frame.hidden=false;document.body.classList.add('academy-immersive');return;
+  }
+  if(msg.type!=='contrem:academy-action'||frame.hidden||!opened)return;
   if(msg.action==='back'){hidePortalFrame();show('studentView');$('myAcademies')?.scrollIntoView({block:'start'});return;}
   if(msg.action==='open-module'&&msg.academyId===opened&&typeof msg.moduleId==='string'){
    const item=store.studentPrograms().items.find(x=>x.academy.id===opened);
