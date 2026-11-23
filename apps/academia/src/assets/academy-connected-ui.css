@@ -114,3 +114,37 @@ body.academy-connected-open{overflow:hidden!important}
  .connected-program-heading{align-items:start;flex-direction:column}
  .connected-room-lesson{flex-direction:column}
 }
+
+
+/* Construtor de etapas, módulos e aulas integrado à Academia. */
+.connected-add-entry{display:flex;flex-wrap:wrap;align-items:end;gap:10px;background:#f5f8fa;
+ padding:13px 14px;border:1px dashed #cbd9e5;border-radius:10px;margin:12px 0 16px}
+.connected-add-entry label{display:grid;gap:6px;flex:1 1 220px;min-width:0;font-size:11px;
+ font-weight:750;color:#536c82}
+.connected-add-entry input{width:100%;min-height:39px;border-radius:8px;border:1px solid #d1dee8;
+ background:#fff;padding:10px 12px;color:#21384e;font:inherit;font-size:12px}
+.connected-add-entry button{flex:0 0 auto;min-height:39px;padding:9px 13px;border-radius:8px;
+ border:1px solid #c5d8e7;background:#fff;color:#214c6c;font-size:12px;font-weight:800;cursor:pointer}
+.connected-add-entry button:hover:not(:disabled){background:#e7f0f8}
+.connected-add-entry button:disabled{opacity:.55;cursor:not-allowed}
+.connected-stage-modules .connected-add-entry{margin-top:15px}
+.connected-module-editor .connected-field-grid label{display:grid;gap:6px;color:#4f687d;font-size:11px;font-weight:750}
+.connected-module-editor .connected-field-grid label.wide{grid-column:1/-1}
+.connected-module-editor .connected-field-grid input,
+.connected-module-editor .connected-field-grid textarea,
+.connected-lesson-entry input,.connected-lesson-entry textarea{width:100%;border-radius:8px;border:1px solid #d4dde6;
+ padding:10px 11px;background:#fff;color:#263f57;font:inherit;font-size:12px;min-width:0}
+.connected-module-editor .connected-field-grid textarea,.connected-lesson-entry textarea{resize:vertical}
+.connected-module-editor>h4{font-size:13px;margin:10px 0 0;color:#2c4258}
+.connected-lesson-entry{display:grid;gap:11px;padding:15px;background:#fff;
+ border:1px solid #dae4ed;border-radius:10px;min-width:0}
+.connected-lesson-entry strong{font-size:12px;color:#2d4359}
+.connected-lesson-entry label{display:grid;gap:6px;font-size:11px;font-weight:750;color:#63788a}
+.connected-lesson-entry .connected-lesson-notice{font-size:11px;color:#865936;background:#fff4e9;
+ padding:9px;border-radius:7px}
+.connected-module-editor .connected-lessons-list{grid-template-columns:1fr;gap:10px}
+.connected-module-save{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:5px}
+.connected-module-save small{font-size:11px;color:#697e92;max-width:420px}
+@media(max-width:640px){.connected-add-entry{align-items:stretch;flex-direction:column}
+ .connected-add-entry label,.connected-add-entry button{flex:unset;width:100%}
+ .connected-module-editor .connected-field-grid label.wide{grid-column:auto}}
