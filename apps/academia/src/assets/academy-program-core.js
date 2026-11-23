@@ -13,8 +13,12 @@
   const moduleActive=course=>!!course&&course.status==='published'&&course.moduleEnabled!==false;
   const firstVideoReady=course=>!!course?.lessons?.length&&validMux(course.lessons[0].url);
   const lessonCheckpointKey=(courseId,lessonId)=>'lesson-assessment:'+courseId+':'+lessonId;
+  const videoWatchKey=courseId=>'video-watched:'+courseId;
+  function videoWatched(course,lesson,state){
+    return !!course&&!!lesson&&(state?.progress?.[videoWatchKey(course.id)]||[]).includes(lesson.id);
+  }
   function lessonCompleted(course,lesson,state){
-    if(!course||!lesson||(state?.progress?.[course.id]||[]).includes(lesson.id)===false)return false;
+    if(!course||!lesson||!videoWatched(course,lesson,state)||(state?.progress?.[course.id]||[]).includes(lesson.id)===false)return false;
     if(!Array.isArray(lesson.questions)||!lesson.questions.length)return true;
     return (state?.progress?.[lessonCheckpointKey(course.id,lesson.id)]||[]).some(a=>a?.passed===true);
   }
@@ -100,7 +104,7 @@
     if(status==='approved')return {allowed:true,initial:false};
     return {allowed:false,reason:status==='pending'?'Solicitação enviada. Aguarde a autorização do ADM Master.':'Após reprovação, solicite uma nova tentativa ao ADM Master.'};
   }
-  const api={MOD,copy,today,moduleIds,validDate,activeEnrollment,validMux,moduleActive,firstVideoReady,lessonCheckpointKey,lessonCompleted,lessonDone,nextLessonIndex,attempts,passed,requestStatus,buildMap,programState,guardProgram,inspectModules,publishReady,eligibleExam};
+  const api={MOD,copy,today,moduleIds,validDate,activeEnrollment,validMux,moduleActive,firstVideoReady,lessonCheckpointKey,videoWatchKey,videoWatched,lessonCompleted,lessonDone,nextLessonIndex,attempts,passed,requestStatus,buildMap,programState,guardProgram,inspectModules,publishReady,eligibleExam};
   root.CONTREM_PROGRAM_CORE=api;
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);
