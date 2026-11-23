@@ -28,7 +28,7 @@ test('Cursos avulsos não podem ser inseridos como módulos, e módulos são exc
 });
 test('Academia pode ser publicada com todos os módulos inativos e sem vídeos',()=>{
  const s=setup();s.create();
- s.courses.forEach(c=>{c.status='draft';c.moduleEnabled=false;c.lessons[0].url='';c.questions=[];});
+ s.courses.forEach(c=>{c.status='draft';c.moduleEnabled=false;c.lessons[0].url='';c.questions=[];});s.persist();
  assert.equal(s.store.setStatus('program','published').status,'published');
  s.store.enroll(s.id,'program',true,'','manual');s.asStudent();
  const map=s.store.studentPrograms().items[0].map;
