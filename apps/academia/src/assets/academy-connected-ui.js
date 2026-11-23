@@ -183,29 +183,6 @@
     item.cardTitle=fields.querySelector('[data-stage-card]').value.trim();
     item.cardDescription=fields.querySelector('[data-stage-description]').value.trim();}
   }
-  document.querySelectorAll('#connectedProgramDetails .connected-module-editor:not([hidden])').forEach(collectModuleFields);
- }
- function collectModuleFields(box){
-  const id=box.dataset.moduleId,mod=draft?.modules.find(m=>m.id===id);
-  if(!mod)return;
-  const title=box.querySelector('[data-module-name]');
-  const description=box.querySelector('[data-module-description]');
-  const hours=box.querySelector('[data-module-hours]');
-  if(title)mod.name=title.value.trim().slice(0,180);
-  if(description)mod.description=description.value.trim().slice(0,1200);
-  if(hours)mod.hours=Math.max(0,Math.min(1000,Number(hours.value)||0));
-  box.querySelectorAll('[data-lesson-name]').forEach(input=>{
-   const lesson=mod.lessons.find(l=>l.id===input.dataset.lessonName);
-   if(lesson)lesson.name=input.value.trim().slice(0,180);
-  });
-  box.querySelectorAll('[data-lesson-description]').forEach(input=>{
-   const lesson=mod.lessons.find(l=>l.id===input.dataset.lessonDescription);
-   if(lesson)lesson.description=input.value.trim().slice(0,1200);
-  });
-  box.querySelectorAll('[data-lesson-minutes]').forEach(input=>{
-   const lesson=mod.lessons.find(l=>l.id===input.dataset.lessonMinutes);
-   if(lesson)lesson.minutes=Math.max(0,Math.min(600,Number(input.value)||0));
-  });
  }
  function addStage(){
   if(!draft)return;
@@ -258,7 +235,7 @@
   }
   html+='</div><div class="connected-add-entry"><label>Nova etapa da Academia<input type="text" id="connectedNewStageName" maxlength="120" placeholder="Ex.: Fundamentos de manutenção" '+(!canEdit?'disabled':'')+'></label><button type="button" id="connectedAddStage" class="outline" '+(!canEdit?'disabled':'')+'>+ Adicionar etapa</button></div><div class="connected-form-actions"><button type="submit" class="primary" '+(!canEdit?'disabled':'')+'>Salvar configurações</button>';
   if(isMaster()&&p?.status!=='published')html+='<button type="button" id="connectedPublishProgram" class="outline">Publicar Academia completa</button>';
-  html+='</div></form><h3>2. Módulos e aulas da Academia</h3><p class="connected-builder-guide">Dentro de cada etapa, use <strong>Adicionar módulo</strong>. Depois clique em <strong>Gerenciar aulas</strong> para cadastrar as aulas. Salve as configurações antes de publicar. Os vídeos podem ser incluídos depois.</p><div id="connectedModulesList">';
+  html+='</div></form><h3>2. Módulos e aulas da Academia</h3><p class="connected-builder-guide">Dentro de cada etapa, use <strong>Adicionar módulo</strong>. Configure cada aula pelo botão <strong>Configurar aula</strong> ou clique em <strong>+ Adicionar aula completa</strong> para cadastrar vídeos Mux, anexos e atividades.</p><div id="connectedModulesList">';
   const byId=new Map(draft.modules.map(m=>[m.id,m]));
   for(const stage of draft.stages){
    html+='<div class="connected-stage-modules"><h4>'+esc(stage.title)+'</h4>';
@@ -266,7 +243,17 @@
     const m=byId.get(id);if(!m)continue;
     html+='<div class="connected-module-row" data-module="'+esc(m.id)+'"><div><b>'+esc(m.name)+'</b><small>'+Number(m.hours||0)+'h · '+(m.lessons||[]).length+' aulas · '+(m.moduleEnabled?'ATIVO':'INATIVO')+'</small></div><div class="connected-module-tools">';
     if(isMaster()&&p)html+='<button type="button" data-toggle-module="'+esc(m.id)+'" data-enable="true" class="'+(m.moduleEnabled?'selected':'')+'">Ativar</button><button type="button" data-toggle-module="'+esc(m.id)+'" data-enable="false" class="'+(!m.moduleEnabled?'selected':'')+'">Desativar</button>';
-    html+='<button type="button" data-edit-module="'+esc(m.id)+'" class="outline">Gerenciar aulas e materiais →</button></div></div><div class="connected-module-editor" id="connectedModuleEditor-'+esc(m.id)+'" hidden></div>';
+    html+='<button type="button" data-edit-module="'+esc(m.id)+'" class="outline">Gerenciar aulas e materiais →</button></div></div>'+
+     '<div class="connected-module-lessons">'+
+     (m.lessons.length?m.lessons.map((lesson,i)=>
+      '<div class="connected-module-lesson"><div><strong>Aula '+String(i+1).padStart(2,'0')+' · '+esc(lesson.name||'Nova aula')+'</strong>'+
+      '<small>'+(lesson.videoId||lesson.url?'Vídeo Mux cadastrado':'Vídeo pendente')+
+      (lesson.previewMaterials?.length?' · '+lesson.previewMaterials.length+' arquivo(s)':'')+
+      (lesson.questions?.length?' · '+lesson.questions.length+' questão(ões)':'')+'</small></div>'+
+      '<button type="button" data-edit-lesson="'+esc(m.id)+'" data-lesson-id="'+esc(lesson.id)+'" class="outline">Configurar aula →</button></div>'
+     ).join(''):'<p class="connected-module-lessons-empty">Nenhuma aula cadastrada neste módulo.</p>')+
+     '<button type="button" data-create-module-lesson="'+esc(m.id)+'" class="outline" '+(!canEdit?'disabled':'')+'>+ Adicionar aula completa</button>'+
+     '</div>';
    }
    html+='<div class="connected-add-entry"><label>Novo módulo nesta etapa<input type="text" data-new-module-name="'+esc(stage.id)+'" maxlength="180" placeholder="Ex.: Segurança e ferramentas" '+(!canEdit?'disabled':'')+'></label><button type="button" data-add-module="'+esc(stage.id)+'" class="outline" '+(!canEdit?'disabled':'')+'>+ Adicionar módulo</button></div></div>';
   }
@@ -333,16 +320,23 @@
   holder.querySelectorAll('[data-edit-module]').forEach(button=>button.onclick=()=>{
    collectForm();openFullModuleEditor(button.dataset.editModule,canEdit);
   });
+  holder.querySelectorAll('[data-edit-lesson]').forEach(button=>button.onclick=()=>{
+   collectForm();openFullModuleEditor(button.dataset.editLesson,canEdit,button.dataset.lessonId);
+  });
+  holder.querySelectorAll('[data-create-module-lesson]').forEach(button=>button.onclick=()=>{
+   if(!canEdit)return;
+   collectForm();openFullModuleEditor(button.dataset.createModuleLesson,canEdit,null,true);
+  });
   const load=$('connectedLoadStudents');if(load)load.onclick=loadStudents;
  }
  const field=(name,label,value,max)=>'<label>'+esc(label)+'<input type="text" name="'+name+'" maxlength="'+max+'" value="'+esc(value||'')+'"></label>';
  const textarea=(name,label,value,max)=>'<label class="wide">'+esc(label)+'<textarea name="'+name+'" maxlength="'+max+'" rows="3">'+esc(value||'')+'</textarea></label>';
- async function openFullModuleEditor(moduleId,canEdit){
+ async function openFullModuleEditor(moduleId,canEdit,lessonId=null,createLesson=false){
   const editor=window.CONTREM_ACADEMY_LESSON_EDITOR;
   const source=draft?.modules.find(m=>m.id===moduleId),programId=selected;
   if(!editor||!source){message('Não foi possível abrir o construtor completo. Atualize o navegador.',true);return;}
   editor.open({
-   programId,programTitle:draft.title,module:source,canEdit,
+   programId,programTitle:draft.title,module:source,canEdit,lessonId,createLesson,
    async onSave(updatedModule){
     if(programId!==selected)throw Error('A Academia selecionada mudou. Volte aos módulos e tente novamente.');
     const newDefinition=copy(draft),index=newDefinition.modules.findIndex(m=>m.id===moduleId);
@@ -366,41 +360,6 @@
    await api('save',{id:selected,revision:existing?.revision??null,definition:draft});
    await reloadAdmin();message('Configurações e aulas planejadas salvas no Supabase.');
   }catch(error){if(button)button.disabled=false;message(error.message,true);}
- }
- function renderModuleEditor(id,box,canEdit){
-  const m=draft.modules.find(x=>x.id===id);if(!m)return;
-  box.dataset.moduleId=id;
-  let html='<div class="connected-module-head"><h4>'+esc(m.name)+'</h4><p>Planeje as aulas sem vídeos. Elas permanecem indisponíveis até a publicação do conteúdo e liberação pelo ADM.</p></div>'+
-    '<div class="connected-field-grid">'+
-    '<label>Nome do módulo<input data-module-name maxlength="180" value="'+esc(m.name)+'" '+(!canEdit?'disabled':'')+'></label>'+
-    '<label>Carga horária (horas)<input type="number" data-module-hours min="0" max="1000" step="0.5" value="'+Number(m.hours||0)+'" '+(!canEdit?'disabled':'')+'></label>'+
-    '<label class="wide">Descrição do módulo<textarea data-module-description maxlength="1200" rows="3" '+(!canEdit?'disabled':'')+'>'+esc(m.description||'')+'</textarea></label></div>'+
-    '<h4>Aulas deste módulo ('+m.lessons.length+')</h4><div class="connected-lessons-list">';
-  for(const [i,lesson] of m.lessons.entries()){
-   html+='<div class="connected-lesson-entry"><strong>Aula '+String(i+1).padStart(2,'0')+'</strong>'+
-    '<label>Título da aula<input data-lesson-name="'+esc(lesson.id)+'" maxlength="180" value="'+esc(lesson.name)+'" '+(!canEdit?'disabled':'')+'></label>'+
-    '<label>Descrição<textarea data-lesson-description="'+esc(lesson.id)+'" maxlength="1200" rows="2" '+(!canEdit?'disabled':'')+'>'+esc(lesson.description||'')+'</textarea></label>'+
-    '<label>Duração prevista (minutos)<input data-lesson-minutes="'+esc(lesson.id)+'" type="number" min="0" max="600" step="1" value="'+Number(lesson.minutes||0)+'" '+(!canEdit?'disabled':'')+'></label>'+
-    '<span class="connected-lesson-notice">'+(lesson.videoId?'Vídeo Mux vinculado ao conteúdo':'Vídeo Mux ainda não vinculado — aula em preparação')+'</span></div>';
-  }
-  html+='</div><div class="connected-add-entry"><label>Nome da nova aula<input type="text" data-new-lesson-name maxlength="180" placeholder="Ex.: Introdução ao sistema hidráulico" '+(!canEdit?'disabled':'')+'></label>'+
-   '<button type="button" data-add-lesson class="outline" '+(!canEdit?'disabled':'')+'>+ Adicionar aula</button></div>'+
-   '<div class="connected-module-save"><button type="button" class="primary" data-save-module '+(!canEdit?'disabled':'')+'>Salvar módulo e aulas</button>'+
-   '<small>A matrícula e as liberações são gerenciadas separadamente. Aulas não podem ser excluídas neste fluxo.</small></div>';
-  box.innerHTML=html;
-  box.querySelector('[data-save-module]').onclick=async()=>{
-   collectForm();await saveDraft();
-  };
-  box.querySelector('[data-add-lesson]').onclick=()=>{
-   const name=box.querySelector('[data-new-lesson-name]')?.value.trim();
-   if(!name){message('Digite o nome da nova aula.',true);box.querySelector('[data-new-lesson-name]')?.focus();return;}
-   collectForm();
-   if(m.lessons.length>=150){message('Limite de 150 aulas por módulo.',true);return;}
-   m.lessons.push({id:newId('lesson'),name:name.slice(0,180),description:'',minutes:0,videoId:''});
-   renderModuleEditor(id,box,canEdit);
-   box.querySelector('[data-save-module]')?.scrollIntoView({block:'nearest'});
-   message('Aula adicionada. Preencha as informações e clique em Salvar módulo e aulas.');
-  };
  }
  async function loadStudents(){
   try{const result=await api('students');students=result.students||[];enrollments=result.enrollments||[];
