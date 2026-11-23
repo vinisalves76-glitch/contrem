@@ -35,6 +35,30 @@ test('ADM pode ativar módulo só com primeiro vídeo, mantendo aulas futuras em
  assert.equal(core.buildMap(academy,[first,later],{progress:{}},{active:true})[0].canOpen,true);
 });
 
+test('Ativar módulo sem Mux libera módulo mas não a aula',()=>{
+ const courses=[course('m1'),course('m2')],student={active:true,validUntil:null};
+ courses[0].moduleEnabled=true;
+ let result=core.buildMap(academy,courses,{progress:{}},student);
+ assert.equal(result[0].canOpen,true);
+ assert.equal(result[0].enabled,true);
+ assert.equal(result[0].hasVideo,false);
+ assert.equal(result[0].status,'preparing');
+ assert.equal(core.lessonCompleted(courses[0],courses[0].lessons[0],{progress:{}}),false);
+ assert.equal(result[1].canOpen,false);
+ courses[0].moduleEnabled=false;
+ result=core.buildMap(academy,courses,{progress:{}},student);
+ assert.equal(result[0].canOpen,false);
+ assert.equal(result[0].status,'inactive');
+});
+
+test('Estado Ativo é preservado quando construtor deixa módulo em rascunho',()=>{
+ const c=course('m1',true);
+ c.status='draft';
+ assert.equal(core.moduleActive(c),true);
+ c.moduleEnabled=false;
+ assert.equal(core.moduleActive(c),false);
+});
+
 test('Aula somente é concluída após vídeo e atividade aprovada, e módulo exige prova se cadastrada',()=>{
  const first=course('m1',true),second=course('m2',true);
  first.lessons[0].questions=[{id:'a',text:'Atividade?',choices:['A','B'],correct:0}];
@@ -67,13 +91,16 @@ test('Sem prova final cadastrada, concluir vídeo e atividade da aula permite av
  assert.equal(core.buildMap(academy,[first,second],{progress:p},{active:true})[1].canOpen,true);
 });
 
-test('Interface contém publicação separada, toggle de módulos e rastreamento Mux',()=>{
+test('ADM contém botões Ativar/Desativar e preserva rastreamento Mux',()=>{
  const source=fs.readFileSync(path.resolve(__dirname,'../src/assets/academy-program-ui.js'),'utf8');
  const gate=fs.readFileSync(path.resolve(__dirname,'../src/assets/academy-lesson-gate.js'),'utf8');
  assert.match(source,/store\.setStatus\(a\.id,'published'\)/);
- assert.match(source,/data-module-enabled/);
- assert.match(source,/moduleEnabled=control\.checked/);
- assert.match(source,/core\.firstVideoReady\(course\)/);
+ assert.match(source,/data\.moduleAccess/);
+ assert.match(source,/data\.accessValue/);
+ assert.match(source,/course\.moduleEnabled=active/);
+ assert.match(source,/\[true,'Ativar'\]/);
+ assert.match(source,/\[false,'Desativar'\]/);
+ assert.doesNotMatch(source,/if\(control\.checked&&!core\.firstVideoReady/);
  assert.match(gate,/player\.on\('timeupdate'/);
  assert.match(gate,/player\.on\('ended'/);
  assert.match(gate,/watched>=\.95/);
