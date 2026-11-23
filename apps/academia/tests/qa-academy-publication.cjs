@@ -4,41 +4,78 @@ const assert=require('node:assert/strict');
 const core=require('../src/assets/academy-program-core.js');
 const fs=require('node:fs');
 const path=require('node:path');
-function prepared(id,status='draft'){
- return {id,academyId:'academy-test',catalogType:'academy_module',name:'Módulo '+id,description:'Conteúdo didático',
- status,lessons:[{id:id+'-aula',name:'Aula técnica',url:'https://player.mux.com/abc123XYZ'}],
- questions:[{id:id+'-q',text:'Questão?',choices:['A','B'],correct:0}],passScore:75};
-}
+const validUrl='https://player.mux.com/hXZZcG4J01eIXscxjSGGKtkfkQjbttFu1P01raXQinZ500';
 const academy={id:'academy-test',title:'Formação de Mecânicos',stages:[{id:'s1',title:'Fundamentos',moduleIds:['m1','m2']}]};
+const course=(id,enabled=false)=>({id,academyId:academy.id,catalogType:core.MOD,name:'Módulo '+id,description:'Conteúdo didático',
+ status:enabled?'published':'draft',moduleEnabled:enabled,
+ lessons:[{id:id+'-aula-1',name:'Aula técnica',url:enabled?validUrl:''}],
+ questions:[{id:id+'-q',text:'Questão?',choices:['A','B'],correct:0}],passScore:75});
 
-test('Módulos completos em rascunho devem ser identificados como aptos para publicação conjunta',()=>{
- const courses=[prepared('m1','published'),prepared('m2','draft')];
- const report=core.inspectModules(academy,courses);
- assert.equal(report.length,2);
- assert.ok(report.every(item=>item.ready));
- assert.equal(report[1].status,'draft');
- assert.match(core.publishReady(academy,courses),/Módulo m2/);
- courses[1].status='published';
+test('Formação pode ser publicada com todos os vídeos ausentes e módulos inativos',()=>{
+ const courses=[course('m1'),course('m2')];
  assert.equal(core.publishReady(academy,courses),'');
+ assert.equal(core.inspectModules(academy,courses).filter(x=>x.enabled).length,0);
+ assert.equal(core.firstVideoReady(courses[0]),false);
+ assert.equal(core.moduleActive(courses[0]),false);
+ const student={active:true,validUntil:null};
+ const map=core.buildMap(academy,courses,{progress:{}},student);
+ assert.equal(map.length,2);
+ assert.equal(map[0].canOpen,false);
+ assert.equal(map[0].status,'inactive');
 });
 
-test('Não publicar módulo sem prova, Mux ou descrição',()=>{
- const courses=[prepared('m1'),prepared('m2')];
- courses[0].questions=[];
- courses[1].lessons[0].url='';
- const report=core.inspectModules(academy,courses);
- assert.equal(report.filter(m=>!m.ready).length,2);
- assert.match(report[0].issues.join(' '),/prova/);
- assert.match(report[1].issues.join(' '),/Mux/);
- assert.ok(courses.every(c=>c.status==='draft'),'a validação não muda o status');
+test('ADM pode ativar módulo só com primeiro vídeo, mantendo aulas futuras em preparação',()=>{
+ const first=course('m1',true),later=course('m2');
+ first.lessons.push({id:'m1-aula-2',name:'Aula 2',url:''});
+ const summary=core.inspectModules(academy,[first,later]);
+ assert.equal(summary[0].enabled,true);
+ assert.equal(summary[0].ready,true);
+ assert.equal(summary[0].missingLessons,1);
+ assert.equal(summary[1].enabled,false);
+ assert.equal(core.buildMap(academy,[first,later],{progress:{}},{active:true})[0].canOpen,true);
 });
 
-test('A publicação conjunta no ADM valida tudo antes de mudar status e restaura em caso de falha',()=>{
- const ui=fs.readFileSync(path.resolve(__dirname,'../src/assets/academy-program-ui.js'),'utf8');
- assert.match(ui,/const diagnostics=core\.inspectModules\(a,courses\),invalid=diagnostics\.filter\(item=>!item\.ready\)/);
- assert.match(ui,/if\(invalid\.length\)/);
- assert.match(ui,/for\(const entry of original\)entry\.course\.status='published'/);
- assert.match(ui,/store\.setStatus\(a\.id,'published'\)/);
- assert.match(ui,/for\(const entry of original\)entry\.course\.status=entry\.status/);
- assert.match(ui,/Corrigir módulo/);
+test('Aula somente é concluída após vídeo e atividade aprovada, e módulo exige prova se cadastrada',()=>{
+ const first=course('m1',true),second=course('m2',true);
+ first.lessons[0].questions=[{id:'a',text:'Atividade?',choices:['A','B'],correct:0}];
+ const progress={};
+ const state={progress},lesson=first.lessons[0],enrollment={active:true};
+ assert.equal(core.lessonCompleted(first,lesson,state),false);
+ progress.m1=[lesson.id]; // marcação manual antiga não deve valer como vídeo completo
+ assert.equal(core.lessonCompleted(first,lesson,state),false);
+ progress['video-watched:m1']=[lesson.id];
+ assert.equal(core.lessonCompleted(first,lesson,state),false); // falta atividade
+ progress['lesson-assessment:m1:'+lesson.id]=[{passed:false}];
+ assert.equal(core.lessonCompleted(first,lesson,state),false);
+ progress['lesson-assessment:m1:'+lesson.id].push({passed:true});
+ assert.equal(core.lessonCompleted(first,lesson,state),true);
+ assert.equal(core.passed(first,state),false); // falta prova final do módulo
+ assert.equal(core.buildMap(academy,[first,second],state,enrollment)[1].status,'blocked');
+ progress['assessment:m1']=[{passed:true}];
+ assert.equal(core.passed(first,state),true);
+ assert.equal(core.buildMap(academy,[first,second],state,enrollment)[1].canOpen,true);
+ second.moduleEnabled=false;
+ assert.equal(core.buildMap(academy,[first,second],state,enrollment)[1].canOpen,false);
+ assert.equal(core.buildMap(academy,[first,second],state,enrollment)[1].status,'inactive');
+});
+
+test('Sem prova final cadastrada, concluir vídeo e atividade da aula permite avançar',()=>{
+ const first=course('m1',true),second=course('m2',true);
+ first.questions=[];
+ const p={m1:['m1-aula-1'],'video-watched:m1':['m1-aula-1']};
+ assert.equal(core.passed(first,{progress:p}),true);
+ assert.equal(core.buildMap(academy,[first,second],{progress:p},{active:true})[1].canOpen,true);
+});
+
+test('Interface contém publicação separada, toggle de módulos e rastreamento Mux',()=>{
+ const source=fs.readFileSync(path.resolve(__dirname,'../src/assets/academy-program-ui.js'),'utf8');
+ const gate=fs.readFileSync(path.resolve(__dirname,'../src/assets/academy-lesson-gate.js'),'utf8');
+ assert.match(source,/store\.setStatus\(a\.id,'published'\)/);
+ assert.match(source,/data-module-enabled/);
+ assert.match(source,/moduleEnabled=control\.checked/);
+ assert.match(source,/core\.firstVideoReady\(course\)/);
+ assert.match(gate,/player\.on\('timeupdate'/);
+ assert.match(gate,/player\.on\('ended'/);
+ assert.match(gate,/watched>=\.95/);
+ assert.match(gate,/\$\('markDone'\)\.disabled=true/);
 });
