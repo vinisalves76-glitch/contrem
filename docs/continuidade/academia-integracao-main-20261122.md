@@ -49,3 +49,31 @@ Este pacote é deliberadamente preparatório: **não coloca a trilha em produç�
 A configuração da CONTREM Academia em produção aponta para o projeto Supabase `relatoriopro`, acessível pelo conector. As tabelas atuais `academy_members`, `academy_course_access`, `academy_editor_catalog`, `academy_learning_state`, `academy_videos` e `academy_stream_assets` já existem com RLS habilitado. As funções `academy_my_catalog` e `academy_save_learning` estão ativas. Não foram identificadas tabelas reais independentes para cadastro de Academias, matrículas nas formações e Ativar/Desativar de módulos com validação server-side.
 
 O projeto Supabase é compartilhado; somente uma migração aditiva revisada, com políticas e testes de acesso, poderá suportar a trilha real. Nenhum SQL de escrita foi executado nesta inspeção.
+
+
+## Atualização: integração visual e do ADM na PREVIEW (23/11/2026)
+
+Esta seção substitui a informação anterior de que a branch continha apenas o motor puro. A integração foi ampliada, sempre partindo da main original e sem substituir o login real.
+
+- Portal visual original aprovado copiado para apps/academia/src/trilha-formacao/ (HTML, CSS, JavaScript e matriz didática).
+- Login Supabase Auth, ADM Master, ADM Conteúdo e Cursos Avulsos preservados. cloud-ui.js apenas dispara eventos ao entrar e sair da sessão.
+- ADM: menu Academias, edição do banner, upload de capa, etapas, planejamento das aulas, publicação integral independente de vídeos, botões Ativar/Desativar por módulo, gerenciamento de matrículas e botão Visualizar portal.
+- Aluno: seção Minhas Academias, restrita às matrículas publicadas, com abertura do painel original em tela inteira e retorno ao perfil.
+- Supabase: migração aditiva criou academy_programs e academy_program_enrollments com RLS e sem acesso direto de anon/authenticated. Nova Edge Function academy-programs versão 1 valida JWT, papel, matrícula e status; a API academy-workspace antiga foi preservada.
+- Formação de Mecânicos cadastrada como RASCUNHO no novo banco, usando a matriz original: 3 etapas, 12 módulos, 78 aulas planejadas, todas inativas inicialmente. Identificador academy-formacao-mecanicos.
+- URL de Preview estável: https://contrem-git-release-aca-bcdaf7-vinicius-alves-projects-fdea38e8.vercel.app/academia/
+- Build da Vercel READY: dpl_8yHrkSJBKfudxevMwjqP9Ct6GSKB. Verificados HTTP 200 para app, script do ADM, rota do portal original e CSS. Seis testes de contrato passaram.
+
+### Importante: o que ainda não foi integrado
+
+- Acompanhamento confiável de visualização Mux, avaliações por aula, provas finais, tentativas autorizadas, progressão entre módulos e certificados com validação server-side. Módulos ativados podem abrir o painel e a lista de aulas, mas não permitem concluir aulas sem vídeo ou avançar automaticamente. NÃO promover para produção antes dessa etapa.
+- As edições feitas somente no localStorage da preview antiga não foram importadas; somente a matriz base foi semeada, sem sobrescrever cursos e alunos reais existentes.
+- A mídia dos módulos da nova Academia requer integração com o Mux assinado e autorização da matrícula. O controle de acesso ao módulo não equivale à liberação de vídeo.
+- A URL da preview compartilha o projeto Supabase real, embora use tabelas novas e sem políticas públicas. Usar matrícula de conta de teste para QA.
+- Antes de publicar em produção: testes reais do fluxo ADM-aluno, compatibilidade com contremtec/site, prova/Mux e regressões de PWA, permissões de publicação e cursos avulsos.
+
+### Como testar nesta preview
+
+Entre como ADM Master. No menu lateral, escolha Academias, abra Formação de Mecânicos e use Visualizar portal. É possível publicar a formação, controlar Ativar/Desativar por módulo e liberar uma matrícula real de teste. O aluno matriculado verá Minhas Academias e o painel original, com as aulas ainda em preparação.
+
+A main e o domínio contrem.vercel.app permanecem intactos.
