@@ -115,3 +115,19 @@ Implementação desta versão:
 Testes: \`apps/academia/tests/qa-academy-integrated-preview.cjs\` (novo) e \`qa-academy-portal-navigation.cjs\` (atualizado). Confirmar a navegação no navegador, especialmente troca entre duas Academias, abertura de módulo e botão voltar.
 
 Limitações: **os dados de homologação estão em localStorage**; não há autenticação/autorização real pelo Supabase nesse novo portal, upload persistente de servidor, emissão de certificado comercial ou pagamentos. O backend precisará verificar matrículas e emitir links Mux de forma segura antes de liberar em produção. Não alterar \`develop\` ou \`main\` durante esta integração. O merge futuro com \`develop\` exige revisão, pois a frente de autenticação de ADM de Conteúdo avançou em paralelo.
+
+
+## Correção do clique que voltava ao topo (Preview)
+
+Relato: ao clicar na Academia liberada, a interface apenas rolava até o início da página geral do aluno, sem abrir o painel.
+
+Causa provável identificada na navegação: a versão anterior deixava o iframe do painel `hidden` e esperava uma confirmação da página interna para exibi-lo. Enquanto isso, executava `show('studentView')` e `scrollTo({top:0})`. Se a confirmação não fosse recebida, a navegação permanecia silenciosamente na página geral.
+
+Correções na branch isolada:
+- A tela do portal é exibida **imediatamente** com abertura visual azul-marinho, carregamento do iframe não oculto e sobreposição controlada.
+- Confirmada a renderização da Academia escolhida, a tela de carregamento desaparece; permanece a barra lateral, banner e trilha originais.
+- Uma falha da renderização do iframe gera mensagem na tela, com **Tentar novamente** e **Voltar ao meu perfil**, em vez de apenas rolar a página.
+- Controle por identificador de abertura impede confusão entre Academias e mensagens de navegações antigas; erros são informados da página filha para a pai.
+- Os testes `qa-academy-integrated-preview.cjs` e `qa-academy-portal-navigation.cjs` foram atualizados; testaram estrutura, matrícula, separação de dados, abertura imediata, fluxo de retorno e JavaScript válido.
+
+**Limite:** os testes executados são automatizados de código e simulados, não são testes visuais reais no navegador. A causa raiz de eventual ausência de resposta do iframe poderá ser identificada pela mensagem mostrada ao aluno. A correção é restrita à preview local; `main`, `develop` e produção permanecem intactos.
