@@ -108,3 +108,36 @@ test('Servidor conserva Mux, metadados de anexos, links e questões sem exigir v
  assert.match(backend,/\.eq\('role','admin'\)|m\.role==='admin'/);
  assert.doesNotMatch(backend,/lessons:cleanLessons,questions:\[\]/);
 });
+
+
+test('Atividades por aula e prova do módulo persistem sem misturar com Cursos Avulsos',async()=>{
+ const f=fixture();
+ f.click('[data-tab="assessment"]');
+ f.set('questionText','Qual é a função da bomba hidráulica?');
+ f.set('choices','Converter energia mecânica em hidráulica\nArmazenar óleo');
+ f.set('correct','1');
+ f.click('[data-action="add-question"]');
+ f.click('[data-action="save"]');await sleep();
+ assert.equal(f.saved.at(-1).lessons[0].questions.length,1);
+ assert.equal(f.saved.at(-1).lessons[0].questions[0].correct,0);
+ const scope=f.root.querySelector('#academyFullQuestionScope');
+ scope.value='module';scope.dispatchEvent(new f.window.Event('change',{bubbles:true}));
+ f.set('questionText','Qual é o objetivo da manutenção preventiva?');
+ f.set('choices','Reduzir falhas\nSubstituir todas as peças');
+ f.set('correct','1');
+ f.click('[data-action="add-question"]');
+ f.click('[data-action="save"]');await sleep();
+ assert.equal(f.saved.at(-1).questions.length,1);
+ assert.equal(f.saved.at(-1).lessons[0].questions.length,1);
+});
+test('Materiais comuns ao módulo não são inseridos como materiais da aula',async()=>{
+ const f=fixture();
+ f.click('[data-tab="materials"]');
+ f.set('linkTitle','Apostila da formação');
+ f.set('linkUrl','https://exemplo.com/apostila.pdf');
+ f.click('[data-action="add-link:module"]');
+ f.click('[data-action="save"]');await sleep();
+ assert.equal(f.saved.at(-1).supportLinks.length,1);
+ assert.equal(f.saved.at(-1).lessons[0].supportLinks.length,0);
+ assert.equal(f.saved.at(-1).supportLinks[0].title,'Apostila da formação');
+});
