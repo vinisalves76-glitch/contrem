@@ -133,20 +133,45 @@ Correções na branch isolada:
 **Limite:** os testes executados são automatizados de código e simulados, não são testes visuais reais no navegador. A causa raiz de eventual ausência de resposta do iframe poderá ser identificada pela mensagem mostrada ao aluno. A correção é restrita à preview local; `main`, `develop` e produção permanecem intactos.
 
 
-## Publicação conjunta de módulos de Academia — Correção
+## Publicação por formação + Ativo/Inativo dos módulos — regra atualizada
 
-Relato: ao publicar Formação de Mecânicos, o ADM exibia apenas `Publique primeiro todos os módulos no construtor de cursos.`, sem apontar quais unidades impediam a publicação. A Formação é preparada com módulos em rascunho, por isso a validação anterior de estado `published` bloqueava mesmo um módulo com conteúdo pronto.
+**Decisão do usuário (substitui a regra anterior de publicação conjunta obrigatória):**
+A Academia completa pode ser publicada **sem vídeos e sem provas cadastrados**. Uma formação de 12 módulos pode estar visível para seus alunos matriculados enquanto os conteúdos ainda são preparados. Publicar a formação NÃO libera automaticamente os módulos.
 
-Novo comportamento na preview:
+### ADM Master — liberação incremental
 
-1. Em **ADM → Academias → Selecionar formação** há um painel **Publicação da Academia** com contagem de módulos preparados e motivos das pendências de cada unidade.
-2. Se faltar título/descrição, aula, link Mux válido, prova ou nota mínima válida, o sistema **não publica** a formação e exibe **Corrigir módulo** na unidade correspondente, abrindo o construtor anterior.
-3. Se **todos os módulos** estiverem completos, o botão **Publicar Academia** muda, na mesma operação da preview, todos os módulos prontos de rascunho para publicado e publica a formação completa. Não é preciso abrir 12 módulos só para mudar seu estado.
-4. Em caso de falha de validação, os status originais dos módulos são preservados.
-5. Continua exclusivo do ADM Master; sem pagamento, Supabase ou deploy de produção.
+- Em **ADM → Academias → selecionar formação**, cada módulo tem uma chave **Ativo para alunos / Inativo**.
+- Os módulos criados pela matriz Formação de Mecânicos começam **inativos**, preservando o conteúdo em preparação.
+- O ADM pode publicar a estrutura geral da Academia em rascunho sem links Mux.
+- Para ativar um módulo, o ADM deve preencher pelo menos o vídeo Mux válido da **primeira aula**. As demais aulas podem receber vídeos posteriormente; até lá, não podem ser concluídas nem acessadas fora de ordem.
+- A chave Ativo ativa a publicação do módulo no catálogo da preview, limitada à matrícula e à aprovação dos módulos anteriores. Desativar preserva progresso e aprovações.
+- É possível abrir o construtor anterior a partir do módulo para inserir links Mux, apostilas, atividades e prova, inclusive na Academia já publicada. Não alterar IDs, apagar aulas concluídas ou reordenar conteúdos com matrícula ativa sem versionamento e estratégia de migração; esses controles precisam ser implementados no backend real antes da produção.
+- Matrículas, validade e nova tentativa em reprovação final continuam sob liberação exclusiva do ADM Master.
 
-Arquivos: `academy-program-core.js` (função pura `inspectModules`, com nomes e motivos específicos), `academy-program-ui.js`, `academy-program-ui.css`, teste `qa-academy-publication.cjs`. A validação de links Mux e prova é preservada; não há publicação automática de aulas vazias.
+### Experiência do aluno
 
-A formação inicial possui aulas planejadas em rascunho, sem vídeo nem prova até serem cadastrados. Não é correto contornar o requisito pedagógico de aprovação para disponibilizá-las aos alunos.
+1. Academia publicada aparece no portal visual aprovado após o aluno acessar **Minhas Academias**.
+2. Módulos inativos e futuros continuam **visíveis no mapa**, mas com acesso bloqueado.
+3. Módulo ativo exige matrícula válida e aprovação dos anteriores. Se a primeira aula ainda não tiver vídeo Mux, não há acesso.
+4. Na sala de aula, o botão manual **Marcar como concluída** não é aceito para módulos da Academia.
+5. A aula é concluída pelo evento \`ended\` do Mux, depois da verificação de cobertura de reprodução em pelo menos **95%** dos segundos do vídeo. Adiantar até o fim, isoladamente, **não** marca como concluído. O acompanhamento é feito por \`player.js\` (Mux iframe).
+6. Se a aula possui atividade configurada no editor, é necessário **aprovação nessa atividade** para liberar a próxima aula, além do vídeo concluído.
+7. A próxima aula não abre enquanto a anterior não cumprir os dois requisitos. Aulas com vídeo ainda não publicado permanecem bloqueadas.
+8. Se o módulo possui prova final, essa prova só pode ser iniciada depois de todas as aulas e atividades aprovadas. O próximo módulo só é liberado após aprovação nessa prova. Se o módulo não tem prova final configurada, cumprir todas as aulas e atividades aprova o módulo.
+9. Reprovação na prova **final do módulo** segue exigindo nova tentativa autorizada pelo ADM Master, conforme definição anterior.
+10. A conclusão de todos os módulos é pré-requisito do certificado final da Academia quando habilitado.
 
-**Ambiente:** somente `feature/academia-trilha-formacao-mecanicos` / Preview estável. `main`, `develop` e produção intocados.
+### Armazenamento de preview e limites
+
+- \`academy-program-core.js\`: \`moduleActive\`, \`firstVideoReady\`, \`lessonCompleted\`, \`nextLessonIndex\`, \`buildMap\`, \`publishReady\`; agora separa publicação editorial de liberação pedagógica.
+- \`academy-program-ui.js\`: publica a Academia sem conteúdos, mostra a chave por módulo, preserva os estados anteriores e não publica módulos automaticamente.
+- \`academy-lesson-gate.js\`: eventos do iframe Mux \`timeupdate\`/\`seeked\`/\`ended\`, bloqueio de marcação manual e próxima aula; somente no ambiente da Academia, não nos Cursos Avulsos.
+- \`assessment-student.js\`: registra o resultado da atividade por aula e continua a aplicar o pedido de nova tentativa na prova final.
+- \`admin-preview-service.js\`: preserva as chaves locais \`video-watched:<courseId>\` e \`lesson-assessment:<courseId>:<lessonId>\` na sessão.
+- \`trilha-formacao/integrated.js\`: indica no mapa módulos inativos e aguardando vídeo.
+
+**ATENÇÃO:** esses registros são **sinais do navegador em homologação**, e não um sistema auditável ou resistente a fraude. A checagem não garante que a pessoa prestou atenção durante todo o vídeo, apenas que houve reprodução rastreada. Na versão com usuários reais, o backend deverá validar matrícula, impor bloqueios no servidor, controlar conteúdo por versão, usar autorização Mux/signed playback e armazenar histórico e eventos de progresso em banco seguro. Sem isso, um aluno técnico pode manipular localStorage/JavaScript. Não promover esta etapa para produção por esse motivo.
+
+Os testes de regressão \`qa-academy-programs.cjs\`, \`qa-academy-publication.cjs\` e \`qa-academy-lesson-watch.cjs\` cobrem formação sem vídeos, módulos inativos, aulas, aprovação e tentativas. Tests são simulados; teste E2E em navegador real ainda necessário.
+
+**Ambiente autorizado:** \`feature/academia-trilha-formacao-mecanicos\` e sua URL de Preview estável. \`main\`, \`develop\` e produção permanecem inalterados.
