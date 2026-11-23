@@ -121,7 +121,7 @@
   const name=prompt('Nome da nova Academia:');
   if(!name?.trim())return;
   const slug=name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,100);
-  selected='academy-'+(slug||'formacao');
+  selected='academy-'+(slug||'formacao')+'-'+crypto.randomUUID().slice(0,8);
   draft={title:name.trim(),description:'',heroKicker:'TRILHA DE CONHECIMENTO',
    heroTitle:name.trim(),heroHighlight:'',heroDescription:'',stageHeading:'Etapas da formação.',
    cover:'',audience:'',objectives:'',certificateEnabled:false,stages:[],modules:[]};
@@ -233,7 +233,7 @@
    textarea('objectives','Objetivos de aprendizagem',draft.objectives,2000)+
    '</div><div class="connected-cover-field"><label for="connectedCoverUpload">Imagem da capa (JPG, PNG ou WebP até 600 KB)</label><input id="connectedCoverUpload" type="file" accept="image/jpeg,image/png,image/webp"><img id="connectedCoverPreview" alt="Capa selecionada" hidden></div>'+
    '<label class="connected-certificate"><input type="checkbox" name="certificateEnabled" '+(draft.certificateEnabled?'checked':'')+'> Certificado final da Academia</label>'+
-   '<h3>Etapas do aprendizado</h3><div id="connectedStagesFields">';
+   '<h3>1. Etapas do aprendizado</h3><p class="connected-builder-guide">Crie as etapas da trilha. Depois, adicione os módulos e as aulas de cada etapa.</p><div id="connectedStagesFields">';
   for(const [i,stage] of draft.stages.entries()){
    html+='<div class="connected-stage-fields" data-stage-fields="'+esc(stage.id)+'"><b>Etapa '+String(i+1).padStart(2,'0')+'</b>'+
     '<label>Nome<input data-stage-title value="'+esc(stage.title)+'" maxlength="120"></label>'+
@@ -242,7 +242,7 @@
   }
   html+='</div><div class="connected-add-entry"><label>Nova etapa da Academia<input type="text" id="connectedNewStageName" maxlength="120" placeholder="Ex.: Fundamentos de manutenção" '+(!canEdit?'disabled':'')+'></label><button type="button" id="connectedAddStage" class="outline" '+(!canEdit?'disabled':'')+'>+ Adicionar etapa</button></div><div class="connected-form-actions"><button type="submit" class="primary" '+(!canEdit?'disabled':'')+'>Salvar configurações</button>';
   if(isMaster()&&p?.status!=='published')html+='<button type="button" id="connectedPublishProgram" class="outline">Publicar Academia completa</button>';
-  html+='</div></form><h3>Liberação dos módulos</h3><p class="muted">Publicar a formação não libera aulas. O botão Ativar controla a entrada no módulo, mantendo a sequência e as aulas sem vídeo indisponíveis.</p><div id="connectedModulesList">';
+  html+='</div></form><h3>2. Módulos e aulas da Academia</h3><p class="connected-builder-guide">Dentro de cada etapa, use <strong>Adicionar módulo</strong>. Depois clique em <strong>Gerenciar aulas</strong> para cadastrar as aulas. Salve as configurações antes de publicar. Os vídeos podem ser incluídos depois.</p><div id="connectedModulesList">';
   const byId=new Map(draft.modules.map(m=>[m.id,m]));
   for(const stage of draft.stages){
    html+='<div class="connected-stage-modules"><h4>'+esc(stage.title)+'</h4>';
