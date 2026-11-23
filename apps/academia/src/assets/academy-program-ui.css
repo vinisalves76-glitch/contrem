@@ -102,3 +102,17 @@ body.academy-immersive > :not(#contremAcademyIntegratedFrame):not(#academyPortal
 .academy-portal-loading-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 .academy-portal-loading-actions button{padding:10px 14px;border-radius:9px;min-height:42px}
 .academy-portal-loading-actions button[hidden]{display:none!important}
+
+
+/* Publicação conjunta: checklist técnico por módulo, sem ocultar rascunhos */
+.program-readiness{background:#f6f8fb;border:1px solid #dce5ed;border-radius:12px;margin:20px 0 14px;overflow:hidden}
+.program-readiness-summary{padding:17px 19px}
+.program-readiness-summary strong{font-size:13px;font-weight:800;color:#203449}
+.program-readiness-summary p{font-size:12px;color:#5e7185;line-height:1.55;margin:8px 0 0}
+.program-readiness-list{border-top:1px solid #dce5ed;max-height:380px;overflow-y:auto}
+.program-readiness-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 18px;border-top:1px solid #e9edf2}
+.program-readiness-item:first-child{border-top:0}
+.program-readiness-item b{font-size:12px;color:#23374e}
+.program-readiness-item p{font-size:11px;color:#895637;line-height:1.5;margin:4px 0 0}
+.program-readiness-item button{font-size:11px;flex:0 0 auto}
+@media(max-width:650px){.program-readiness-item{flex-direction:column;align-items:start}.program-readiness-item button{width:100%}}
