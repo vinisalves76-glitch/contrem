@@ -175,3 +175,21 @@ A Academia completa pode ser publicada **sem vídeos e sem provas cadastrados**.
 Os testes de regressão \`qa-academy-programs.cjs\`, \`qa-academy-publication.cjs\` e \`qa-academy-lesson-watch.cjs\` cobrem formação sem vídeos, módulos inativos, aulas, aprovação e tentativas. Tests são simulados; teste E2E em navegador real ainda necessário.
 
 **Ambiente autorizado:** \`feature/academia-trilha-formacao-mecanicos\` e sua URL de Preview estável. \`main\`, \`develop\` e produção permanecem inalterados.
+
+
+## Correção ADM Ativar/Desativar versus acesso do aluno — 23/11/2026
+
+O ADM e o aluno mostravam situações diferentes: o domínio anterior misturava o controle manual Ativo/Inativo com a exigência de vídeo na primeira aula.
+
+- O ADM Master dispõe de dois botões explícitos, Ativar e Desativar, em cada módulo da Academia, no lugar de checkbox. Apenas a opção corrente fica selecionada (cor e aria-pressed).
+- Ativar define moduleEnabled=true e permite o acesso à página do módulo para alunos com matrícula válida e ordem de progressão cumprida, mesmo sem vídeo Mux cadastrado.
+- Desativar define moduleEnabled=false e bloqueia o módulo para o aluno; não exclui o progresso anterior.
+- O status do construtor (draft/published) é diferente da decisão do ADM (moduleEnabled). Salvar aula não desfaz uma ativação manual. Para módulos antigos sem moduleEnabled, o status published é tratado como ativo por compatibilidade.
+- Módulos sem vídeo podem apresentar programa e descrição, mas a aula continua indisponível, sem player e sem contagem de progresso. A atividade da aula e o próximo módulo só liberam conforme as regras de vídeo e avaliações.
+- O filtro do catálogo do aluno agora aceita módulos ativos que estejam no estado draft do construtor, desde que a matrícula da Academia e a progressão autorizem. O filtro exclui os desativados.
+- O painel do aluno diferencia módulo ativo com vídeo pendente de um módulo efetivamente bloqueado pelo ADM.
+- A operação aguarda a sincronização do catálogo da preview e exibe mensagem de erro se houver falha. O ADM pode voltar ao perfil do aluno e abrir a mesma Academia para verificar.
+
+Os testes de regressão de domínio verificam ativação mesmo sem Mux, desativação, estado do rascunho e proteção de aulas, matrículas e módulos posteriores. A implantação está restrita à branch feature/academia-trilha-formacao-mecanicos.
+
+Limites: este ambiente de demonstração usa localStorage e autorização somente em JavaScript. Não garante segurança contra adulteração dos dados pelo aluno. Na versão real, as permissões precisam ser aplicadas no backend com persistência segura, sem publicar dados de alunos reais durante os testes.
