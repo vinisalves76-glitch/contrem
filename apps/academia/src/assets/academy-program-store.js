@@ -19,9 +19,18 @@
  const learningState=(id,db)=>id===user()?.userId&&user()?.role==='student'&&typeof window.CONTREM_PROGRAM_STATE_ACCESS==='function'?window.CONTREM_PROGRAM_STATE_ACCESS():(db.states[id]||{progress:{}});
  function upsert(value){
   admin();const data=load(),existing=data.academies.find(a=>a.id===value.id);
+  const cover=String(value.cover||'').trim();
+  const isDataImage=/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/i.test(cover);
+  if(cover.length>1400000||(cover&&!isDataImage&&!cover.startsWith('https://')))
+   throw Error('Imagem de capa inválida ou muito grande. Use JPG, PNG ou WebP de até 900 KB.');
   const a={id:value.id||uniqueId('academy'),title:String(value.title||'').trim(),description:String(value.description||'').trim().slice(0,4000),
    audience:String(value.audience||'').trim().slice(0,500),objectives:String(value.objectives||'').trim().slice(0,1200),
-   cover:String(value.cover||'').trim().slice(0,2000),price:Number(value.price)||0,
+   heroKicker:String(value.heroKicker||'').trim().slice(0,160),
+   heroTitle:String(value.heroTitle||'').trim().slice(0,180),
+   heroHighlight:String(value.heroHighlight||'').trim().slice(0,80),
+   heroDescription:String(value.heroDescription||'').trim().slice(0,600),
+   stageHeading:String(value.stageHeading||'').trim().slice(0,130),
+   cover,price:Number(value.price)||0,
    certificateEnabled:!!value.certificateEnabled,stages:core.copy(value.stages||[]),
    status:existing?.status||'draft',createdAt:existing?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
   if(a.price<0||a.price>10000000)throw Error('Preço inválido.');
