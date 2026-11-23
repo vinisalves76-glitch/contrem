@@ -77,7 +77,7 @@
    const a=data.academies.find(a=>a.id===e.academyId&&a.status==='published');
    if(!a)continue;
    for(const item of core.buildMap(a,allCourses,state,e,data.requests,id)){
-    if(item.canOpen&&allCourses.some(c=>c.id===item.id&&c.status==='published'))accessible.add(item.id);
+    if(item.canOpen&&allCourses.some(c=>c.id===item.id&&core.moduleActive(c)))accessible.add(item.id);
    }
   }
   return [...accessible];
