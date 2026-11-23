@@ -39,12 +39,12 @@ test('Adicionar módulo gera uma unidade inativa, dentro da etapa selecionada',(
  const stage={id:'stage-a',title:'Fundamentos',moduleIds:[]};
  const draft={stages:[stage],modules:[]},messages=[];
  const editor={hidden:true,scrollIntoView:()=>messages.push('scrolled')};
- const add=new Function('draft','document','collectForm','message','renderDetails','$','renderModuleEditor','newId',
+ const add=new Function('draft','document','collectForm','message','renderDetails','$','renderModuleEditor','newId','CSS',
  extract(' function addModule(stageId){',' function renderDetails(){')+';return addModule;')(
   draft,{querySelector:()=>({value:'Motor Diesel',focus(){}})},
   ()=>messages.push('collect'),v=>messages.push(v),()=>messages.push('render'),
   id=>id==='connectedModuleEditor-module-abc'?editor:null,
-  ()=>messages.push('open editor'),()=>'module-abc'
+  ()=>messages.push('open editor'),()=>'module-abc',{escape:s=>s}
  );
  add('stage-a');
  assert.equal(draft.modules[0].id,'module-abc');
@@ -59,7 +59,7 @@ test('Adicionar módulo gera uma unidade inativa, dentro da etapa selecionada',(
 test('Gerenciar aulas cria novas aulas com ID estável, sem vídeo obrigatório e sem excluir existentes',()=>{
  const draft={modules:[{id:'module-a',name:'Motor Diesel',description:'',hours:12,lessons:[
   {id:'lesson-original',name:'Introdução',description:'',minutes:0,videoId:''}]}]};
- const buttons={'[data-save-module]':{},'[data-add-lesson]':{},'[data-new-lesson-name]':{value:'Sistema de injeção'}};
+ const buttons={'[data-save-module]':{scrollIntoView(){}},'[data-add-lesson]':{},'[data-new-lesson-name]':{value:'Sistema de injeção'}};
  const box={dataset:{},set innerHTML(x){this.html=x},get innerHTML(){return this.html},querySelector:s=>buttons[s]};
  const render=new Function('draft','esc','collectForm','saveDraft','message','newId',
  extract(' function renderModuleEditor(id,box,canEdit){',' async function loadStudents(){')+';return renderModuleEditor;')(
