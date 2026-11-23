@@ -26,10 +26,16 @@ test('Cursos avulsos não podem ser inseridos como módulos, e módulos são exc
  const s=setup();s.courses[0].catalogType='standalone';assert.throws(()=>s.create(),/exclusivamente/);
  s.courses[0].catalogType='academy_module';s.create();assert.throws(()=>s.store.upsert({title:'Outra Academia',stages:[{id:'e',title:'Básico',moduleIds:['m1']}]}),/exclusivamente|vinculado/);
 });
-test('Academia publicada exige prova, vídeo e módulo publicado',()=>{
- const s=setup();s.create();s.courses[0].status='draft';assert.throws(()=>s.store.setStatus('program','published'),/Publique/);
- s.courses[0].status='published';s.courses[0].questions=[];assert.throws(()=>s.store.setStatus('program','published'),/prova/);
- s.courses[0].questions=[{id:'q',text:'Questão',choices:['A','B'],correct:0}];assert.equal(s.store.setStatus('program','published').status,'published');
+test('Academia pode ser publicada com todos os módulos inativos e sem vídeos',()=>{
+ const s=setup();s.create();
+ s.courses.forEach(c=>{c.status='draft';c.moduleEnabled=false;c.lessons[0].url='';c.questions=[];});
+ assert.equal(s.store.setStatus('program','published').status,'published');
+ s.store.enroll(s.id,'program',true,'','manual');s.asStudent();
+ const map=s.store.studentPrograms().items[0].map;
+ assert.equal(map.items.length,2);
+ assert.equal(map.items[0].status,'inactive');
+ assert.equal(map.items[0].canOpen,false);
+ assert.equal(s.store.accessibleCourseIds(s.id,s.courses,s.db.states[s.id]).length,0);
 });
 test('Matrícula idempotente, bloqueio sequencial, reprovação e retake do Master',()=>{
  const s=setup();s.create();s.store.setStatus('program','published');
@@ -37,7 +43,7 @@ test('Matrícula idempotente, bloqueio sequencial, reprovação e retake do Mast
  assert.equal(s.store.list().enrollments.length,1);
  s.asStudent();assert.deepEqual(Array.from(s.store.accessibleCourseIds(s.id,s.courses,s.db.states[s.id])),['m1']);
  assert.equal(s.store.canAttempt('m1').allowed,false);
- s.db.states[s.id].progress.m1=['m1-l1'];s.persist();
+ s.db.states[s.id].progress.m1=['m1-l1'];s.db.states[s.id].progress['video-watched:m1']=['m1-l1'];s.persist();
  assert.equal(s.store.canAttempt('m1').allowed,true);
  s.store.consumeRetry('m1');
  s.db.states[s.id].progress['assessment:m1']=[{passed:false,score:0,at:new Date().toISOString()}];s.persist();
@@ -51,9 +57,22 @@ test('Matrícula idempotente, bloqueio sequencial, reprovação e retake do Mast
  s.db.states[s.id].progress['assessment:m1'].push({passed:true,score:100,at:new Date().toISOString()});s.persist();
  assert.deepEqual(Array.from(s.store.accessibleCourseIds(s.id,s.courses,s.db.states[s.id])),['m1','m2']);
 });
+test('Uma atividade de aula pendente bloqueia a próxima aula e a aprovação do módulo',()=>{
+ const s=setup();s.courses[0].lessons.push({id:'m1-l2',name:'Aula 2',url:'https://player.mux.com/hXZZcG4J01eIXscxjSGGKtkfkQjbttFu1P01raXQinZ500'});
+ s.courses[0].lessons[0].questions=[{id:'q1',text:'Teste',choices:['A','B'],correct:0}];
+ s.create();s.store.setStatus('program','published');s.store.enroll(s.id,'program',true);
+ s.db.states[s.id].progress.m1=['m1-l1'];s.db.states[s.id].progress['video-watched:m1']=['m1-l1'];s.persist();
+ s.asStudent();assert.equal(s.core.nextLessonIndex(s.courses[0],s.db.states[s.id]),0);
+ s.db.states[s.id].progress['lesson-assessment:m1:m1-l1']=[{passed:true}];s.persist();
+ assert.equal(s.core.nextLessonIndex(s.courses[0],s.db.states[s.id]),1);
+ assert.equal(s.core.lessonDone(s.courses[0],s.db.states[s.id]),false);
+ s.db.states[s.id].progress.m1=['m1-l1','m1-l2'];s.db.states[s.id].progress['video-watched:m1']=['m1-l1','m1-l2'];s.persist();
+ assert.equal(s.store.canAttempt('m1').allowed,true);
+});
 test('Emissão final configurável, sem certificado duplicado e sem acesso vencido',()=>{
  const s=setup();s.create();s.store.setStatus('program','published');s.store.enroll(s.id,'program',true,'','manual');
  s.db.states[s.id].progress.m1=['m1-l1'];s.db.states[s.id].progress.m2=['m2-l1'];
+ s.db.states[s.id].progress['video-watched:m1']=['m1-l1'];s.db.states[s.id].progress['video-watched:m2']=['m2-l1'];
  s.db.states[s.id].progress['assessment:m1']=[{passed:true,score:100}];
  s.db.states[s.id].progress['assessment:m2']=[{passed:true,score:100}];s.persist();
  s.asStudent();const one=s.store.issueCertificate('program');const again=s.store.issueCertificate('program');
