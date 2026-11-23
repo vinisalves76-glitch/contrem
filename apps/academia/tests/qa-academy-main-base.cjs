@@ -61,9 +61,11 @@ test('Produção mantém login real e não carrega sandbox da preview',()=>{
  assert.match(service,/academy_my_catalog/);
  assert.match(service,/academy-workspace/);
 });
-test('A importação é isolada: core puro não substitui o ADM real',()=>{
+test('A integração mantém o ADM real e não injeta o login sandbox',()=>{
  const html=code('apps/academia/src/index.html');
  assert.match(html,/src="assets\/admin-manager\.js"/);
  assert.match(html,/src="assets\/cloud-ui\.js"/);
- assert.doesNotMatch(html,/src="assets\/academy-program-core\.js"/);
+ assert.match(html,/src="assets\/academy-program-core\.js"/);
+ assert.match(html,/src="assets\/academy-connected-ui\.js"/);
+ assert.doesNotMatch(html,/src="assets\/admin-preview-service\.js"/);
 });
