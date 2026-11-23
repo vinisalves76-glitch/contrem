@@ -129,7 +129,7 @@
    heroKicker:'TRILHA DE CONHECIMENTO · NÍVEL INICIAL AO INTERMEDIÁRIO',
    heroTitle:'Formação de Mecânicos de Máquinas Pesadas',heroHighlight:'Mecânicos',
    heroDescription:'Do primeiro contato com a mecânica à análise de sistemas e diagnóstico técnico. Uma jornada completa para evoluir na linha pesada.',
-   stageHeading:'Três etapas. Uma evolução.',cover:'',
+   stageHeading:'Módulos para sua evolução.',cover:'',
    audience:'Iniciantes e profissionais de manutenção',objectives:'Fundamentos, sistemas e diagnóstico introdutório.',
    certificateEnabled:false,stages:stageContent,modules};
  }
@@ -244,7 +244,7 @@
    field('title','Título da Academia',draft.title,180)+field('heroKicker','Chamada superior',draft.heroKicker,160)+
    field('heroTitle','Título principal do banner',draft.heroTitle,180)+
    field('heroHighlight','Palavra em laranja',draft.heroHighlight,80)+
-   field('stageHeading','Chamada das etapas',draft.stageHeading,150)+
+   field('stageHeading','Chamada dos módulos',draft.stageHeading,150)+
    textarea('heroDescription','Descrição do primeiro card',draft.heroDescription,700)+
    textarea('description','Descrição institucional',draft.description,4000)+
    field('audience','Público-alvo',draft.audience,600)+
