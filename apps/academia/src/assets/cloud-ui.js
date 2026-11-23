@@ -154,13 +154,78 @@
  }
  async function loadStudentRoster(){
   const roster=document.getElementById('studentRoster');if(mode!=='cloud'||!isEditor())return;
-  try{const data=await service.listStudents(),rows=data.members||[],grants=data.grants||[];roster.innerHTML=rows.length?rows.map(m=>'<div class="student-roster-row"><b>'+esc(m.display_name)+'</b><small class="roster-email">'+esc(m.email||'')+'</small> · '+(m.active?'Ativo':'Inativo')+' <button type="button" class="outline" '+(!isMaster()?'hidden':'')+' data-member="'+esc(m.id)+'" data-active="'+(!m.active)+'">'+(m.active?'Desativar':'Reativar')+'</button><div class="access-course-list">'+(courses.length?courses.map(c=>'<label><input type="checkbox" data-member="'+esc(m.id)+'" data-course="'+esc(c.id)+'" '+(grants.some(g=>g.member_id===m.id&&g.course_id===c.id)?'checked':'')+' '+(!m.active||(!isMaster()&&c.status!=='published')?'disabled':'')+'> '+esc(c.name)+(c.status!=='published'?' · rascunho':'')+'</label>').join(''):'Cadastre um treinamento para liberar acesso.')+'</div></div>').join(''):'Nenhum aluno cadastrado.';}catch{roster.textContent='Não foi possível carregar os alunos.';}
+  roster.textContent='Carregando alunos e permissões…';
+  try{
+   const data=await service.listStudents(),rows=data.members||[],grants=data.grants||[];
+   let academyPrograms=[],academyEnrollments=[],academyError='';
+   if(isMaster()){
+    try{
+     const academyData=await service.listAcademyAccess();
+     academyPrograms=Array.isArray(academyData.programs)?academyData.programs:[];
+     academyEnrollments=Array.isArray(academyData.enrollments)?academyData.enrollments:[];
+    }catch(error){academyError=error.message||'Falha na consulta às Academias.';}
+   }
+   const enrolled=(memberId,programId)=>academyEnrollments.find(entry=>entry.member_id===memberId&&entry.program_id===programId);
+   const today=new Date().toISOString().slice(0,10);
+   const courseList=member=>'<section class="access-roster-group" aria-label="Cursos Avulsos do aluno">'+
+    '<div class="access-roster-group-title"><strong>Cursos Avulsos</strong><small>'+courses.length+' cadastrados</small></div>'+
+    '<div class="access-roster-options">'+(courses.length?courses.map(course=>{
+     const granted=grants.some(g=>g.member_id===member.id&&g.course_id===course.id);
+     const isDraft=course.status!=='published';
+     return '<label class="access-roster-option"><input type="checkbox" data-member="'+esc(member.id)+'" data-course="'+esc(course.id)+'" '+
+      (granted?'checked ':'')+(!member.active||(!isMaster()&&isDraft)?'disabled ':'')+
+      '><span>'+esc(course.name)+'<small class="'+(isDraft?'roster-draft':'roster-published')+'">'+
+      (isDraft?'Rascunho · ainda não disponível para assistir':'Publicado')+'</small></span></label>';
+    }).join(''):'<p class="access-roster-empty">Nenhum Curso Avulso cadastrado.</p>')+'</div></section>';
+   const academyList=member=>{
+    if(!isMaster())return '<section class="access-roster-group" aria-label="Academias"><div class="access-roster-group-title"><strong>Academias</strong></div><p class="access-roster-empty">A matrícula em Academias é gerenciada somente pelo ADM Master.</p></section>';
+    if(academyError)return '<section class="access-roster-group"><div class="access-roster-group-title"><strong>Academias</strong></div><p class="access-roster-error">Não foi possível consultar as Academias: '+esc(academyError)+
+      '</p><button type="button" class="outline" data-retry-academy>Recarregar Academias</button></section>';
+    return '<section class="access-roster-group" aria-label="Academias do aluno">'+
+      '<div class="access-roster-group-title"><strong>Academias</strong><small>'+academyPrograms.length+' cadastradas</small></div>'+
+      '<div class="access-roster-options">'+(academyPrograms.length?academyPrograms.map(program=>{
+       const enrollment=enrolled(member.id,program.id);
+       const published=program.status==='published';
+       const granted=enrollment?.active===true;
+       const expired=granted&&enrollment.expires_on&&enrollment.expires_on<today;
+       const status=program.status==='published'?'Publicada':program.status==='archived'?'Arquivada':'Rascunho';
+       return '<label class="access-roster-option"><input type="checkbox" data-member="'+esc(member.id)+
+        '" data-academy="'+esc(program.id)+'" data-expires="'+esc(enrollment?.expires_on||'')+'" '+
+        (granted?'checked ':'')+(!member.active||!published?'disabled ':'')+
+        '><span>'+esc(program.title)+'<small class="'+(published?'roster-published':'roster-draft')+'">'+
+        esc(status)+(expired?' · matrícula vencida; revise a validade em Academias':'')+
+        (!published?' · publique para liberar acesso':'')+'</small></span></label>';
+      }).join(''):'<p class="access-roster-empty">Nenhuma Academia cadastrada.</p>')+'</div></section>';
+   };
+   roster.innerHTML=rows.length?rows.map(member=>
+     '<article class="student-roster-row"><div class="student-roster-heading"><div><b>'+esc(member.display_name)+'</b>'+
+     (member.email?'<small class="roster-email">'+esc(member.email)+'</small>':'')+
+     '<span class="student-roster-status">'+(member.active?'Ativo':'Inativo')+'</span></div>'+
+     '<button type="button" class="outline" '+(!isMaster()?'hidden ':'')+'data-member="'+esc(member.id)+
+     '" data-active="'+(!member.active)+'">'+(member.active?'Desativar aluno':'Reativar aluno')+'</button></div>'+
+     '<div class="access-roster-groups">'+courseList(member)+academyList(member)+'</div></article>'
+    ).join(''):'Nenhum aluno cadastrado.';
+  }catch(error){
+   roster.textContent='Não foi possível carregar os alunos: '+(error.message||'verifique sua conexão.');
+  }
  }
  document.getElementById('studentRoster').addEventListener('change',async event=>{
-  const el=event.target;if(!el.matches('[data-course]')||mode!=='cloud')return;
-  el.disabled=true;try{await service.setCourseAccess(el.dataset.member,el.dataset.course,el.checked);document.getElementById('studentFormStatus').textContent='Acesso ao curso atualizado.';}catch(error){el.checked=!el.checked;document.getElementById('studentFormStatus').textContent=error.message;}finally{el.disabled=false;}
+  const el=event.target;if(mode!=='cloud'||!el.matches('[data-course],[data-academy]'))return;
+  const enabled=el.checked,memberId=el.dataset.member,status=document.getElementById('studentFormStatus');
+  el.disabled=true;status.textContent='Atualizando acesso…';
+  try{
+   if(el.dataset.course)await service.setCourseAccess(memberId,el.dataset.course,enabled);
+   else{
+    if(!isMaster())throw Error('Somente o ADM Master libera matrículas das Academias.');
+    await service.setAcademyAccess(memberId,el.dataset.academy,enabled,el.dataset.expires||'');
+   }
+   status.textContent=el.dataset.course?'Acesso ao Curso Avulso atualizado.':
+     enabled?'Matrícula da Academia liberada.':'Acesso à Academia suspenso.';
+  }catch(error){el.checked=!enabled;status.textContent=error.message||'Não foi possível alterar o acesso.';}
+  finally{el.disabled=false;}
  });
  document.getElementById('studentRoster').addEventListener('click',async event=>{
+  if(event.target.closest('[data-retry-academy]')){await loadStudentRoster();return;}
   const el=event.target.closest('[data-active]');if(!el||mode!=='cloud'||!isMaster())return;
   el.disabled=true;try{await service.setStudentActive(el.dataset.member,el.dataset.active==='true');await loadStudentRoster();document.getElementById('studentFormStatus').textContent='Status do aluno atualizado.';}catch(error){document.getElementById('studentFormStatus').textContent=error.message;el.disabled=false;}
  });
