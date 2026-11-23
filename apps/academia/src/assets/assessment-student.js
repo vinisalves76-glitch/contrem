@@ -30,7 +30,7 @@
  }
  async function start(ctx){
   if(!alive(ctx))return;
-  if(ctx.course.academyId&&ctx.checkpoint&&!(progress[ctx.course.id]||[]).includes(ctx.lesson?.id)){
+  if(ctx.course.academyId&&ctx.checkpoint&&!window.CONTREM_PROGRAM_CORE.videoWatched(ctx.course,ctx.lesson,{progress})){
    root.append(el('p','Assista ao vídeo completo antes de iniciar a atividade desta aula.','notice'));
    return;
   }
