@@ -231,9 +231,8 @@
    lessons:[],questions:[],passScore:75});
   stage.moduleIds.push(id);
   renderDetails();
-  const editor=$('connectedModuleEditor-'+id);
-  if(editor){editor.hidden=false;renderModuleEditor(id,editor,true);editor.scrollIntoView({block:'nearest'});}
-  message('Módulo criado como Inativo. Cadastre as aulas e salve a Academia.');
+  // O módulo abre o construtor completo (Mux, anexos, links e atividades).
+  openFullModuleEditor(id,true);
  }
  function renderDetails(){
   const p=programs.find(p=>p.id===selected)||null,canEdit=isMaster()||!p||p.status==='draft';
@@ -267,7 +266,7 @@
     const m=byId.get(id);if(!m)continue;
     html+='<div class="connected-module-row" data-module="'+esc(m.id)+'"><div><b>'+esc(m.name)+'</b><small>'+Number(m.hours||0)+'h · '+(m.lessons||[]).length+' aulas · '+(m.moduleEnabled?'ATIVO':'INATIVO')+'</small></div><div class="connected-module-tools">';
     if(isMaster()&&p)html+='<button type="button" data-toggle-module="'+esc(m.id)+'" data-enable="true" class="'+(m.moduleEnabled?'selected':'')+'">Ativar</button><button type="button" data-toggle-module="'+esc(m.id)+'" data-enable="false" class="'+(!m.moduleEnabled?'selected':'')+'">Desativar</button>';
-    html+='<button type="button" data-edit-module="'+esc(m.id)+'" class="outline">Gerenciar aulas</button></div></div><div class="connected-module-editor" id="connectedModuleEditor-'+esc(m.id)+'" hidden></div>';
+    html+='<button type="button" data-edit-module="'+esc(m.id)+'" class="outline">Gerenciar aulas e materiais →</button></div></div><div class="connected-module-editor" id="connectedModuleEditor-'+esc(m.id)+'" hidden></div>';
    }
    html+='<div class="connected-add-entry"><label>Novo módulo nesta etapa<input type="text" data-new-module-name="'+esc(stage.id)+'" maxlength="180" placeholder="Ex.: Segurança e ferramentas" '+(!canEdit?'disabled':'')+'></label><button type="button" data-add-module="'+esc(stage.id)+'" class="outline" '+(!canEdit?'disabled':'')+'>+ Adicionar módulo</button></div></div>';
   }
@@ -332,13 +331,34 @@
    catch(error){button.disabled=false;message(error.message,true);}
   });
   holder.querySelectorAll('[data-edit-module]').forEach(button=>button.onclick=()=>{
-   collectForm();const id=button.dataset.editModule,box=$('connectedModuleEditor-'+id);
-   if(box.hidden){box.hidden=false;renderModuleEditor(id,box,canEdit);}else box.hidden=true;
+   collectForm();openFullModuleEditor(button.dataset.editModule,canEdit);
   });
   const load=$('connectedLoadStudents');if(load)load.onclick=loadStudents;
  }
  const field=(name,label,value,max)=>'<label>'+esc(label)+'<input type="text" name="'+name+'" maxlength="'+max+'" value="'+esc(value||'')+'"></label>';
  const textarea=(name,label,value,max)=>'<label class="wide">'+esc(label)+'<textarea name="'+name+'" maxlength="'+max+'" rows="3">'+esc(value||'')+'</textarea></label>';
+ async function openFullModuleEditor(moduleId,canEdit){
+  const editor=window.CONTREM_ACADEMY_LESSON_EDITOR;
+  const source=draft?.modules.find(m=>m.id===moduleId),programId=selected;
+  if(!editor||!source){message('Não foi possível abrir o construtor completo. Atualize o navegador.',true);return;}
+  editor.open({
+   programTitle:draft.title,module:source,canEdit,
+   async onSave(updatedModule){
+    if(programId!==selected)throw Error('A Academia selecionada mudou. Volte aos módulos e tente novamente.');
+    const newDefinition=copy(draft),index=newDefinition.modules.findIndex(m=>m.id===moduleId);
+    if(index<0)throw Error('Módulo não encontrado. Reabra a Academia.');
+    newDefinition.modules[index]=updatedModule;
+    const existing=programs.find(p=>p.id===programId);
+    const result=await api('save',{id:programId,revision:existing?.revision??null,definition:newDefinition});
+    draft=newDefinition;
+    const saved={id:programId,title:newDefinition.title,status:result.program?.status||existing?.status||'draft',
+     revision:result.program?.revision??(existing?.revision||0)+1,definition:newDefinition};
+    if(existing)Object.assign(existing,saved);else programs.unshift(saved);
+    message('Módulo, vídeos Mux, materiais e atividades salvos na Academia.');
+   },
+   onClose:()=>{renderAdmin();message('Construtor de aulas fechado.');}
+  });
+ }
  async function saveDraft(){
   if(!draft)return;
   const button=$('connectedProgramForm')?.querySelector('[type=submit]');if(button)button.disabled=true;
