@@ -46,7 +46,9 @@ test('Pré-matrícula em formação de rascunho pode ser marcada, mas não acess
  assert.match(roster,/pré-matrícula; acesso somente após publicar/);
  assert.match(programs,/!\['draft','published'\]\.includes\(program\.status\)/);
  const my=programs.slice(programs.indexOf("if(action==='my')"));
- assert.match(my,/\.eq\('status','published'\)/);
+ assert.match(my,/p\.status==='published'/);
+ assert.match(my,/unpublishedEnrollmentProjection\(p,enrollment,m\.display_name\)/);
+ assert.doesNotMatch(my,/\.eq\('status','published'\)/);
  assert.match(programs,/if\(!master\)return reply\(403/);
 });
 test('Acesso antigo a Cursos Avulsos continua independente das Academias',()=>{
