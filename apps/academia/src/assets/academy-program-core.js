@@ -50,17 +50,30 @@
     }
     return true;
   }
+  function inspectModules(academy,courses){
+    const byId=new Map(courses.map(c=>[c.id,c]));
+    return moduleIds(academy).map(id=>{
+      const course=byId.get(id),issues=[];
+      if(!course){issues.push('Módulo não encontrado no construtor de cursos.');return {id,name:'Módulo ausente',status:'missing',ready:false,issues};}
+      const name=String(course.name||'').trim()||'Módulo sem nome';
+      if(!String(course.name||'').trim()||!String(course.description||'').trim())issues.push('Informe nome e descrição do módulo.');
+      if(!Array.isArray(course.lessons)||!course.lessons.length)issues.push('Cadastre pelo menos uma aula.');
+      else {
+        const incomplete=course.lessons.filter(l=>!String(l.name||'').trim()||!/^(https:\/\/player\.mux\.com\/[A-Za-z0-9_-]+(?:\?.*)?)$/.test(String(l.url||'')));
+        if(incomplete.length)issues.push('Vídeo Mux ausente ou inválido em '+incomplete.length+' aula(s).');
+      }
+      if(!Array.isArray(course.questions)||!course.questions.length)issues.push('Cadastre a prova do módulo.');
+      if(!Number.isFinite(Number(course.passScore))||Number(course.passScore)<0||Number(course.passScore)>100)issues.push('Revise a nota mínima (0 a 100).');
+      return {id,name,status:course.status||'draft',ready:issues.length===0,issues};
+    });
+  }
   function publishReady(academy,courses){
-    const ids=moduleIds(academy);
-    if(!ids.length)return 'Adicione pelo menos um módulo.';
-    const map=new Map(courses.map(c=>[c.id,c]));
-    for(const id of ids){
-      const c=map.get(id);
-      if(!c||c.status!=='published')return 'Publique primeiro todos os módulos no construtor de cursos.';
-      if(!c.lessons?.length||c.lessons.some(l=>!l.name?.trim()||!l.url?.startsWith('https://player.mux.com/')))return 'Todos os módulos precisam de aulas com vídeos Mux válidos.';
-      if(!Array.isArray(c.questions)||!c.questions.length)return 'Cadastre uma prova final em cada módulo.';
-      if(!Number.isFinite(Number(c.passScore))||Number(c.passScore)<0||Number(c.passScore)>100)return 'Revise a nota mínima das avaliações.';
-    }
+    const modules=inspectModules(academy,courses);
+    if(!modules.length)return 'Adicione pelo menos um módulo.';
+    const invalid=modules.find(item=>!item.ready);
+    if(invalid)return invalid.name+': '+invalid.issues[0];
+    const draft=modules.find(item=>item.status!=='published');
+    if(draft)return draft.name+': módulo pronto, mas ainda em rascunho. Publique-o no construtor ou use a publicação conjunta da Academia.';
     return '';
   }
   function eligibleExam(course,state,requests,studentId){
@@ -72,7 +85,7 @@
     if(status==='approved')return {allowed:true,initial:false};
     return {allowed:false,reason:status==='pending'?'Solicitação enviada. Aguarde a autorização do ADM Master.':'Após reprovação, solicite uma nova tentativa ao ADM Master.'};
   }
-  const api={MOD,copy,today,moduleIds,validDate,activeEnrollment,lessonDone,attempts,passed,requestStatus,buildMap,programState,guardProgram,publishReady,eligibleExam};
+  const api={MOD,copy,today,moduleIds,validDate,activeEnrollment,lessonDone,attempts,passed,requestStatus,buildMap,programState,guardProgram,inspectModules,publishReady,eligibleExam};
   root.CONTREM_PROGRAM_CORE=api;
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);
