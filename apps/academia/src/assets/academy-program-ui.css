@@ -116,3 +116,12 @@ body.academy-immersive > :not(#contremAcademyIntegratedFrame):not(#academyPortal
 .program-readiness-item p{font-size:11px;color:#895637;line-height:1.5;margin:4px 0 0}
 .program-readiness-item button{font-size:11px;flex:0 0 auto}
 @media(max-width:650px){.program-readiness-item{flex-direction:column;align-items:start}.program-readiness-item button{width:100%}}
+
+
+/* Controle de disponibilidade explícita por módulo no ADM, sem mudar o layout oficial. */
+.program-module-switch{display:inline-flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;
+  background:#f1f5f8;border:1px solid #d6e1e9;color:#324c65;font-size:11px;font-weight:800;cursor:pointer}
+.program-module-switch input{appearance:auto;accent-color:#e98a34;width:17px;height:17px;margin:0;cursor:pointer}
+.program-module-switch:has(input:checked){background:#e6f5ed;border-color:#b4ddc7;color:#216343}
+.program-module-switch input:disabled{cursor:not-allowed}
+.program-readiness-item p{color:#697d8d}
