@@ -46,7 +46,10 @@
    const catalog=isAdmin?db.catalog.courses:db.catalog.courses.filter(c=>allowed.has(c.id)&&c.status==='published');
    const state=copy(db.states[id]||emptyState(name));
    const visible=new Set(catalog.map(c=>c.id));
-   state.progress=Object.fromEntries(Object.entries(state.progress).filter(([k])=>visible.has(k.replace(/^assessment:/,''))));
+   state.progress=Object.fromEntries(Object.entries(state.progress).filter(([k])=>{
+    const courseId=k.startsWith('lesson-assessment:')?k.slice('lesson-assessment:'.length).split(':')[0]:k.replace(/^assessment:/,'');
+    return visible.has(courseId);
+   }));
    state.activity=Object.fromEntries(Object.entries(state.activity).filter(([k])=>visible.has(k)));
    state.certificates=state.certificates.filter(c=>visible.has(c.courseId));
    current=id;sessionStorage.setItem(SESSION,id);
