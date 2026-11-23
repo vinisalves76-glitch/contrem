@@ -198,3 +198,12 @@ body.academy-connected-open{overflow:hidden!important}
 #studentRoster .student-password-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:13px}
 #studentRoster .student-password-result{font-size:12px!important;color:#38694e!important;margin:11px 0 0!important}
 @media(max-width:660px){#studentRoster .student-password-fields{grid-template-columns:1fr}}
+
+
+/* Matrícula da Academia visível ao aluno, inclusive antes da publicação. */
+.connected-program-card .connected-program-state{
+ display:inline-flex;align-self:flex-start;border:1px solid #6e899b;border-radius:7px;
+ padding:7px 10px;color:#e8f1f8;font-size:10px;letter-spacing:.055em;font-weight:800}
+.connected-program-card.awaiting-publication{background:linear-gradient(128deg,#28384c,#35465b);border-color:#93a4b5}
+.connected-program-card.awaiting-publication .connected-program-state{color:#ffe2bc;background:#73563755;border-color:#b88d59}
+.connected-program-card button:disabled{opacity:.7;cursor:not-allowed;background:#7d8996;color:#fff}
