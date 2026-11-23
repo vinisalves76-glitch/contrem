@@ -81,6 +81,25 @@ test('Emissão final configurável, sem certificado duplicado e sem acesso venci
  assert.equal(s.store.accessibleCourseIds(s.id,s.courses,s.db.states[s.id]).length,0);
  assert.equal(s.store.studentPrograms().certificates.length,1);
 });
+test('Botão Ativar/Desativar é refletido no mapa do aluno mesmo sem vídeo',()=>{
+ const s=setup();
+ s.courses[0].status='draft';s.courses[0].moduleEnabled=true;s.courses[0].lessons[0].url='';
+ s.courses[1].status='published';s.courses[1].moduleEnabled=false;
+ s.persist();s.create();s.store.setStatus('program','published');
+ s.store.enroll(s.id,'program',true);
+ s.asStudent();
+ let map=s.store.studentPrograms().items[0].map;
+ assert.equal(map.items[0].canOpen,true,'módulo ativado deve abrir mesmo sem vídeo');
+ assert.equal(map.items[0].hasVideo,false,'a aula sem vídeo segue pendente');
+ assert.equal(map.items[0].status,'preparing');
+ assert.deepEqual(Array.from(s.store.accessibleCourseIds(s.id,s.courses,s.db.states[s.id])),['m1']);
+ s.courses[0].moduleEnabled=false;s.persist();
+ map=s.store.studentPrograms().items[0].map;
+ assert.equal(map.items[0].canOpen,false,'desativação deve fechar módulo');
+ assert.equal(map.items[0].status,'inactive');
+ assert.equal(s.store.accessibleCourseIds(s.id,s.courses,s.db.states[s.id]).length,0);
+});
+
 test('Edição e arquivamento de programa publicado com matrícula ativa são bloqueados',()=>{
  const s=setup();s.create();s.store.setStatus('program','published');s.store.enroll(s.id,'program',true);
  assert.throws(()=>s.store.upsert({...s.store.getPrograms()[0],title:'Novo nome'}),/versionamento/);
