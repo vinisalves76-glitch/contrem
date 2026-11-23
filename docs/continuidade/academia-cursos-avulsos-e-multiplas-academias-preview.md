@@ -131,3 +131,22 @@ Correções na branch isolada:
 - Os testes `qa-academy-integrated-preview.cjs` e `qa-academy-portal-navigation.cjs` foram atualizados; testaram estrutura, matrícula, separação de dados, abertura imediata, fluxo de retorno e JavaScript válido.
 
 **Limite:** os testes executados são automatizados de código e simulados, não são testes visuais reais no navegador. A causa raiz de eventual ausência de resposta do iframe poderá ser identificada pela mensagem mostrada ao aluno. A correção é restrita à preview local; `main`, `develop` e produção permanecem intactos.
+
+
+## Publicação conjunta de módulos de Academia — Correção
+
+Relato: ao publicar Formação de Mecânicos, o ADM exibia apenas `Publique primeiro todos os módulos no construtor de cursos.`, sem apontar quais unidades impediam a publicação. A Formação é preparada com módulos em rascunho, por isso a validação anterior de estado `published` bloqueava mesmo um módulo com conteúdo pronto.
+
+Novo comportamento na preview:
+
+1. Em **ADM → Academias → Selecionar formação** há um painel **Publicação da Academia** com contagem de módulos preparados e motivos das pendências de cada unidade.
+2. Se faltar título/descrição, aula, link Mux válido, prova ou nota mínima válida, o sistema **não publica** a formação e exibe **Corrigir módulo** na unidade correspondente, abrindo o construtor anterior.
+3. Se **todos os módulos** estiverem completos, o botão **Publicar Academia** muda, na mesma operação da preview, todos os módulos prontos de rascunho para publicado e publica a formação completa. Não é preciso abrir 12 módulos só para mudar seu estado.
+4. Em caso de falha de validação, os status originais dos módulos são preservados.
+5. Continua exclusivo do ADM Master; sem pagamento, Supabase ou deploy de produção.
+
+Arquivos: `academy-program-core.js` (função pura `inspectModules`, com nomes e motivos específicos), `academy-program-ui.js`, `academy-program-ui.css`, teste `qa-academy-publication.cjs`. A validação de links Mux e prova é preservada; não há publicação automática de aulas vazias.
+
+A formação inicial possui aulas planejadas em rascunho, sem vídeo nem prova até serem cadastrados. Não é correto contornar o requisito pedagógico de aprovação para disponibilizá-las aos alunos.
+
+**Ambiente:** somente `feature/academia-trilha-formacao-mecanicos` / Preview estável. `main`, `develop` e produção intocados.
