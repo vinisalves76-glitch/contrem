@@ -157,3 +157,18 @@ Implementação no ramo de integração:
 - Deploy Supabase `academy-programs` v5 ACTIVE, verificado como diff exato do código previamente ativo; frontend restrito à mesma branch de preview `release/academia-formacoes-main-base-20261122`, preservando `main` e produção.
 
 **Pendente:** concluir QA autenticado em navegador com a conta matriculada, verificar publicação da formação e abrir o painel original após ativação do primeiro módulo. Não confundir visualizar pré-matrícula com autorização para assistir a aulas não publicadas.
+
+
+## Navegação separada do aluno e identificação no cadastro — 23/11/2026
+
+**Problema:** todas as áreas estavam exibidas em uma única página vertical; a tela do aluno ainda tinha o formulário de Identificação do aluno e botão Salvar perfil.
+
+**Mudanças na preview baseada na main:**
+- Scripts student-navigation.js e student-navigation.css dividem a área do aluno em seis painéis exclusivos: Minha aprendizagem (visão geral), Minhas Academias, Meus cursos, Meu desempenho (com histórico), Meu perfil (somente leitura) e Certificados.
+- Os componentes existentes de cursos, aulas, player Mux, progresso, desempenho, histórico, matrículas, certificados e perfis legados são preservados e reorganizados em seções com visibilidade exclusiva; não houve recriação ou exclusão de elementos e IDs.
+- Os botões do menu lateral passam a trocar de área (não mais rolar a página). Estado do botão ativo, título superior e retorno do player seguem a seleção do aluno. O banner Explorar meus cursos abre a seção Meus cursos.
+- O formulário de Identificação do aluno permanece apenas oculto no DOM por compatibilidade com scripts legados; não é visível nem editável. O menu Meu perfil apresenta somente informações da conta em leitura, com o nome e e-mail de autenticação e dados opcionais de Empresa e Cargo/Função.
+- Em ADM → Alunos, o cadastro novo passa a pedir Nome completo, E-mail, Senha inicial, Empresa (opcional) e Cargo/Função (opcional). Empresa e cargo são salvos no perfil existente de academy_learning_state, sem nova tabela e sem sobrescrever os cadastros anteriores. O serviço academy-students conserva as validações de ADM Master e Supabase Auth.
+- O botão Minhas Academias utiliza a nova navegação exclusiva e continua consultando o Supabase ao abrir. O controller só opera para aluno autenticado, preservando ADM Master, ADM de Conteúdo, site e ContremTec.
+- Teste de regressão qa-student-navigation-connected.cjs cobre cadastro ADM, perfil somente leitura, menu por área, atalhos e preservação dos componentes existentes.
+- Escopo restrito a branch release/academia-formacoes-main-base-20261122 e URL estável de Preview. A main e produção não são alteradas.
