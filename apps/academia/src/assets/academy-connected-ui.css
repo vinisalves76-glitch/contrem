@@ -207,3 +207,18 @@ body.academy-connected-open{overflow:hidden!important}
 .connected-program-card.awaiting-publication{background:linear-gradient(128deg,#28384c,#35465b);border-color:#93a4b5}
 .connected-program-card.awaiting-publication .connected-program-state{color:#ffe2bc;background:#73563755;border-color:#b88d59}
 .connected-program-card button:disabled{opacity:.7;cursor:not-allowed;background:#7d8996;color:#fff}
+
+
+/* Aulas exibidas dentro do módulo com acesso exclusivo ao construtor completo. */
+.connected-module-lessons{padding:8px 14px 15px 18px;margin:0 0 14px;
+ border-bottom:1px solid #e2e9f1;background:#fcfdfe;display:grid;gap:10px}
+.connected-module-lesson{display:flex;align-items:center;justify-content:space-between;
+ gap:14px;padding:10px 14px;background:#fff;border:1px solid #e0e9f1;border-radius:9px}
+.connected-module-lesson>div{display:grid;gap:5px;min-width:0}
+.connected-module-lesson strong{font-size:12px;color:#253d55;overflow-wrap:anywhere}
+.connected-module-lesson small{font-size:10px;color:#7890a4}
+.connected-module-lessons-empty{margin:4px 0;font-size:12px;color:#72869a}
+.connected-module-lessons>button{justify-self:start}
+.connected-module-lesson button,.connected-module-lessons>button{font-size:11px;white-space:nowrap}
+@media(max-width:740px){.connected-module-lesson{align-items:stretch;flex-direction:column}
+ .connected-module-lesson button{align-self:start}}
