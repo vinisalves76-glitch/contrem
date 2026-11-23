@@ -48,7 +48,7 @@
    if(!['admin','content_admin'].includes(window.AcademySession?.role))throw Error('Somente a equipe da Academia pode anexar materiais.');
    // Reutiliza a MESMA validação e o MESMO bucket privado do construtor de cursos.
    // O diretório da Academia é isolado do catálogo de Cursos Avulsos.
-   if(academyFolder&&!/^academy-asset-[A-Za-z0-9_-]{3,310}$/.test(academyFolder))
+   if(academyFolder&&!/^academy-asset-[A-Za-z0-9_-]{3,360}$/.test(academyFolder))
     throw Error('Diretório de materiais da Academia inválido.');
    const courseId=academyFolder||document.getElementById('editId')?.value||'';
    if(!/^[A-Za-z0-9_-]+$/.test(courseId))throw Error('Salve o curso antes de enviar materiais.');
