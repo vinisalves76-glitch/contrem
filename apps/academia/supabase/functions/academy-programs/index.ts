@@ -26,8 +26,8 @@ const muxId=(value:unknown)=>{
  try{
   const u=new URL(raw);
   if(u.protocol!=='https:'||u.username||u.password||u.search||u.hash)return null;
-  const id=u.hostname==='player.mux.com'?u.pathname.replace(/^\\/(?:watch\\/)?/,'').replace(/\\/$/,''):
-   u.hostname==='stream.mux.com'?u.pathname.slice(1).replace(/\\.m3u8$/,''):'';
+  const id=u.hostname==='player.mux.com'?u.pathname.replace(/^\/(?:watch\/)?/,'').replace(/\/$/,''):
+   u.hostname==='stream.mux.com'?u.pathname.slice(1).replace(/\.m3u8$/,''):'';
   return valid(id)?id:null;
  }catch{return null;}
 };
