@@ -188,10 +188,15 @@ Deno.serve(async(req)=>{
    const {data,error:queryError}=await db.from('academy_members').select('id,display_name,active')
     .eq('role','student').order('display_name').limit(300);
    if(queryError)return reply(500,error(500,'Não foi possível listar alunos.'));
-   const {data:enrollments,error:enrollmentError}=await db.from('academy_program_enrollments')
-    .select('program_id,member_id,active,expires_on').limit(1500);
+   const [{data:enrollments,error:enrollmentError},{data:available,error:programsError}]=await Promise.all([
+    db.from('academy_program_enrollments')
+      .select('program_id,member_id,active,expires_on').limit(1500),
+    db.from('academy_programs')
+      .select('id,title,status').order('title',{ascending:true}).limit(90)
+   ]);
    if(enrollmentError)return reply(500,error(500,'Não foi possível listar matrículas.'));
-   return reply(200,{students:data||[],enrollments:enrollments||[]});
+   if(programsError)return reply(500,error(500,'Não foi possível listar Academias.'));
+   return reply(200,{students:data||[],enrollments:enrollments||[],programs:available||[]});
   }
   if(action==='enroll'){
    if(!master)return reply(403,error(403,'Apenas o ADM Master gerencia matrículas.'));
