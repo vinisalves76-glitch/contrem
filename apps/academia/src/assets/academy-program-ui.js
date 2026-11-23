@@ -7,7 +7,7 @@
  const $=id=>document.getElementById(id),e=s=>esc(s??''),date=()=>core.today();
  window.CONTREM_PROGRAM_COURSE_ACCESS=()=>courses;
  window.CONTREM_PROGRAM_STATE_ACCESS=()=>({progress});
- let selected=null,opened=null,returnToAcademy=null;
+ let selected=null,opened=null,returnToAcademy=null,frameReady=false;
  const admin=$('adminView'),panel=document.createElement('section');
  panel.id='academiasAdminPanel';panel.className='panel program-main';
  panel.innerHTML=`
@@ -39,12 +39,12 @@
  $('adminStudents').append(enrollment);
  const studentPanel=document.createElement('section');studentPanel.id='myAcademies';studentPanel.className='panel program-student-panel';
  studentPanel.innerHTML='<div class="tag">MINHAS ACADEMIAS</div><div class="row"><div><h2>Minhas formações</h2><p class="muted">Trilhas completas, com etapas e módulos liberados conforme sua aprovação.</p></div><button type="button" class="outline" id="refreshAcademies">Atualizar progresso ↻</button></div><div id="studentAcademiesList"></div>';
- const portal=document.createElement('main');
- portal.id='academyPortalView';portal.className='wrap program-portal hidden';
- portal.setAttribute('aria-label','Portal da Academia');
- portal.innerHTML='<section class="program-portal-hero"><div class="program-portal-toolbar"><button type="button" id="programPortalBack" class="program-portal-back">← Minhas Academias</button><span class="program-portal-brand">CONTREM ACADEMIA · FORMAÇÃO</span></div><div class="program-portal-heading"><span class="tag">SEU AMBIENTE DE FORMAÇÃO</span><h1 id="programPortalTitle">Minha Academia</h1><p id="programPortalDescription">Acesse as etapas e continue sua formação.</p><div id="programPortalMeta" class="program-portal-meta"></div></div></section><section class="program-portal-content"><div id="studentAcademyDetail" hidden></div></section>';
- $('studentView').after(portal);
- portal.querySelector('#programPortalBack').onclick=()=>{show('studentView');$('myAcademies')?.scrollIntoView({block:'start'});};
+ const frame=document.createElement('iframe');
+ frame.id='contremAcademyIntegratedFrame';
+ frame.title='Portal da Academia vinculada ao seu login';
+ frame.setAttribute('referrerpolicy','same-origin');
+ frame.hidden=true;
+ document.body.append(frame);
  $('studentView').querySelector('.learning-banner')?.after(studentPanel);
  const studentNav=document.createElement('button');studentNav.type='button';studentNav.innerHTML='<span aria-hidden="true">◇</span> Minhas Academias';
  studentNav.setAttribute('data-jump','myAcademies');$('studentNav').insertBefore(studentNav,$('studentNav').querySelector('[data-jump="my-performance"]'));
@@ -277,10 +277,10 @@
  roster.observe($('studentRoster'),{subtree:true,childList:true});
  // Student view: overview remains separate from avulsos and does not expose locked lessons.
  function renderStudent(){
-  if(!enrolled()){studentPanel.hidden=true;return;}
+  if(!enrolled()){studentPanel.hidden=true;hidePortalFrame();return;}
   studentPanel.hidden=false;
   const {items}=store.studentPrograms(),box=$('studentAcademiesList');box.replaceChildren();
-  if(!items.length){box.innerHTML='<p class="muted">Você ainda não possui matrículas em Academias. Seus cursos avulsos continuam disponíveis em Meus Cursos.</p>';$('studentAcademyDetail').hidden=true;return;}
+  if(!items.length){box.innerHTML='<p class="muted">Você ainda não possui matrículas em Academias. Seus cursos avulsos continuam disponíveis em Meus Cursos.</p>';hidePortalFrame();return;}
   for(const item of items){
    const button=document.createElement('button');button.className='program-student-card';button.type='button';
    button.innerHTML='<div><span class="tag">'+(item.map.active?'MATRÍCULA ATIVA':'ACESSO EXPIRADO OU SUSPENSO')+'</span><h3>'+e(item.academy.title)+'</h3><p>'+e(item.academy.description)+'</p><small>'+item.map.approved+' de '+item.map.total+' módulos aprovados · '+(item.enrollment.validUntil?'Válido até '+e(item.enrollment.validUntil):'Sem prazo')+'</small></div><span class="program-arrow">→</span>';
@@ -288,58 +288,63 @@
    box.append(button);
   }
   if(!opened||!items.some(i=>i.academy.id===opened))opened=items[0].academy.id;
-  renderStudentDetail();
+  if(!frame.hidden&&frameReady)sendPortalData();
+ }
+ function hidePortalFrame(){
+  frame.hidden=true;
+  document.body.classList.remove('academy-immersive');
+ }
+ function preparePortalPayload(academyId){
+  if(!enrolled())return null;
+  const item=store.studentPrograms().items.find(entry=>entry.academy.id===academyId);
+  if(!item)return null;
+  const modules=item.map.items;
+  const ready=modules.find(m=>m.canOpen&&!m.passed)||null;
+  const last=ready&&courses.find(c=>c.id===ready.id);
+  const completedLessons=last?new Set(progress[ready.id]||[]):new Set();
+  const nextLesson=last?.lessons?.find(l=>!completedLessons.has(l.id))||last?.lessons?.[0]||null;
+  const resume=!item.map.active?{status:'blocked',name:'Matrícula indisponível',description:'Consulte a validade da sua matrícula.'}
+    :item.map.completed?{status:'completed',name:'Formação concluída',description:'Você concluiu as etapas e avaliações desta formação.'}
+    :ready?{status:'available',moduleId:ready.id,started:completedLessons.size>0||ready.attempts>0,
+       name:nextLesson?nextLesson.name:ready.name,description:'Módulo: '+ready.name}
+    :{status:'blocked',name:'Continue seu desenvolvimento',description:'Consulte sua trilha e os requisitos dos módulos.'};
+  const availableCourses=modules.filter(m=>m.canOpen).map(m=>{
+   const c=courses.find(x=>x.id===m.id);
+   return c?{id:c.id,name:c.name,description:c.description,lessons:(c.lessons||[]).map(l=>({id:l.id,name:l.name}))}:null;
+  }).filter(Boolean);
+  return {academy:item.academy,map:item.map,enrollment:{active:item.enrollment.active,
+   validUntil:item.enrollment.validUntil||null},courses:availableCourses,resume,studentName};
+ }
+ function sendPortalData(){
+  if(frame.hidden||!frameReady||!opened||!enrolled())return;
+  const payload=preparePortalPayload(opened);
+  if(!payload){hidePortalFrame();return;}
+  frame.contentWindow?.postMessage({type:'contrem:academy-data',academyId:opened,payload},location.origin);
  }
  function openAcademyPortal(academyId){
   if(!enrolled())return;
-  const item=store.studentPrograms().items.find(entry=>entry.academy.id===academyId);
-  if(!item)return;
+  const payload=preparePortalPayload(academyId);
+  if(!payload)return;
   opened=academyId;
-  renderStudentDetail();
-  show('academyPortalView');
+  show('studentView');
+  frame.hidden=false;
+  document.body.classList.add('academy-immersive');
+  if(!frame.getAttribute('src')){
+   frameReady=false;frame.setAttribute('src','./trilha-formacao/?integrated=1');
+  }else sendPortalData();
   window.scrollTo({top:0,behavior:'auto'});
  }
- function renderStudentDetail(){
-  if(!enrolled()||!opened)return;
-  const data=store.studentPrograms(),item=data.items.find(i=>i.academy.id===opened),root=$('studentAcademyDetail');
-  if(!item){root.hidden=true;return;}
-  root.hidden=false;root.replaceChildren();
-  $('programPortalTitle').textContent=item.academy.title;
-  $('programPortalDescription').textContent=item.academy.description||'Sua jornada de aprendizagem organizada em etapas e módulos.';
-  const validity=item.enrollment.validUntil?'Válido até '+item.enrollment.validUntil.split('-').reverse().join('/'):'Acesso sem prazo';
-  $('programPortalMeta').textContent=item.academy.stages.length+' etapa(s) · '+item.map.total+' módulo(s) · '+validity;
-  const heading=document.createElement('div');heading.className='program-student-heading';
-  heading.innerHTML='<div><span class="tag">MAPA DA FORMAÇÃO</span><h3>'+e(item.academy.title)+'</h3><p>'+item.map.approved+' de '+item.map.total+' módulos aprovados</p></div><span class="program-progress-pct">'+(item.map.total?Math.round(100*item.map.approved/item.map.total):0)+'%</span>';root.append(heading);
-  const progressBar=document.createElement('div');progressBar.className='program-progress-track';const fill=document.createElement('span');fill.style.width=(item.map.total?Math.round(100*item.map.approved/item.map.total):0)+'%';progressBar.append(fill);root.append(progressBar);
-  const labels={blocked:'Bloqueado',expired:'Acesso indisponível',approved:'Aprovado',available:'Disponível','awaiting-exam':'Pronto para prova',failed:'Reprovado · nova tentativa necessária','retry-pending':'Aguardando ADM Master','retry-approved':'Nova tentativa autorizada'};
-  for(const stage of item.academy.stages){
-   const block=document.createElement('section');block.className='program-student-stage';
-   const title=document.createElement('h4');title.textContent=stage.title;block.append(title);
-   for(const id of stage.moduleIds){
-    const m=item.map.items.find(x=>x.id===id);if(!m)continue;
-    const row=document.createElement('div');row.className='program-student-module'+(m.canOpen?' unlocked':' locked');
-    row.innerHTML='<div><b>'+e(m.name)+'</b><small>'+e(labels[m.status])+' · '+m.lessons+' aulas · '+m.hours+'h</small></div>';
-    const actions=document.createElement('div');actions.className='program-student-actions';
-    if(m.canOpen){const open=document.createElement('button');open.type='button';open.className='primary';open.textContent=m.passed?'Revisar módulo →':'Abrir módulo →';open.onclick=()=>openModule(item.academy.id,id);actions.append(open);}
-    if(m.canOpen&&m.status==='failed'){
-     const request=document.createElement('button');request.type='button';request.className='outline';request.textContent='Solicitar nova tentativa';
-     request.onclick=async()=>{try{await window.CONTREM_PREVIEW_SYNC?.flush?.();store.requestRetake(id);renderStudent();}catch(err){alert(err.message);}};actions.append(request);
-    }
-    row.append(actions);block.append(row);
-   }
-   root.append(block);
+ window.addEventListener('message',event=>{
+  if(event.origin!==location.origin||event.source!==frame.contentWindow||!enrolled())return;
+  const msg=event.data;
+  if(msg?.type==='contrem:academy-ready'){frameReady=true;sendPortalData();return;}
+  if(msg?.type!=='contrem:academy-action'||frame.hidden||!opened)return;
+  if(msg.action==='back'){hidePortalFrame();show('studentView');$('myAcademies')?.scrollIntoView({block:'start'});return;}
+  if(msg.action==='open-module'&&msg.academyId===opened&&typeof msg.moduleId==='string'){
+   const item=store.studentPrograms().items.find(x=>x.academy.id===opened);
+   if(item?.map.active&&item.map.items.some(m=>m.id===msg.moduleId&&m.canOpen))openModule(opened,msg.moduleId);
   }
-  const certificate=data.certificates.find(c=>c.academyId===item.academy.id);
-  const certArea=document.createElement('div');certArea.className='program-certificate';
-  const certMessage=item.academy.certificateEnabled?'Certificado da Academia habilitado pelo ADM Master.':'Esta Academia não emite certificado final.';
-  certArea.innerHTML='<b>Certificação da formação</b><p>'+e(certMessage)+'</p>';
-  if(certificate){const b=document.createElement('button');b.type='button';b.className='outline';b.textContent='Visualizar certificado de demonstração';b.onclick=()=>printCert(certificate);certArea.append(b);}
-  else if(item.academy.certificateEnabled&&item.map.completed&&item.map.active){
-   const b=document.createElement('button');b.type='button';b.className='primary';b.textContent='Emitir certificado de demonstração';
-   b.onclick=async()=>{try{await window.CONTREM_PREVIEW_SYNC?.flush?.();const cert=store.issueCertificate(item.academy.id);printCert(cert);renderStudent();}catch(err){alert(err.message);}};certArea.append(b);
-  }
-  root.append(certArea);
- }
+ });
  async function openModule(academyId,moduleId){
   if(!enrolled())return;
   const selected=store.studentPrograms().items.find(x=>x.academy.id===academyId);
@@ -380,9 +385,8 @@
  refresh=function(){originalRefresh();if(enrolled())renderStudent();};
  const originalShow=show;
  show=function(id){
-  const result=originalShow(id==='academyPortalView'?'studentView':id);
-  portal.classList.toggle('hidden',id!=='academyPortalView');
-  if(id==='academyPortalView')$('studentView').classList.add('hidden');
+  const result=originalShow(id);
+  if(id!=='studentView')hidePortalFrame();
   if(id==='studentView'&&enrolled())renderStudent();
   return result;
  };
