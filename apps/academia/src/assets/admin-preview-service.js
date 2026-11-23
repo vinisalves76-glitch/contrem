@@ -47,7 +47,7 @@
    const state=copy(db.states[id]||emptyState(name));
    const visible=new Set(catalog.map(c=>c.id));
    state.progress=Object.fromEntries(Object.entries(state.progress).filter(([k])=>{
-    const courseId=k.startsWith('lesson-assessment:')?k.slice('lesson-assessment:'.length).split(':')[0]:k.replace(/^assessment:/,'');
+    const courseId=k.startsWith('lesson-assessment:')?k.slice('lesson-assessment:'.length).split(':')[0]:k.replace(/^(?:assessment:|video-watched:)/,'');
     return visible.has(courseId);
    }));
    state.activity=Object.fromEntries(Object.entries(state.activity).filter(([k])=>visible.has(k)));
