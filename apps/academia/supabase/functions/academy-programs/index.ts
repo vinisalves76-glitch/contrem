@@ -64,6 +64,17 @@ function clean(data:unknown){
   objectives:short(a.objectives,2000),cover,certificateEnabled:a.certificateEnabled===true,
   stages,modules};
 }
+function unpublishedEnrollmentProjection(program:Json,enrollment:Json,studentName:string){
+ // Exposição mínima: não enviar estrutura, aulas ou vídeos de Academias não publicadas.
+ const until=typeof enrollment.expires_on==='string'?enrollment.expires_on:null;
+ return {publicationStatus:'published',academy:{id:String(program.id),title:String(program.title),description:'',
+   heroDescription:'',stages:[]},publicationStatus:String(program.status),
+   map:{active:false,approved:0,total:0,completed:false,items:[]},
+   enrollment:{active:enrollment.active===true,validUntil:until},courses:[],
+   resume:{status:'waiting',name:'Aguardando publicação',
+    description:'Sua matrícula foi registrada. A Academia será disponibilizada após publicação pelo ADM Master.'},
+   studentName};
+}
 function studentProjection(program:Json,enrollment:Json,studentName:string){
  const data=asObject(program.definition),modules=Array.isArray(data.modules)?data.modules as Json[]:[],
   stages=Array.isArray(data.stages)?data.stages as Json[]:[],
@@ -222,15 +233,21 @@ Deno.serve(async(req)=>{
   }
   if(action==='my'){
    const {data:enrollments,error:enrollmentError}=await db.from('academy_program_enrollments')
-    .select('program_id,active,expires_on').eq('member_id',m.id);
+    .select('program_id,active,expires_on').eq('member_id',m.id).eq('active',true);
    if(enrollmentError)return reply(500,error(500,'Não foi possível consultar suas matrículas.'));
    const ids=(enrollments||[]).map(x=>x.program_id);
    if(!ids.length)return reply(200,{academies:[]});
+   // Incluir matrículas em rascunho para o aluno enxergar a concessão, sem abrir conteúdo.
    const {data:programs,error:queryError}=await db.from('academy_programs')
-    .select('id,title,status,definition').in('id',ids).eq('status','published');
+    .select('id,title,status,definition').in('id',ids);
    if(queryError)return reply(500,error(500,'Não foi possível consultar suas Academias.'));
    const byId=new Map((enrollments||[]).map(x=>[x.program_id,x]));
-   return reply(200,{academies:(programs||[]).map(p=>studentProjection(p,byId.get(p.id) as Json,m.display_name))});
+   return reply(200,{academies:(programs||[]).map(p=>{
+    const enrollment=byId.get(p.id) as Json;
+    return p.status==='published'
+     ?studentProjection(p,enrollment,m.display_name)
+     :unpublishedEnrollmentProjection(p,enrollment,m.display_name);
+   })});
   }
   return reply(400,error(400,'Operação não reconhecida.'));
  }catch(ex){
