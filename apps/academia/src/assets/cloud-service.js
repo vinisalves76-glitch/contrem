@@ -80,6 +80,10 @@
    async reload(){if(!identity)throw Error('Entre novamente.');const version=clearIdentity(),data=unwrap(await client.auth.getUser());return load(data.user,version);},
    async signOut(){clearIdentity();const result=await client.auth.signOut({scope:'local'});if(result.error)throw result.error;},
    async createStudent(name,email,password){return manage('create',{name,email,password});},
+   async resetStudentPassword(memberId,password){
+    if(!admin())throw Error('Somente o ADM Master redefine a senha de alunos.');
+    return manage('password_reset',{memberId,password});
+   },
    async listStudents(){if(!editor())throw Error('Acesso restrito à equipe administrativa.');return admin()?manage('list'):workspace('list_students');},
    async listAcademyAccess(){return academyAccess('students');},
    async setAcademyAccess(memberId,programId,enabled,expiresOn=''){
