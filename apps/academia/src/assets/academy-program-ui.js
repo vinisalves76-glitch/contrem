@@ -140,6 +140,15 @@
   a.stages.forEach((stage,idx)=>{
    const box=document.createElement('section');box.className='program-stage';
    box.innerHTML='<div class="program-stage-head"><div><span class="tag">ETAPA '+String(idx+1).padStart(2,'0')+'</span><h4>'+e(stage.title)+'</h4></div><div class="program-stage-actions"><button type="button" class="outline" data-stage-up="'+idx+'" '+(idx===0?'disabled':'')+'>↑</button><button type="button" class="outline" data-stage-down="'+idx+'" '+(idx===a.stages.length-1?'disabled':'')+'>↓</button><button type="button" class="outline" data-stage-rename="'+idx+'">Renomear</button></div></div>';
+   const stageAppearance=document.createElement('form');stageAppearance.className='program-stage-copy';
+   stageAppearance.innerHTML='<div class="program-form-grid"><label>Chamada do cartão<input name="cardTitle" maxlength="120" value="'+e(stage.cardTitle||'')+'" placeholder="Ex.: Construa sua base técnica"></label><label>Descrição resumida<input name="cardDescription" maxlength="240" value="'+e(stage.cardDescription||'')+'" placeholder="Ex.: Segurança, mecânica e metrologia"></label></div><button type="submit" class="outline">Salvar texto desta etapa</button>';
+   stageAppearance.onsubmit=event=>{
+    event.preventDefault();const fields=new FormData(stageAppearance),stages=core.copy(a.stages);
+    stages[idx].cardTitle=String(fields.get('cardTitle')||'').trim();
+    stages[idx].cardDescription=String(fields.get('cardDescription')||'').trim();
+    updateProgram({...a,stages});
+   };
+   box.append(stageAppearance);
    const list=document.createElement('div');list.className='program-module-list';
    stage.moduleIds.forEach((id,i)=>{
     const c=courses.find(c=>c.id===id);
@@ -244,7 +253,12 @@
   if(!blue?.modules)return notify('Matriz de formação indisponível.',true);
   const id='academy-formacao-mecanicos';const present=fresh().academies.find(a=>a.id===id);
   if(present){selected=id;renderAdmin();return notify('Formação já preparada. Suas edições foram preservadas.');}
-  const stages=[1,2,3].map((n)=>({id:'academy-mec-stage-'+n,title:['Fundamentos','Sistemas das máquinas','Aplicação e diagnóstico'][n-1],moduleIds:[]}));
+  const stageContent=[
+   {title:'Fundamentos',cardTitle:'Construa sua base técnica.',cardDescription:'Segurança, mecânica básica, metrologia e documentação.'},
+   {title:'Sistemas',cardTitle:'Entenda como tudo funciona.',cardDescription:'Motores diesel, elétrica, eletrônica, hidráulica e trem de força.'},
+   {title:'Aplicação',cardTitle:'Pense como um técnico.',cardDescription:'Manutenção, investigação de falhas e estudos de caso virtuais.'}
+  ];
+  const stages=stageContent.map((item,i)=>({id:'academy-mec-stage-'+(i+1),...item,moduleIds:[]}));
   for(const m of blue.modules){
    const cid='trilha-formacao-'+m.id.toLowerCase(),exists=courses.find(c=>c.id===cid);
    if(exists?.academyId&&exists.academyId!==id)return notify('Um módulo existente pertence a outra Academia.',true);
