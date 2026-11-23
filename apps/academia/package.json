@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "node --test tests/release-contract.test.mjs && node tests/qa-admin-production.cjs && node tests/qa-staff-production.cjs"
+    "test": "node --test tests/release-contract.test.mjs && node tests/qa-admin-production.cjs && node tests/qa-staff-production.cjs && node --test tests/qa-academy-full-lesson-editor.cjs"
   },
   "devDependencies": {
     "linkedom": "0.18.12"
