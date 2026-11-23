@@ -97,3 +97,21 @@ Não há configuração de gateway de pagamento ou migração Supabase aplicada 
 **Verificação executada:** sintaxe JS válida; teste isolado do caminho do clique passou (renderização → troca para portal → rolagem ao início); tentativa de abrir ID inexistente não navega; presença das regras de retorno comprovada na fonte. **Não houve teste E2E em navegador real.**
 
 **Importante:** o controle de matrícula e desbloqueio permanece restrito ao **sandbox local da Preview**. A correção não altera banco real, Supabase Auth/RLS, `develop`, `main` nem produção. Antes de integrar à base mais recente, reconciliar modificações concorrentes de outros trabalhos.
+
+
+## Portal visual original integrado ao login do aluno — Preview v2
+
+O usuário aprovou visualmente a antiga rota \`/academia/trilha-formacao/\` e definiu que esse painel, com a barra lateral azul-marinho, logo CONTREM, banner com escavadeira, etapas, indicadores, trilha e Laboratório Virtual, deve abrir **a partir da matrícula na conta do aluno**. Não deve haver uma segunda experiência genérica paralela. O botão **Voltar para meu perfil** entra no menu original.
+
+Implementação desta versão:
+
+- \`trilha-formacao/index.html\` e \`style.css\` **continuam sendo o layout original de referência**. Quando abertos com \`?integrated=1&request=...\`, carregam \`integrated.js\` e \`integrated.css\`; sem esse parâmetro preservam a demonstração isolada anterior.
+- \`academy-program-ui.js\` cria um iframe **mesma origem** em tela cheia sobre a sessão da CONTREM Academia ao clicar em uma Academia do aluno. Usa somente \`store.studentPrograms()\` e acesso a módulos liberados para construir o resumo, identificando a próxima aula via progresso. A sala de aula utiliza o construtor/player existente, voltando depois ao painel visual original.
+- O iframe espera uma mensagem com a identificação exclusiva da abertura, recebe os dados autorizados, renderiza e confirma a exibição antes de ficar visível. A troca de Academia recarrega o iframe para não mostrar conteúdo de outra matrícula. Todas as mensagens conferem origem, janela, token e identificador da Academia.
+- \`integrated.js\` fornece o menu **Visão geral**, **Minha trilha**, **Laboratório virtual**, **Sobre o programa** e **Voltar para meu perfil**, com cartões de etapas dinâmicos, status/bloqueios reais do sandbox e botão **Continuar de onde parei**. O Laboratório Virtual mantém o espaço e o visual, com conteúdo em desenvolvimento.
+- \`academy-program-store.js\` e o ADM \`academy-program-ui.js\` agora aceitam chamada superior, título principal, palavra em laranja, descrição, título das etapas, imagem de capa e frase/descrição de cada etapa. Upload de imagem JPG/PNG/WebP até **900 KB**, guardado apenas no navegador em homologação; na ausência de capa personalizada fica a imagem original. A Formação de Mecânicos nova recebe as chamadas de exemplo baseadas na prévia.
+- Mantidas matrículas, validade, progressão sequencial, autorização da nova tentativa, certificados demonstrativos e separação de cursos avulsos.
+
+Testes: \`apps/academia/tests/qa-academy-integrated-preview.cjs\` (novo) e \`qa-academy-portal-navigation.cjs\` (atualizado). Confirmar a navegação no navegador, especialmente troca entre duas Academias, abertura de módulo e botão voltar.
+
+Limitações: **os dados de homologação estão em localStorage**; não há autenticação/autorização real pelo Supabase nesse novo portal, upload persistente de servidor, emissão de certificado comercial ou pagamentos. O backend precisará verificar matrículas e emitir links Mux de forma segura antes de liberar em produção. Não alterar \`develop\` ou \`main\` durante esta integração. O merge futuro com \`develop\` exige revisão, pois a frente de autenticação de ADM de Conteúdo avançou em paralelo.
