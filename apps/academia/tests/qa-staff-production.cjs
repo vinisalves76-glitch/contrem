@@ -12,7 +12,7 @@ Object.defineProperty(dom.HTMLSelectElement.prototype,'value',{get(){return this
 dom.HTMLElement.prototype.reset=function(){this.querySelectorAll('input,textarea').forEach(el=>el.value=el.getAttribute('value')||'');};
 dom.HTMLElement.prototype.scrollIntoView=()=>{};
 const windowEvents=new Map();let allowDiscard=true;
-const context={document,localStorage:storage(memory),sessionStorage:storage(session),crypto:webcrypto,TextEncoder,URL,Blob,indexedDB,console,MutationObserver:dom.MutationObserver,navigator:{onLine:true},matchMedia:()=>({matches:false}),scrollTo:()=>{},alert:text=>{throw Error('Unexpected alert: '+text);},confirm:()=>allowDiscard,setTimeout,clearTimeout,queueMicrotask,addEventListener:(name,fn)=>{windowEvents.set(name,fn);}};
+const context={document,localStorage:storage(memory),sessionStorage:storage(session),crypto:webcrypto,TextEncoder,URL,Blob,indexedDB,console,MutationObserver:dom.MutationObserver,navigator:{onLine:true},matchMedia:()=>({matches:false}),scrollTo:()=>{},alert:text=>{throw Error('Unexpected alert: '+text);},confirm:()=>allowDiscard,setTimeout,clearTimeout,queueMicrotask,Event:dom.Event,CustomEvent:class CustomEvent extends dom.Event{constructor(type,options={}){super(type,options);this.detail=options.detail;}},addEventListener:(name,fn)=>{windowEvents.set(name,fn);},dispatchEvent:event=>{windowEvents.get(event.type)?.(event);return true;}};
 context.window=context;vm.createContext(context);
 const run=code=>vm.runInContext(code,context);
 const asset=name=>run(fs.readFileSync('src/assets/'+name,'utf8'));
