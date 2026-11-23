@@ -52,22 +52,22 @@
   const pills=query('.hero-pills');pills.replaceChildren();
   ['◉ 100% online','◎ '+(a.audience?'Formação técnica':'Multimarcas'),'✦ '+modules.length+' módulos'].forEach(x=>pills.append(element('span',x)));
   const cards=document.querySelectorAll('.stats-grid .stat-card');
-  stat(cards[0],modules.length,'módulos');stat(cards[1],total,'horas');stat(cards[2],stages.length,'etapas');
+  stat(cards[0],modules.length,'módulos');stat(cards[1],total,'horas');stat(cards[2],data.map.approved,'aprovados');
   stat(cards[3],pct,'%');$('overviewBar').style.width=pct+'%';
   cards[3].querySelector('.stat-sub').textContent='Progresso na formação';
   query('.section-intro.intro-top .muted-label').textContent='PROGRAMA · CONTREM';
   const eyebrow=query('.section-intro:not(.intro-top) h2');
-  if(eyebrow)eyebrow.textContent=safeText(a.stageHeading||stages.length+' etapas. Uma evolução.');
+  if(eyebrow)eyebrow.textContent='Módulos da sua formação';
   const stageGrid=query('.stage-grid');stageGrid.replaceChildren();
-  if(stages.length!==3)stageGrid.style.gridTemplateColumns='repeat(auto-fit,minmax(230px,1fr))';
-  stages.forEach((stage,i)=>{
-   const btn=element('button',undefined,'stage stage-'+(i%3+1));btn.type='button';btn.dataset.stage=String(i);
-   btn.append(element('span',String(i+1).padStart(2,'0')+' / '+safeText(stage.title).toUpperCase(),'stage-index'),
-    element('span',['⌁','⚙','⬡'][i%3],'stage-symbol'),
-    element('strong',stage.cardTitle||stage.title),
-    element('small',stage.cardDescription||'Etapa da formação '+a.title));
+  stageGrid.style.gridTemplateColumns='repeat(auto-fit,minmax(230px,1fr))';
+  modules.forEach((module,i)=>{
+   const btn=element('button',undefined,'stage stage-'+(i%3+1));btn.type='button';btn.dataset.module=module.id;
+   btn.append(element('span','MÓDULO '+String(i+1).padStart(2,'0'),'stage-index'),
+    element('span',module.canOpen?'✓':'◇','stage-symbol'),
+    element('strong',module.name),
+    element('small',module.lessons+' aulas · '+(labels[module.status]||'EM PREPARAÇÃO')));
    const foot=element('span',undefined,'stage-footer');
-   foot.append(document.createTextNode((stage.moduleIds||[]).length+' MÓDULOS'),element('i','→'));
+   foot.append(document.createTextNode(module.canOpen?'ACESSAR MÓDULO':'VISUALIZAR MÓDULO'),element('i','→'));
    btn.append(foot);stageGrid.append(btn);
   });
   document.querySelectorAll('.nav-trailing').forEach(label=>label.textContent=String(modules.length));
@@ -88,19 +88,17 @@
   const academy=data.academy,stages=academy.stages||[],modules=allModules();
   const hours=modules.reduce((sum,m)=>sum+(Number(m.hours)||0),0),pct=modules.length?Math.round(data.map.approved/modules.length*100):0;
   $('modules-title').textContent='Mapa de aprendizagem.';
-  query('#view-modules .page-heading p').textContent=modules.length+' módulos em '+stages.length+' etapas. A próxima etapa é liberada após aprovação na anterior.';
+  query('#view-modules .page-heading p').textContent=modules.length+' módulos na ordem da formação. O próximo módulo exige aprovação nas aulas e na prova final do anterior.';
   const summary=document.querySelectorAll('.track-summary > div');
   if(summary[0])summary[0].querySelector('strong').textContent=hours+'h';
   if(summary[1])summary[1].querySelector('strong').textContent=modules.length;
-  if(summary[2])summary[2].querySelector('strong').textContent=stages.length;
+  if(summary[2])summary[2].querySelector('strong').textContent=data.map.approved;
   $('trackProgressLabel').textContent=pct+'% concluído';$('trackProgressBar').style.width=pct+'%';
   query('.disclaimer-note').textContent='A formação exige a conclusão das aulas e aprovação na avaliação de cada módulo. Novas tentativas após reprovação exigem autorização do ADM Master.';
   const list=$('moduleList');list.replaceChildren();
   stages.forEach((stage,index)=>{
    const section=element('section',undefined,'stage-group');section.dataset.stageIndex=String(index);
-   const heading=element('div',undefined,'stage-heading');heading.append(element('span','ETAPA '+String(index+1).padStart(2,'0'),'stage-number'),element('h2',stage.title),
-    element('p',stage.cardDescription||stage.cardTitle||''));
-   section.append(heading);
+   // Manter as associações internas legadas sem exibir uma hierarquia de etapas ao aluno.
    const grid=element('div',undefined,'module-items');
    (stage.moduleIds||[]).forEach((id,i)=>{
     const m=findModule(id);if(!m)return;
@@ -119,7 +117,7 @@
   const m=findModule(id),c=course(id);if(!m)return;
   selectedModule=id;
   const stageIndex=data.academy.stages.findIndex(stage=>(stage.moduleIds||[]).includes(id));
-  $('detail-stage').textContent='ETAPA '+String(stageIndex+1).padStart(2,'0')+' / '+safeText(data.academy.stages[stageIndex]?.title||'FORMAÇÃO').toUpperCase();
+  $('detail-stage').textContent='MÓDULO '+String(allModules().findIndex(x=>x.id===id)+1).padStart(2,'0')+' / '+safeText(data.academy.title).toUpperCase();
   $('detail-title').textContent=m.name;
   $('detail-summary').textContent=c?.description||'Módulo da formação '+data.academy.title+'.';
   $('detail-count').textContent=String(allModules().findIndex(x=>x.id===id)+1).padStart(2,'0');
@@ -154,13 +152,13 @@
   const panels=document.querySelectorAll('.about-panel');
   if(panels[0]){
    panels[0].querySelector('h2').textContent=a.audience||'Para quem deseja desenvolver conhecimento técnico.';
-   panels[0].querySelector('p').textContent=a.objectives||'Percurso estruturado em etapas, com aulas e avaliações.';
-   panels[0].querySelector('.about-highlights').replaceChildren(element('span','✓ Formação em etapas'),element('span','✓ Progressão após aprovação'),element('span','✓ Material de apoio'));
+   panels[0].querySelector('p').textContent=a.objectives||'Percurso estruturado em módulos, com aulas e avaliações.';
+   panels[0].querySelector('.about-highlights').replaceChildren(element('span','✓ Formação por módulos'),element('span','✓ Progressão após aprovação'),element('span','✓ Material de apoio'));
   }
   if(panels[1]){
    panels[1].querySelector('h2').textContent='Teoria com aplicação visual.';
    panels[1].querySelector('p').textContent='Aulas, vídeos Mux, materiais complementares e avaliações dentro do ambiente de aprendizagem.';
-   panels[1].querySelector('.about-highlights').replaceChildren(element('span',m.length+' módulos'),element('span',m.reduce((s,x)=>s+Number(x.hours||0),0)+' horas'),element('span',a.stages.length+' etapas'));
+   panels[1].querySelector('.about-highlights').replaceChildren(element('span',m.length+' módulos'),element('span',m.reduce((s,x)=>s+Number(x.hours||0),0)+' horas'),element('span',m.length+' módulos de aprendizagem'));
   }
   query('.certificate-info p').textContent=a.certificateEnabled?'O certificado de conclusão estará disponível após a aprovação em todos os módulos e o cumprimento das regras da formação.':'Esta formação não possui certificado final habilitado. Consulte o ADM para informações.';
  }
