@@ -64,6 +64,15 @@
    if(result.error){const data=await result.error.context?.json?.().catch(()=>null);throw Error(data?.error||'Não foi possível alterar o acesso.');}
    return result.data;
   }
+  async function academyAccess(action,body={}){
+   if(!admin())throw Error('Somente o ADM Master gerencia matrículas das Academias.');
+   const result=await client.functions.invoke('academy-programs',{body:{action,...body}});
+   if(result.error){
+    const data=await result.error.context?.json?.().catch(()=>null);
+    throw Error(data?.error||result.error.message||'Não foi possível gerenciar as matrículas.');
+   }
+   return result.data;
+  }
   return {
    clearIdentity,
    async signIn(email,password){const version=clearIdentity();unwrap(await client.auth.signInWithPassword({email,password}));try{current(version);const verified=unwrap(await client.auth.getUser());return await load(verified.user,version);}catch(error){if(version===generation)await client.auth.signOut({scope:'local'});throw error;}},
@@ -72,6 +81,11 @@
    async signOut(){clearIdentity();const result=await client.auth.signOut({scope:'local'});if(result.error)throw result.error;},
    async createStudent(name,email,password){return manage('create',{name,email,password});},
    async listStudents(){if(!editor())throw Error('Acesso restrito à equipe administrativa.');return admin()?manage('list'):workspace('list_students');},
+   async listAcademyAccess(){return academyAccess('students');},
+   async setAcademyAccess(memberId,programId,enabled,expiresOn=''){
+    if(typeof enabled!=='boolean')throw Error('Defina a situação da matrícula.');
+    return academyAccess('enroll',{memberId,id:programId,active:enabled,expiresOn});
+   },
    async setCourseAccess(memberId,courseId,enabled){
     if(!editor())throw Error('Acesso restrito à equipe administrativa.');
     return admin()?manage('access',{memberId,courseId,enabled}):workspace('access',{memberId,courseId,enabled});
