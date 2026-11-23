@@ -169,7 +169,7 @@
  function renderDetails(){
   const p=programs.find(p=>p.id===selected)||null,canEdit=isMaster()||!p||p.status==='draft';
   const holder=$('connectedProgramDetails');let html=
-   '<div class="connected-details-bar"><h2>'+esc(draft.title||'Nova Academia')+'</h2><span class="connected-state">'+esc(p?.status==='published'?'PUBLICADA':'RASCUNHO')+'</span></div>'+
+   '<div class="connected-details-bar"><h2>'+esc(draft.title||'Nova Academia')+'</h2><div class="connected-details-actions"><span class="connected-state">'+esc(p?.status==='published'?'PUBLICADA':'RASCUNHO')+'</span><button type="button" id="connectedPreviewProgram" class="outline">Visualizar portal</button></div></div>'+
    '<form id="connectedProgramForm"><h3>Identidade e apresentação do portal</h3><div class="connected-field-grid">'+
    field('title','Título da Academia',draft.title,180)+field('heroKicker','Chamada superior',draft.heroKicker,160)+
    field('heroTitle','Título principal do banner',draft.heroTitle,180)+
@@ -205,6 +205,31 @@
   html+='</div>';
   if(isMaster()&&p?.status==='published')html+='<section class="connected-enrollment-panel"><h3>Gerenciar matrículas</h3><p>Somente o ADM Master pode liberar ou suspender acesso à formação.</p><div id="connectedEnrollmentEditor"><button class="outline" type="button" id="connectedLoadStudents">Carregar alunos</button></div></section>';
   holder.innerHTML=html;
+  $('connectedPreviewProgram').onclick=()=>{
+   collectForm();
+   const stages=draft.stages||[],modules=draft.modules||[];
+   const byId=new Map(modules.map(m=>[m.id,m]));
+   const ids=stages.flatMap(s=>s.moduleIds||[]);
+   const items=ids.map((id,index)=>{
+    const m=byId.get(id),enabled=m?.moduleEnabled===true,hasVideo=!!m?.lessons?.[0]?.videoId;
+    return {id,index,name:m?.name||'Módulo planejado',hours:m?.hours||0,lessons:m?.lessons?.length||0,
+     enabled,hasVideo,canOpen:enabled&&index===0,passed:false,done:false,attempts:0,
+     status:index>0?'blocked':!enabled?'inactive':!hasVideo?'preparing':'available'};
+   });
+   const first=items.find(x=>x.canOpen),source=byId.get(first?.id);
+   const payload={academy:{id:selected,title:draft.title,description:draft.description,
+    heroKicker:draft.heroKicker,heroTitle:draft.heroTitle,heroHighlight:draft.heroHighlight,
+    heroDescription:draft.heroDescription,stageHeading:draft.stageHeading,cover:draft.cover,
+    audience:draft.audience,objectives:draft.objectives,certificateEnabled:draft.certificateEnabled,
+    stages},map:{active:true,approved:0,total:items.length,completed:false,items},
+    courses:first&&source?[{id:first.id,name:first.name,description:source.description,
+      lessons:(source.lessons||[]).map(l=>({id:l.id,name:l.name}))}]:[],
+    resume:first?{moduleId:first.id,name:source?.lessons?.[0]?.name||first.name,
+      description:'Prévia administrativa da formação'}:{status:'blocked',name:'Módulos em preparação',
+      description:'Ative o primeiro módulo para permitir o acesso ao aluno matriculado.'},
+    studentName:'Prévia ADM'};
+   openPortal(payload);
+  };
   const form=$('connectedProgramForm');form.onsubmit=async event=>{
    event.preventDefault();collectForm();await saveDraft();
   };
