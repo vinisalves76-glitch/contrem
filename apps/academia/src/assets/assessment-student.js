@@ -30,6 +30,10 @@
  }
  async function start(ctx){
   if(!alive(ctx))return;
+  if(ctx.course.academyId&&ctx.checkpoint&&!(progress[ctx.course.id]||[]).includes(ctx.lesson?.id)){
+   root.append(el('p','Assista ao vídeo completo antes de iniciar a atividade desta aula.','notice'));
+   return;
+  }
   if(!ctx.checkpoint&&ctx.course.academyId){
    try{await window.CONTREM_PREVIEW_SYNC?.flush?.();if(!alive(ctx))return;const ui=window.CONTREM_PROGRAM_UI;if(!ui)throw Error('Regras da Academia não carregadas.');ui.consumeRetry(ctx.course.id);}
    catch(error){root.append(el('p',error.message||'Não é possível iniciar a prova.','notice'));return;}
@@ -43,8 +47,14 @@
   const result={...core.grade(record.snapshot.questions,record.answers,record.snapshot.passScore),at:new Date().toISOString(),fingerprint:record.fingerprint};
   record.result=result;record.status='result';record.history=[...(record.history||[]),clone(result)];
   if(!ctx.checkpoint){progress['assessment:'+ctx.course.id]=[...getAttempts(ctx.course.id),clone(result)];save();}
+  else if(ctx.course.academyId&&ctx.lesson){
+   const key=window.CONTREM_PROGRAM_CORE.lessonCheckpointKey(ctx.course.id,ctx.lesson.id);
+   progress[key]=[...(progress[key]||[]),clone(result)];
+   save();
+  }
   persist(ctx,record);renderCourseCertificates();refresh();renderAssessment();
-  window.dispatchEvent(new CustomEvent('academia:assessment-completed',{detail:{courseId:ctx.course.id,passed:result.passed,score:result.score}}));
+  window.dispatchEvent(new CustomEvent('academia:assessment-completed',{detail:{courseId:ctx.course.id,lessonId:ctx.checkpoint?ctx.lesson?.id:null,checkpoint:ctx.checkpoint,passed:result.passed,score:result.score}}));
+  if(ctx.checkpoint&&result.passed&&ctx.course.academyId)renderClass();
  }
  function questionVisual(q,holder){
   if(q.context)holder.append(el('p',q.context,'assessment-context'));
