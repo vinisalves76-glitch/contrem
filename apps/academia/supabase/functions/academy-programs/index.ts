@@ -164,8 +164,11 @@ Deno.serve(async(req)=>{
    if(readError||!program)return reply(404,error(404,'Academia não encontrada.'));
    let nextStatus=program.status,definition=asObject(program.definition);
    if(action==='publish'){
-    if(!Array.isArray(definition.stages)||!definition.stages.length)return reply(400,error(400,'Cadastre as etapas primeiro.'));
-    nextStatus='published'; // Videos are NOT a publication prerequisite.
+    const stages=Array.isArray(definition.stages)?definition.stages as Json[]:[];
+    if(!stages.length)return reply(400,error(400,'Adicione uma etapa em Etapas do aprendizado e salve a Academia.'));
+    if(!stages.some(stage=>Array.isArray(stage.moduleIds)&&stage.moduleIds.length>0))
+     return reply(400,error(400,'Adicione pelo menos um módulo na etapa e salve a Academia. Vídeos não são obrigatórios.'));
+    nextStatus='published'; // The formation can be published without videos or uploaded lessons.
    }else{
     const moduleId=short(input.moduleId,160);
     if(!modulePattern.test(moduleId)||typeof input.enabled!=='boolean')return reply(400,error(400,'Selecione o módulo e a situação.'));
