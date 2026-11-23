@@ -62,7 +62,7 @@
 /* Portal integrado ocupa toda a viewport e substitui visualmente o painel geral,
    sem encerrar a sessão. A navegação é restaurada ao voltar ao perfil. */
 body.academy-immersive{overflow:hidden!important}
-body.academy-immersive > :not(#contremAcademyIntegratedFrame):not(script):not(style){display:none!important}
+body.academy-immersive > :not(#contremAcademyIntegratedFrame):not(#academyPortalLoading):not(script):not(style){display:none!important}
 #contremAcademyIntegratedFrame{position:fixed!important;inset:0!important;z-index:2147480000!important;
   width:100%!important;height:100vh!important;height:100dvh!important;border:0!important;
   border-radius:0!important;margin:0!important;padding:0!important;display:block!important;
@@ -85,3 +85,20 @@ body.academy-immersive > :not(#contremAcademyIntegratedFrame):not(script):not(st
 .program-stage-copy .program-form-grid label{display:grid;gap:6px;color:#546679;font-size:11px;font-weight:700}
 .program-stage-copy input{font-size:12px;padding:9px;border:1px solid #dce3e8;border-radius:6px;min-width:0;width:100%;background:white}
 .program-stage-copy button{justify-self:start;font-size:11px;padding:8px 10px}
+
+
+/* In-app academy navigation: no silent redirect to the top while the portal loads. */
+#academyPortalLoading{position:fixed!important;inset:0!important;z-index:2147480001!important;display:flex!important;align-items:center;justify-content:center;
+  padding:24px;background:#111e30;color:#fff;font-family:system-ui,Arial,sans-serif;min-height:100vh;min-height:100dvh}
+#academyPortalLoading[hidden]{display:none!important}
+.academy-portal-loading-card{max-width:460px;width:100%;padding:35px 26px;border:1px solid #35465b;border-radius:17px;background:#1c2c41;
+  box-shadow:0 18px 65px rgba(0,0,0,.23);text-align:center}
+.academy-portal-loading-brand{font-size:21px;font-weight:900;letter-spacing:.13em}
+.academy-portal-loading-brand span{display:block;color:#ef9b4d;font-size:11px;letter-spacing:.3em;margin:5px 0}
+.academy-portal-loader{width:43px;height:43px;border:3px solid #3b506a;border-top-color:#ef9b4d;border-radius:50%;margin:24px auto 12px;animation:academy-loading-turn .8s linear infinite}
+@keyframes academy-loading-turn{to{transform:rotate(360deg)}}
+.academy-portal-loading-card h2{font-size:23px;line-height:1.25;color:#fff;margin:16px 0 10px}
+.academy-portal-loading-card p{font-size:13px;line-height:1.65;color:#c0cad5;margin:0 0 20px}
+.academy-portal-loading-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.academy-portal-loading-actions button{padding:10px 14px;border-radius:9px;min-height:42px}
+.academy-portal-loading-actions button[hidden]{display:none!important}
