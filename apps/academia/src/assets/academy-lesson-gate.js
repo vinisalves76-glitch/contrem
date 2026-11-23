@@ -25,7 +25,7 @@
   const watchedKey=core.videoWatchKey(courseId);
   progress[watchedKey]=Array.from(new Set([...(progress[watchedKey]||[]),lessonId]));
   save();
-  void window.CONTREM_PREVIEW_SYNC?.flush?.().catch(()=>{});
+  void Promise.resolve(window.CONTREM_PREVIEW_SYNC?.flush?.()).catch(()=>{});
   const hasExercise=!!selectedCourse.lessons[selectedLesson]?.questions?.length;
   $('lessonVideoStatus').hidden=false;
   $('lessonVideoStatus').textContent=hasExercise?'Vídeo assistido! Conclua e seja aprovado na atividade desta aula para liberar a próxima.':'Vídeo assistido! A próxima aula será liberada.';
