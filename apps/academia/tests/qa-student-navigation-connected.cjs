@@ -44,7 +44,11 @@ function fake(){
  jumpProfile:'my-profile',jumpCertificates:'my-certificates',heroCourseCTA:'my-courses'};
  for(const [id,jump] of Object.entries(menu))el(id).dataset.jump=jump;
  el('connectedAcademyOverlay').hidden=true;
- const doc={getElementById:el,createElement:()=>el('dynamic-'+byId.size),
+ const doc={getElementById:el,createElement:()=>{
+   const node=el('dynamic-'+byId.size);let id=node.id;
+   Object.defineProperty(node,'id',{get(){return id},set(v){id=v;byId.set(v,node)}});
+   return node;
+  },
   querySelectorAll:q=>q==='#studentNav [data-jump], .learning-banner [data-jump]'?
   Object.keys(menu).map(el):[]};
  const win={addEventListener:(name,cb)=>listeners.set(name,cb),
@@ -125,7 +129,7 @@ test('Separação não altera controles dos cursos, matrículas e player',()=>{
  assert.match(html,/id="courseGrid"/);
  assert.match(html,/id="player"/);
  assert.match(html,/id="my-certificates"/);
- assert.match(html,/id="connectedMyAcademies"/);
+ assert.match(connected,/studentSection\.id='connectedMyAcademies'/);
  assert.match(cloud,/contrem:academy-session-ready/);
  assert.match(connected,/api\('my'\)/);
  assert.doesNotMatch(navCode,/removeChild|\\.remove\(/);
