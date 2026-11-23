@@ -62,7 +62,8 @@
  studentBtn.onclick=async()=>{
   if(!session||isEditor())return;
   closeEditor();show('studentView');
-  studentSection.scrollIntoView({block:'start',behavior:'smooth'});
+  if(window.CONTREM_STUDENT_NAV?.go)window.CONTREM_STUDENT_NAV.go('academies');
+  else studentSection.scrollIntoView({block:'start',behavior:'smooth'});
   await reloadStudent(); // Reconsultar matrículas e publicação a cada abertura do menu.
  };
  async function reloadAdmin(){
