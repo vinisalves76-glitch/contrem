@@ -87,6 +87,7 @@
   if(isMaster())loadStaffRoster();
   message(conflicted?'Há alterações locais e alterações em outro acesso. Baixe a cópia pendente e recarregue os dados.':dirtyCatalog||dirtyState?'Enviando alterações pendentes deste aparelho…':'Conta conectada. Dados carregados.',conflicted);
   if(!conflicted&&(dirtyCatalog||dirtyState))scheduleSync();
+  window.dispatchEvent(new CustomEvent('contrem:academy-session-ready',{detail:{role:data.member.role,memberId:data.member.id,name:data.member.display_name||'Aluno'}}));
  }
  async function flush(){
   if(saving)return saving;
@@ -126,6 +127,7 @@
   savePending();scheduleSync();
  });
  function resetToDemo(){
+  window.dispatchEvent(new Event('contrem:academy-session-ended'));
   epoch++;clearTimeout(timer);mode=config?.preview?'demo':'guest';window.AcademySession=null;identity=null;conflicted=false;dirtyState=false;dirtyCatalog=false;
   academyStorage.setScope(null);bar.hidden=true;syncAlert.hidden=true;syncAlert.textContent='';
   courses=config?.preview?read(KEY,demo):[];progress=config?.preview?read(PK,{}):{};certificates=config?.preview?read(CK,[]):[];profile=config?.preview?read(PROFILE_KEY,{fullName:'',email:'',company:'',role:''}):{fullName:'',email:'',company:'',role:''};activity=config?.preview?read(ACTIVITY_KEY,{}):{};
