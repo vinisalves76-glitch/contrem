@@ -140,7 +140,7 @@
   const slug=name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,100);
   selected='academy-'+(slug||'formacao')+'-'+crypto.randomUUID().slice(0,8);
   draft={title:name.trim(),description:'',heroKicker:'TRILHA DE CONHECIMENTO',
-   heroTitle:name.trim(),heroHighlight:'',heroDescription:'',stageHeading:'Etapas da formação.',
+   heroTitle:name.trim(),heroHighlight:'',heroDescription:'',stageHeading:'Módulos da formação.',
    cover:'',audience:'',objectives:'',certificateEnabled:false,stages:[],modules:[]};
   renderAdmin();
  }
@@ -151,7 +151,7 @@
    renderAdmin();message('Formação existente carregada, sem sobrescrever o cadastro.');return;
   }
   try{const definition=seedDefinition();await api('save',{id:'academy-formacao-mecanicos',definition});
-   selected='academy-formacao-mecanicos';await reloadAdmin();message('Formação criada com 3 etapas, 12 módulos e 78 aulas planejadas. Todos começam inativos.');
+   selected='academy-formacao-mecanicos';await reloadAdmin();message('Formação criada com 12 módulos e 78 aulas planejadas. Todos começam inativos.');
   }catch(error){message(error.message,true);}
  }
  function renderAdmin(){
@@ -168,7 +168,7 @@
    btn.onclick=()=>{selected=p.id;draft=copy(p.definition);renderAdmin();};
    list.append(btn);
   }
-  if(!selected||!draft){$('connectedProgramDetails').innerHTML='<div class="connected-program-placeholder">Selecione uma Academia para editar sua apresentação, etapas, módulos e matrículas.</div>';return;}
+  if(!selected||!draft){$('connectedProgramDetails').innerHTML='<div class="connected-program-placeholder">Selecione uma Academia para editar sua apresentação, módulos, aulas e matrículas.</div>';return;}
   renderDetails();
  }
  function collectForm(){
@@ -216,12 +216,13 @@
   draft.stages.push({id:newId('stage'),title:name.slice(0,120),cardTitle:'',
    cardDescription:'',moduleIds:[]});
   renderDetails();
-  message('Etapa adicionada. Agora adicione um módulo e clique em Salvar configurações.');
+  message('Etapa interna registrada. Cadastre os módulos e salve as configurações.');
  }
  function addModule(stageId){
   if(!draft)return;
-  const stage=draft.stages.find(s=>s.id===stageId);
-  const input=document.querySelector('[data-new-module-name="'+CSS.escape(stageId)+'"]');
+  if(!draft.stages.length)draft.stages.push({id:newId('stage'),title:'Módulos',cardTitle:'Sua jornada técnica',cardDescription:'Formação organizada por módulos.',moduleIds:[]});
+  const stage=draft.stages.find(s=>s.id===stageId)||draft.stages[0];
+  const input=document.querySelector('[data-new-module-name]');
   const name=input?.value.trim();
   if(!stage||!name){message('Informe o nome do módulo antes de adicionar.',true);input?.focus();return;}
   collectForm();
@@ -250,32 +251,25 @@
    textarea('objectives','Objetivos de aprendizagem',draft.objectives,2000)+
    '</div><div class="connected-cover-field"><label for="connectedCoverUpload">Imagem da capa (JPG, PNG ou WebP até 600 KB)</label><input id="connectedCoverUpload" type="file" accept="image/jpeg,image/png,image/webp"><img id="connectedCoverPreview" alt="Capa selecionada" hidden></div>'+
    '<label class="connected-certificate"><input type="checkbox" name="certificateEnabled" '+(draft.certificateEnabled?'checked':'')+'> Certificado final da Academia</label>'+
-   '<h3>1. Etapas do aprendizado</h3><p class="connected-builder-guide">Crie as etapas da trilha. Depois, adicione os módulos e as aulas de cada etapa.</p><div id="connectedStagesFields">';
-  for(const [i,stage] of draft.stages.entries()){
-   html+='<div class="connected-stage-fields" data-stage-fields="'+esc(stage.id)+'"><b>Etapa '+String(i+1).padStart(2,'0')+'</b>'+
-    '<label>Nome<input data-stage-title value="'+esc(stage.title)+'" maxlength="120"></label>'+
-    '<label>Chamada do cartão<input data-stage-card value="'+esc(stage.cardTitle||'')+'" maxlength="150"></label>'+
-    '<label>Descrição resumida<input data-stage-description value="'+esc(stage.cardDescription||'')+'" maxlength="320"></label></div>';
-  }
-  html+='</div><div class="connected-add-entry"><label>Nova etapa da Academia<input type="text" id="connectedNewStageName" maxlength="120" placeholder="Ex.: Fundamentos de manutenção" '+(!canEdit?'disabled':'')+'></label><button type="button" id="connectedAddStage" class="outline" '+(!canEdit?'disabled':'')+'>+ Adicionar etapa</button></div><div class="connected-form-actions"><button type="submit" class="primary" '+(!canEdit?'disabled':'')+'>Salvar configurações</button>';
+   '<h3>1. Estrutura da formação</h3><p class="connected-builder-guide">Organize a Academia diretamente por módulos. Cada módulo possui suas aulas e uma avaliação final. Os agrupamentos antigos permanecem preservados internamente para não perder dados.</p><div class="connected-form-actions"><button type="submit" class="primary" '+(!canEdit?'disabled':'')+'>Salvar configurações</button>';
   if(isMaster()&&p?.status!=='published')html+='<button type="button" id="connectedPublishProgram" class="outline">Publicar Academia completa</button>';
-  html+='</div></form><h3>2. Módulos e aulas da Academia</h3><p class="connected-builder-guide">Dentro de cada etapa, use <strong>Adicionar módulo</strong>. Depois clique em <strong>Gerenciar aulas</strong> para cadastrar as aulas. Salve as configurações antes de publicar. Os vídeos podem ser incluídos depois.</p><div id="connectedModulesList">';
+  html+='</div></form><h3>2. Módulos e aulas</h3><p class="connected-builder-guide">Escolha um módulo e clique em <strong>Gerenciar aulas</strong>. A navegação do aluno permanece ligada à formação original.</p><div id="connectedModulesList">';
   const byId=new Map(draft.modules.map(m=>[m.id,m]));
   for(const stage of draft.stages){
-   html+='<div class="connected-stage-modules"><h4>'+esc(stage.title)+'</h4>';
+   html+='<div class="connected-stage-modules">';
    for(const id of stage.moduleIds){
     const m=byId.get(id);if(!m)continue;
     html+='<div class="connected-module-row" data-module="'+esc(m.id)+'"><div><b>'+esc(m.name)+'</b><small>'+Number(m.hours||0)+'h · '+(m.lessons||[]).length+' aulas · '+(m.moduleEnabled?'ATIVO':'INATIVO')+'</small></div><div class="connected-module-tools">';
     if(isMaster()&&p)html+='<button type="button" data-toggle-module="'+esc(m.id)+'" data-enable="true" class="'+(m.moduleEnabled?'selected':'')+'">Ativar</button><button type="button" data-toggle-module="'+esc(m.id)+'" data-enable="false" class="'+(!m.moduleEnabled?'selected':'')+'">Desativar</button>';
     html+='<button type="button" data-edit-module="'+esc(m.id)+'" class="outline">Gerenciar aulas</button></div></div><div class="connected-module-editor" id="connectedModuleEditor-'+esc(m.id)+'" hidden></div>';
    }
-   html+='<div class="connected-add-entry"><label>Novo módulo nesta etapa<input type="text" data-new-module-name="'+esc(stage.id)+'" maxlength="180" placeholder="Ex.: Segurança e ferramentas" '+(!canEdit?'disabled':'')+'></label><button type="button" data-add-module="'+esc(stage.id)+'" class="outline" '+(!canEdit?'disabled':'')+'>+ Adicionar módulo</button></div></div>';
+   html+='</div>';
   }
-  html+='</div>';
+  html+='<div class="connected-add-entry"><label>Nome do novo módulo<input type="text" data-new-module-name maxlength="180" placeholder="Ex.: Motor Diesel" '+(!canEdit?'disabled':'')+'></label><button type="button" data-add-module="new" class="outline" '+(!canEdit?'disabled':'')+'>+ Adicionar módulo</button></div></div>';
   if(isMaster()&&p?.status==='published')html+='<section class="connected-enrollment-panel"><h3>Gerenciar matrículas</h3><p>Somente o ADM Master pode liberar ou suspender acesso à formação.</p><div id="connectedEnrollmentEditor"><button class="outline" type="button" id="connectedLoadStudents">Carregar alunos</button></div></section>';
   holder.innerHTML=html;
-  $('connectedAddStage').onclick=addStage;
-  holder.querySelectorAll('[data-add-module]').forEach(button=>button.onclick=()=>addModule(button.dataset.addModule));
+  // Etapas antigas preservadas no banco; editor organizado diretamente por módulos.
+  holder.querySelectorAll('[data-add-module]').forEach(button=>button.onclick=()=>addModule(draft.stages[0]?.id));
   $('connectedPreviewProgram').onclick=()=>{
    collectForm();
    const stages=draft.stages||[],modules=draft.modules||[];
@@ -350,7 +344,7 @@
  function renderModuleEditor(id,box,canEdit){
   const m=draft.modules.find(x=>x.id===id);if(!m)return;
   box.dataset.moduleId=id;
-  let html='<div class="connected-module-head"><h4>'+esc(m.name)+'</h4><p>Planeje as aulas sem vídeos. Elas permanecem indisponíveis até a publicação do conteúdo e liberação pelo ADM.</p></div>'+
+  let html='<div class="connected-module-head"><h4>'+esc(m.name)+'</h4><p>Cadastre as aulas deste módulo. A liberação ao aluno continua controlada pelo ADM.</p></div>'+
     '<div class="connected-field-grid">'+
     '<label>Nome do módulo<input data-module-name maxlength="180" value="'+esc(m.name)+'" '+(!canEdit?'disabled':'')+'></label>'+
     '<label>Carga horária (horas)<input type="number" data-module-hours min="0" max="1000" step="0.5" value="'+Number(m.hours||0)+'" '+(!canEdit?'disabled':'')+'></label>'+
@@ -366,7 +360,7 @@
   html+='</div><div class="connected-add-entry"><label>Nome da nova aula<input type="text" data-new-lesson-name maxlength="180" placeholder="Ex.: Introdução ao sistema hidráulico" '+(!canEdit?'disabled':'')+'></label>'+
    '<button type="button" data-add-lesson class="outline" '+(!canEdit?'disabled':'')+'>+ Adicionar aula</button></div>'+
    '<div class="connected-module-save"><button type="button" class="primary" data-save-module '+(!canEdit?'disabled':'')+'>Salvar módulo e aulas</button>'+
-   '<small>A matrícula e as liberações são gerenciadas separadamente. Aulas não podem ser excluídas neste fluxo.</small></div>';
+   '<small>Materiais, vídeos e provas devem ser integrados ao editor padrão antes da publicação de conteúdo real. Aulas não podem ser excluídas.</small></div>';
   box.innerHTML=html;
   box.querySelector('[data-save-module]').onclick=async()=>{
    collectForm();await saveDraft();
