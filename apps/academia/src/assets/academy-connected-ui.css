@@ -182,3 +182,19 @@ body.academy-connected-open{overflow:hidden!important}
  #studentRoster .access-roster-groups{grid-template-columns:1fr}
  #studentRoster .student-roster-heading{align-items:flex-start;flex-wrap:wrap}
 }
+
+
+/* Redefinição segura das credenciais de alunos, sem exibir a senha anterior. */
+#studentRoster .student-roster-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+#studentRoster .student-roster-heading .roster-email{font-weight:650;color:#536e86;font-size:12px;overflow-wrap:anywhere}
+#studentRoster .student-password-panel{margin:14px 0 0;padding:16px;border:1px solid #d6e4ef;border-radius:10px;
+ background:#f5f9fc;color:#263b50}
+#studentRoster .student-password-panel[hidden]{display:none!important}
+#studentRoster .student-password-panel p{font-size:12px;margin:0 0 11px;color:#607990}
+#studentRoster .student-password-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#studentRoster .student-password-fields label{display:grid;gap:6px;min-width:0;font-weight:750;font-size:11px;color:#485f72}
+#studentRoster .student-password-fields input{width:100%;padding:10px;min-height:42px;border-radius:8px;
+ background:#fff;border:1px solid #cadbe7;color:#142b43;font-size:13px;min-width:0}
+#studentRoster .student-password-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:13px}
+#studentRoster .student-password-result{font-size:12px!important;color:#38694e!important;margin:11px 0 0!important}
+@media(max-width:660px){#studentRoster .student-password-fields{grid-template-columns:1fr}}
