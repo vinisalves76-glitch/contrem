@@ -119,3 +119,20 @@ A main e o domínio contrem.vercel.app permanecem intactos.
 **QA:** testes `qa-academy-roster-access.cjs` (6 contratos) + simulação de renderização e eventos: curso com acesso prévio preservado, Academy matriculada marcada, Academy em rascunho desabilitada, concessão/suspensão separada de curso.
 
 **Ambiente:** apenas branch `release/academia-formacoes-main-base-20261122` e preview estável; `main` e Vercel production intactos. Backend Supabase `academy-programs` v3 implantado com alteração aditiva apenas na resposta de consulta de alunos; tabelas e contas não sofreram modificação.
+
+
+## Ajuste de permissões e credenciais — 23/11/2026
+
+Solicitação: em **Alunos cadastrados**, as Academias apareciam, mas o checkbox não podia ser marcado porque as formações estavam em rascunho. O usuário também pediu e-mail e senha do aluno.
+
+Implementação no ramo de integração:
+
+- O ADM Master agora pode marcar uma **pré-matrícula** para Academia `draft`, preservada no `academy_program_enrollments`. A API `academy-programs` só apresenta Academias `published` na resposta `my` do aluno, portanto agendar uma matrícula **não** permite acessar conteúdo não publicado. Academias arquivadas continuam sem novas concessões. Revogações continuam possíveis.
+- O e-mail real de cada aluno é consultado pelo backend `academy-students` através de `admin.auth.admin.getUserById(user_id)`, usando a chave secreta somente no servidor. Só o ADM Master autenticado consulta essa listagem; o HTML apresenta o e-mail, sem divulgar senha.
+- **Senhas anteriores nunca são recuperadas ou exibidas.** O ADM Master tem o botão **Redefinir senha** para informar e confirmar uma nova senha de 8 a 128 caracteres. A API faz `admin.auth.admin.updateUserById` após validação de JWT, papel ADM e usuário-alvo com papel de aluno, não registra nem retorna a senha. O formulário mantém a nova senha somente no navegador até o usuário sair ou atualizar, podendo mostrar/ocultar temporariamente para entrega direta ao aluno.
+- A alternância de Cursos Avulsos continua independente; nenhuma permissão de curso é alterada durante uma matrícula na Academia ou redefinição de senha.
+- Supabase Edge Functions atualizadas: `academy-programs` v4 e `academy-students` v8, mantendo a validação de origem e autenticação; apenas diffs esperados foram implantados, após comparação exata com o código anteriormente ativo.
+- Testes `qa-academy-students-email-password.cjs` mais regressões de alunos e Academias: **28 cenários passaram** com mocks e validação de sintaxe; o teste navegador com login real ainda é necessário.
+- Interface aplicada apenas na preview da branch `release/academia-formacoes-main-base-20261122`; domínio production `contrem.vercel.app` e branch `main` continuam intocados.
+
+**Atenção:** redefinir senha é operação deliberada pelo ADM Master; nunca executar automaticamente, nem disponibilizar a senha antiga, nem enviar senha em logs, JSON de resposta ou banco.
