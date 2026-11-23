@@ -21,9 +21,9 @@ test('Preserva cursos avulsos e exibe Academias com consulta independente',()=>{
  assert.match(functionCode,/Academias/);
  assert.match(functionCode,/academyError/);
 });
-test('Aluno inativo e Academia em rascunho não podem receber matrícula pelo checkbox',()=>{
+test('Permite pré-matrícula em rascunho mas bloqueia Academias arquivadas e alunos inativos',()=>{
  const roster=get(ui,' async function loadStudentRoster(){'," document.getElementById('studentRoster').addEventListener('change'");
- assert.match(roster,/!member\.active\|\|!published\?'disabled '/);
+ assert.match(roster,/!member\.active\|\|program\.status==='archived'\?'disabled '/);
  assert.match(roster,/program\.status==='published'/);
  assert.match(roster,/enrollment\?\.active===true/);
  assert.match(roster,/matrícula vencida/);
