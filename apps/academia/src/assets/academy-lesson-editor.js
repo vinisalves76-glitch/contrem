@@ -36,7 +36,7 @@
    return valid(id)?id:null;
   }catch{return null;}
  }
- const folder=()=>('academy-asset-'+module.id.replace(/[^A-Za-z0-9_-]/g,''));
+ const folder=()=>('academy-asset-'+ctx.programId+'-'+module.id).replace(/[^A-Za-z0-9_-]/g,'');
  const setStatus=(value,error=false)=>{status=String(value||'');statusError=error;const el=root.querySelector('#academyFullStatus');if(el){el.textContent=status;el.classList.toggle('error',error);}};
  const canEdit=()=>ctx?.canEdit===true;
  const field=(label,name,value,opts='')=>'<label>'+esc(label)+'<input data-field="'+name+'" '+opts+' value="'+esc(value??'')+'" '+(!canEdit()?'disabled':'')+'></label>';
