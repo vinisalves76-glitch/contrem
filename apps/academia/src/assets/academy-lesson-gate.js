@@ -22,6 +22,8 @@
  function concludeVideo(courseId,lessonId){
   if(!isAcademy()||selectedCourse.id!==courseId||selectedCourse.lessons[selectedLesson]?.id!==lessonId)return;
   progress[courseId]=Array.from(new Set([...(progress[courseId]||[]),lessonId]));
+  const watchedKey=core.videoWatchKey(courseId);
+  progress[watchedKey]=Array.from(new Set([...(progress[watchedKey]||[]),lessonId]));
   save();
   void window.CONTREM_PREVIEW_SYNC?.flush?.().catch(()=>{});
   const hasExercise=!!selectedCourse.lessons[selectedLesson]?.questions?.length;
@@ -35,7 +37,7 @@
   const c=selectedCourse,lesson=c?.lessons?.[selectedLesson];
   if(!isAcademy()||!lesson||!core.validMux(lesson.url))return;
   const status=$('lessonVideoStatus');status.hidden=false;
-  if((progress[c.id]||[]).includes(lesson.id)){
+  if(core.videoWatched(c,lesson,state())){
    status.textContent=lesson.questions?.length&&!core.lessonCompleted(c,lesson,state())?
     'Vídeo assistido. Conclua a atividade da aula para continuar.':'Vídeo assistido e registrado nesta prévia.';
    return;
@@ -65,7 +67,7 @@
    player.on('ended',()=>{
     if(!stillCurrent())return;ended=true;
     const watched=seen.size/Math.max(1,Math.ceil(duration));
-    const completed=duration>0&&watched>=.90;
+    const completed=duration>0&&watched>=.95;
     saveWatch(courseId,lessonId,{duration,seen:[...seen],complete:completed});
     if(completed)concludeVideo(courseId,lessonId);
     else{
@@ -127,7 +129,7 @@
  renderAssessment=function(){
   const result=previousAssessment?.();
   if(isAcademy()){
-   const c=selectedCourse,l=c.lessons[selectedLesson],watched=(progress[c.id]||[]).includes(l?.id);
+   const c=selectedCourse,l=c.lessons[selectedLesson],watched=core.videoWatched(c,l,state());
    if(!watched){
     $('assessmentContent').textContent='Assista ao vídeo completo antes de iniciar a atividade desta aula ou a prova do módulo.';
    }else if(!core.lessonDone(c,state())){
