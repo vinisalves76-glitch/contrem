@@ -9,7 +9,7 @@
  const safeText=value=>String(value??'');
  const root=document.documentElement;
  const request=new URLSearchParams(location.search).get('request');
- const labels={blocked:'BLOQUEADO',expired:'ACESSO INDISPONÍVEL',approved:'APROVADO',
+ const labels={blocked:'BLOQUEADO',inactive:'EM PREPARAÇÃO',preparing:'AGUARDANDO VÍDEO',expired:'ACESSO INDISPONÍVEL',approved:'APROVADO',
   available:'DISPONÍVEL','awaiting-exam':'PROVA DISPONÍVEL',failed:'AGUARDANDO NOVA TENTATIVA',
   'retry-pending':'AGUARDANDO ADM MASTER','retry-approved':'TENTATIVA AUTORIZADA'};
  let data=null,current='overview',selectedModule=null;
@@ -130,7 +130,10 @@
   if(!c?.lessons?.length)lessons.append(element('li','Conteúdo disponível conforme liberação da trilha.'));
   $('detail-goal').textContent=c?.description||'Aprender e aplicar os conceitos previstos nesta unidade.';
   $('lesson-title').textContent=canEnter(m)?'Continuar estudando: '+m.name:'Módulo bloqueado';
-  $('lesson-goal').textContent=canEnter(m)?'Acesse a sala de aula com seus vídeos, materiais, atividades e prova.':'Conclua os módulos anteriores e mantenha a matrícula ativa para liberar as aulas.';
+  $('lesson-goal').textContent=canEnter(m)?'Acesse a sala de aula. As próximas aulas serão liberadas após assistir ao vídeo e concluir a atividade, quando houver.':
+   m.status==='inactive'?'O ADM ainda não ativou este módulo. Ele será liberado conforme os vídeos forem disponibilizados.':
+   m.status==='preparing'?'O módulo está previsto na trilha, mas aguarda o vídeo da primeira aula.':
+   'Conclua os módulos anteriores e mantenha sua matrícula ativa para liberar as aulas.';
   query('.lesson-head .eyebrow').textContent='SALA DE AULA · CONTREM ACADEMIA';
   query('.lesson-head .tiny-pill').textContent=canEnter(m)?'LIBERADO':'BLOQUEADO';
   query('.lesson-description').textContent=canEnter(m)?'Os conteúdos e atividades serão abertos na sala de aula do seu login, mantendo seu progresso.':'Este módulo está protegido pelas regras de progressão.';
