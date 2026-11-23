@@ -269,7 +269,15 @@
      description:'Conteúdo técnico em preparação.',minutes:15,supportLinks:[],previewMaterials:[]})),questions:[],passScore:75});
    stages[m.stage-1].moduleIds.push(cid);
   }
-  const saved=updateProgram({id,title:'Formação de Mecânicos de Máquinas Pesadas',description:'Formação técnica multimarcas 100% online. Projeto pedagógico em revisão.',audience:'Iniciantes e profissionais de manutenção',objectives:'Fundamentos, sistemas e diagnóstico introdutório.',price:0,certificateEnabled:false,stages});
+  const saved=updateProgram({id,title:'Formação de Mecânicos de Máquinas Pesadas',
+   description:'Formação técnica multimarcas 100% online. Projeto pedagógico em revisão.',
+   heroKicker:'TRILHA DE CONHECIMENTO · NÍVEL INICIAL AO INTERMEDIÁRIO',
+   heroTitle:'Formação de Mecânicos de Máquinas Pesadas',
+   heroHighlight:'Mecânicos',
+   heroDescription:'Do primeiro contato com a mecânica à análise de sistemas e diagnóstico técnico. Uma jornada completa para quem quer evoluir no universo da linha pesada.',
+   stageHeading:'Três etapas. Uma evolução.',
+   audience:'Iniciantes e profissionais de manutenção',objectives:'Fundamentos, sistemas e diagnóstico introdutório.',
+   price:0,certificateEnabled:false,stages});
   if(saved){save();refresh();notify('Academia criada com 3 etapas e 12 módulos exclusivos em rascunho. Configure as aulas, o Mux e as avaliações antes de publicar.');}
  }
  panel.querySelector('#programSeed').onclick=seedBlueprint;
