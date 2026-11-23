@@ -185,12 +185,19 @@
     const c=courses.find(c=>c.id===id);
     const row=document.createElement('div');row.className='program-module';
     row.innerHTML='<div><b>'+String(i+1).padStart(2,'0')+'. '+e(c?.name||'Módulo não encontrado')+'</b><small>'+Number(c?.hours||0)+'h · '+(c?.lessons?.length||0)+' aulas · '+e(core.moduleActive(c)?'ATIVO PARA ALUNOS':'INATIVO · EM PREPARAÇÃO')+'</small></div><div class="program-module-actions"><button type="button" class="outline" data-module-up="'+idx+':'+i+'" '+(i===0?'disabled':'')+'>↑</button><button type="button" class="outline" data-module-down="'+idx+':'+i+'" '+(i===stage.moduleIds.length-1?'disabled':'')+'>↓</button><button type="button" class="primary" data-module-edit="'+e(id)+'">Gerenciar aulas →</button></div>';
-    const toggle=document.createElement('label');toggle.className='program-module-switch';
-    const control=document.createElement('input');control.type='checkbox';control.dataset.moduleEnabled=id;
-    control.checked=core.moduleActive(c);control.disabled=!permitted();
-    const label=document.createElement('span');label.textContent=control.checked?'Ativo para alunos':'Inativo';
-    toggle.append(control,label);
-    row.querySelector('.program-module-actions').prepend(toggle);
+    const access=document.createElement('div');access.className='program-module-access';
+    access.setAttribute('role','group');access.setAttribute('aria-label','Disponibilidade de '+(c?.name||id));
+    const enabled=core.moduleActive(c);
+    for(const [value,title] of [[true,'Ativar'],[false,'Desativar']]){
+     const button=document.createElement('button');button.type='button';
+     button.className='program-access-choice'+(enabled===value?' selected':'');
+     button.dataset.moduleAccess=id;
+     button.dataset.accessValue=String(value);
+     button.setAttribute('aria-pressed',String(enabled===value));
+     button.disabled=!permitted();
+     button.textContent=title;access.append(button);
+    }
+    row.querySelector('.program-module-actions').prepend(access);
     if(a.stages.length>1){
      const selector=document.createElement('select');
      selector.className='program-move-stage';
@@ -249,33 +256,35 @@
    const result=updateProgram({...a,stages});if(result){save();refresh();notify('Módulo criado. Clique em Gerenciar aulas para cadastrar vídeos, materiais e prova.');}
    else courses.splice(courses.findIndex(c=>c.id===id),1);
   });
-  root.onchange=async event=>{
-   const control=event.target.closest('input[data-module-enabled]');
-   if(!control||!permitted())return;
-   const course=courses.find(item=>item.id===control.dataset.moduleEnabled&&item.academyId===a.id);
-   if(!course){notify('Módulo não encontrado.',true);control.checked=false;return;}
-   const was={moduleEnabled:course.moduleEnabled,status:course.status};
-   if(control.checked&&!core.firstVideoReady(course)){
-    control.checked=false;
-    notify('Antes de ativar "'+course.name+'", cadastre o vídeo Mux da primeira aula. A Academia pode continuar publicada com este módulo inativo.',true);
+  root.onclick=async event=>{
+   const button=event.target.closest('button');if(!button)return;
+   if(button.dataset.moduleAccess!==undefined){
+    if(!permitted())return;
+    const moduleId=button.dataset.moduleAccess;
+    const active=button.dataset.accessValue==='true';
+    const course=courses.find(item=>item.id===moduleId&&item.academyId===a.id);
+    if(!course){notify('Módulo não encontrado. Atualize o ADM e tente novamente.',true);return;}
+    if(core.moduleActive(course)===active){
+     notify(course.name+': já está '+(active?'ATIVO':'INATIVO')+'.');return;
+    }
+    const original={moduleEnabled:course.moduleEnabled,status:course.status};
+    const group=button.closest('.program-module-access');
+    group?.querySelectorAll('button').forEach(item=>item.disabled=true);
+    try{
+     course.moduleEnabled=active;
+     save();
+     await window.CONTREM_PREVIEW_SYNC?.flush?.();
+     renderAdmin();
+     notify(course.name+': '+(active
+      ?'ATIVO para alunos autorizados. Aulas sem vídeo continuam indisponíveis.'
+      :'INATIVO. Acesso bloqueado no portal do aluno; progresso anterior preservado.'));
+    }catch(error){
+     course.moduleEnabled=original.moduleEnabled;course.status=original.status;
+     save();renderAdmin();
+     notify('Falha ao '+(active?'ativar':'desativar')+' '+course.name+': '+error.message,true);
+    }
     return;
    }
-   control.disabled=true;
-   try{
-    course.moduleEnabled=control.checked;
-    if(control.checked)course.status='published';
-    save();
-    await window.CONTREM_PREVIEW_SYNC?.flush?.();
-    renderAdmin();
-    notify(course.name+': '+(core.moduleActive(course)?'módulo liberado para os alunos que concluíram os anteriores.':'módulo desativado; o progresso anterior foi preservado.'));
-   }catch(error){
-    course.moduleEnabled=was.moduleEnabled;course.status=was.status;save();
-    control.disabled=false;control.checked=core.moduleActive(course);
-    notify('Não foi possível atualizar o módulo: '+error.message,true);
-   }
-  };
-  root.onclick=event=>{
-   const button=event.target.closest('button');if(!button)return;
    const action=button.dataset.programAction;
    if(action){
     if(action==='publish'){
