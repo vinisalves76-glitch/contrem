@@ -24,7 +24,7 @@ test('Formação pode ser publicada com todos os vídeos ausentes e módulos ina
  assert.equal(map[0].status,'inactive');
 });
 
-test('ADM pode ativar módulo só com primeiro vídeo, mantendo aulas futuras em preparação',()=>{
+test('ADM pode liberar apenas a primeira aula e manter as futuras em preparação',()=>{
  const first=course('m1',true),later=course('m2');
  first.lessons.push({id:'m1-aula-2',name:'Aula 2',url:''});
  const summary=core.inspectModules(academy,[first,later]);
@@ -95,8 +95,8 @@ test('ADM contém botões Ativar/Desativar e preserva rastreamento Mux',()=>{
  const source=fs.readFileSync(path.resolve(__dirname,'../src/assets/academy-program-ui.js'),'utf8');
  const gate=fs.readFileSync(path.resolve(__dirname,'../src/assets/academy-lesson-gate.js'),'utf8');
  assert.match(source,/store\.setStatus\(a\.id,'published'\)/);
- assert.match(source,/data\.moduleAccess/);
- assert.match(source,/data\.accessValue/);
+ assert.match(source,/dataset\.moduleAccess/);
+ assert.match(source,/dataset\.accessValue/);
  assert.match(source,/course\.moduleEnabled=active/);
  assert.match(source,/\[true,'Ativar'\]/);
  assert.match(source,/\[false,'Desativar'\]/);
