@@ -6,7 +6,7 @@ const url=Deno.env.get('SUPABASE_URL')||'';
 const key=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||'';
 const db=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
 const preview='https://contrem-git-release-aca-bcdaf7-vinicius-alves-projects-fdea38e8.vercel.app';
-const permittedOrigin=(origin:string)=>origin==='https://contrem.vercel.app'||
+const permittedOrigin=(origin:string)=>origin==='https://contrem-git-fix-academi-3f153d-vinicius-alves-projects-fdea38e8.vercel.app'||origin==='https://contrem.vercel.app'||
   origin==='https://contrem-academia.vercel.app'||origin===preview||
   /^http:\/\/(localhost|127\.0\.0\.1):\d{2,5}$/.test(origin);
 const idPattern=/^academy-[a-z0-9-]{3,150}$/;
