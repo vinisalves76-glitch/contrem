@@ -43,7 +43,7 @@
     const unlockedCourseIds=window.CONTREM_PROGRAM_STORE.accessibleCourseIds(id,db.catalog.courses,db.states[id]||emptyState(name));
     for(const courseId of unlockedCourseIds)allowed.add(courseId);
    }
-   const catalog=isAdmin?db.catalog.courses:db.catalog.courses.filter(c=>allowed.has(c.id)&&c.status==='published');
+   const catalog=isAdmin?db.catalog.courses:db.catalog.courses.filter(c=>allowed.has(c.id)&&(c.status==='published'||c.academyId&&window.CONTREM_PROGRAM_CORE?.moduleActive(c)));
    const state=copy(db.states[id]||emptyState(name));
    const visible=new Set(catalog.map(c=>c.id));
    state.progress=Object.fromEntries(Object.entries(state.progress).filter(([k])=>{
