@@ -70,3 +70,10 @@ test('Publicada com matrícula ativa abre; arquivada, rascunho e vencida não ab
   assert.equal(list.children.length,1);
  }
 });
+
+test('Ao abrir Minhas Academias ou voltar à aba, o aluno reconsulta matrículas',()=>{
+ const menu=extract(ui,' studentBtn.onclick=async()=>{',' async function reloadAdmin(){');
+ assert.match(menu,/await reloadStudent\(\)/);
+ assert.match(ui,/window\.addEventListener\('focus',\(\)=>\{/);
+ assert.match(ui,/if\(session&&!isEditor\(\)&&overlay\.hidden\)void reloadStudent\(\)/);
+});
