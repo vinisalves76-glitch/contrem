@@ -9,7 +9,7 @@ const html=fs.readFileSync(path.join(base,'src/index.html'),'utf8');
 const media=fs.readFileSync(path.join(base,'src/assets/admin-preview-media.js'),'utf8');
 const backend=fs.readFileSync(path.join(base,'supabase/functions/academy-programs/index.ts'),'utf8');
 const sleep=()=>new Promise(r=>setTimeout(r,15));
-function fixture(){
+function fixture(options={}){
  const {document,window}=parseHTML('<html><body></body></html>');
  const saved=[],uploaded=[];
  const target={
@@ -18,6 +18,7 @@ function fixture(){
    previewMaterials:[],supportLinks:[],questions:[]}],
   previewMaterials:[],supportLinks:[],questions:[],passScore:75
  };
+ if(options.twoLessons)target.lessons.push({id:'lesson-002',name:'Cilindros hidráulicos',description:'',videoId:'',minutes:0,previewMaterials:[],supportLinks:[],questions:[]});
  window.AcademySession={role:'admin'};
  window.confirm=()=>true;
  window.AcademyAssessment={normalizeQuestion:x=>x};
@@ -31,7 +32,7 @@ function fixture(){
  };
  vm.runInNewContext(source,{window,document,crypto:webcrypto,URL,console});
  const editor=window.CONTREM_ACADEMY_LESSON_EDITOR;
- editor.open({programId:'academy-efm',programTitle:'Formação de Mecânicos',module:target,canEdit:true,
+ editor.open({programId:'academy-efm',programTitle:'Formação de Mecânicos',module:target,canEdit:true,lessonId:options.lessonId||null,createLesson:options.createLesson||false,
   onSave:async module=>{saved.push(JSON.parse(JSON.stringify(module)))},onClose:()=>{}});
  const root=document.getElementById('connectedFullLessonEditor');
  const click=selector=>{
@@ -141,4 +142,38 @@ test('Materiais comuns ao módulo não são inseridos como materiais da aula',as
  assert.equal(f.saved.at(-1).supportLinks.length,1);
  assert.equal(f.saved.at(-1).lessons[0].supportLinks.length,0);
  assert.equal(f.saved.at(-1).supportLinks[0].title,'Apostila da formação');
+});
+
+
+test('A lista de módulos usa exclusivamente o construtor completo, com acesso individual a cada aula',()=>{
+ assert.match(connected,/data-edit-lesson=/);
+ assert.match(connected,/data-create-module-lesson=/);
+ assert.match(connected,/Configurar aula →/);
+ assert.match(connected,/Adicionar aula completa/);
+ assert.match(connected,/openFullModuleEditor\(button\.dataset\.editLesson,canEdit,button\.dataset\.lessonId\)/);
+ assert.match(connected,/openFullModuleEditor\(button\.dataset\.createModuleLesson,canEdit,null,true\)/);
+ assert.doesNotMatch(connected,/function renderModuleEditor\(/);
+ assert.doesNotMatch(connected,/connectedModuleEditor-/);
+ assert.doesNotMatch(connected,/function collectModuleFields\(/);
+});
+test('Configurar aula 02 abre diretamente a segunda aula com seus campos Mux',async()=>{
+ const f=fixture({twoLessons:true,lessonId:'lesson-002'}),id='hXZZcG4J01eIXscxjSGGKtkfkQjbttFu1P01raXQinZ500';
+ assert.equal(f.root.querySelector('[data-field="lessonName"]').value,'Cilindros hidráulicos');
+ f.set('lessonUrl',id);
+ f.set('lessonDescription','Teste da aula selecionada');
+ f.click('[data-action="save"]');await sleep();
+ assert.equal(f.saved.length,1);
+ assert.equal(f.saved[0].lessons[0].videoId,'');
+ assert.equal(f.saved[0].lessons[1].videoId,id);
+ assert.equal(f.saved[0].lessons[1].description,'Teste da aula selecionada');
+});
+test('Adicionar aula completa abre o construtor na nova aula com campos editáveis',async()=>{
+ const f=fixture({createLesson:true});
+ assert.equal(f.root.querySelector('[data-field="lessonName"]').value,'Nova aula');
+ assert.match(f.root.innerHTML,/Link do vídeo Mux ou Playback ID/);
+ f.set('lessonName','Sensores e atuadores');
+ f.click('[data-action="save"]');await sleep();
+ assert.equal(f.saved.length,1);
+ assert.equal(f.saved[0].lessons.length,2);
+ assert.equal(f.saved[0].lessons[1].name,'Sensores e atuadores');
 });
