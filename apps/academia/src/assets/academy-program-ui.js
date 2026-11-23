@@ -7,7 +7,7 @@
  const $=id=>document.getElementById(id),e=s=>esc(s??''),date=()=>core.today();
  window.CONTREM_PROGRAM_COURSE_ACCESS=()=>courses;
  window.CONTREM_PROGRAM_STATE_ACCESS=()=>({progress});
- let selected=null,opened=null,returnToAcademy=null,frameReady=false,portalRequest=null;
+ let selected=null,opened=null,returnToAcademy=null,frameReady=false,portalRequest=null,portalTimer=null;
  const admin=$('adminView'),panel=document.createElement('section');
  panel.id='academiasAdminPanel';panel.className='panel program-main';
  panel.innerHTML=`
@@ -45,6 +45,11 @@
  frame.setAttribute('referrerpolicy','same-origin');
  frame.hidden=true;
  document.body.append(frame);
+ const loading=document.createElement('div');
+ loading.id='academyPortalLoading';loading.hidden=true;
+ loading.setAttribute('role','status');loading.setAttribute('aria-live','polite');
+ loading.innerHTML='<div class="academy-portal-loading-card"><div class="academy-portal-loading-brand">CONTREM <span>ACADEMIA</span></div><div class="academy-portal-loader" aria-hidden="true"></div><h2 id="academyPortalLoadingTitle">Abrindo sua Academia</h2><p id="academyPortalLoadingMessage">Carregando o painel da formação e verificando sua matrícula.</p><div class="academy-portal-loading-actions"><button type="button" id="academyPortalRetry" class="primary" hidden>Tentar novamente</button><button type="button" id="academyPortalCancel" class="outline">Voltar ao meu perfil</button></div></div>';
+ document.body.append(loading);
  $('studentView').querySelector('.learning-banner')?.after(studentPanel);
  const studentNav=document.createElement('button');studentNav.type='button';studentNav.innerHTML='<span aria-hidden="true">◇</span> Minhas Academias';
  studentNav.setAttribute('data-jump','myAcademies');$('studentNav').insertBefore(studentNav,$('studentNav').querySelector('[data-jump="my-performance"]'));
@@ -354,11 +359,31 @@
   if(!frame.hidden&&frameReady)sendPortalData();
  }
  function hidePortalFrame(){
+  if(portalTimer!==null){clearTimeout(portalTimer);portalTimer=null;}
   frame.hidden=true;
+  loading.hidden=true;
   frameReady=false;
   portalRequest=null;
   document.body.classList.remove('academy-immersive');
  }
+ function portalProblem(message){
+  if(!portalRequest)return;
+  if(portalTimer!==null){clearTimeout(portalTimer);portalTimer=null;}
+  $('academyPortalLoadingTitle').textContent='Não foi possível abrir a Academia';
+  $('academyPortalLoadingMessage').textContent=message||'O painel não respondeu. Tente novamente.';
+  $('academyPortalRetry').hidden=false;
+  loading.hidden=false;
+  frame.style.visibility='hidden';
+ }
+ function portalLoading(){
+  $('academyPortalLoadingTitle').textContent='Abrindo sua Academia';
+  $('academyPortalLoadingMessage').textContent='Carregando o painel da formação e verificando sua matrícula.';
+  $('academyPortalRetry').hidden=true;
+  frame.style.visibility='visible';
+  loading.hidden=false;
+ }
+ $('academyPortalCancel').onclick=()=>{hidePortalFrame();show('studentView');$('myAcademies')?.scrollIntoView({block:'start'});};
+ $('academyPortalRetry').onclick=()=>{const id=opened;hidePortalFrame();if(id)openAcademyPortal(id);};
  function preparePortalPayload(academyId){
   if(!enrolled())return null;
   const item=store.studentPrograms().items.find(entry=>entry.academy.id===academyId);
@@ -394,8 +419,16 @@
   opened=academyId;
   portalRequest=crypto.randomUUID();
   frameReady=false;
-  frame.hidden=true;
-  frame.setAttribute('src','./trilha-formacao/?integrated=1&request='+encodeURIComponent(portalRequest));
+  frame.hidden=false;
+  portalLoading();
+  document.body.classList.add('academy-immersive');
+  const request=portalRequest;
+  frame.setAttribute('src','./trilha-formacao/?integrated=1&request='+encodeURIComponent(request));
+  if(portalTimer!==null)clearTimeout(portalTimer);
+  portalTimer=setTimeout(()=>{
+   if(portalRequest===request&&frameReady===false)portalProblem('O painel visual não respondeu ao carregamento. Verifique sua conexão e tente novamente.');
+   else if(portalRequest===request&&loading.hidden===false)portalProblem('Os dados da Academia não foram exibidos. Tente novamente.');
+  },12000);
   window.scrollTo({top:0,behavior:'auto'});
  }
  window.addEventListener('message',event=>{
@@ -404,7 +437,16 @@
   if(!portalRequest||msg?.request!==portalRequest)return;
   if(msg.type==='contrem:academy-ready'){frameReady=true;sendPortalData();return;}
   if(msg.type==='contrem:academy-displayed'&&msg.academyId===opened){
-   frame.hidden=false;document.body.classList.add('academy-immersive');return;
+   if(portalTimer!==null){clearTimeout(portalTimer);portalTimer=null;}
+   frame.style.visibility='visible';
+   frame.hidden=false;
+   loading.hidden=true;
+   document.body.classList.add('academy-immersive');
+   return;
+  }
+  if(msg.type==='contrem:academy-error'){
+   portalProblem('A Academia encontrou um problema ao abrir: '+String(msg.message||'falha desconhecida').slice(0,240));
+   return;
   }
   if(msg.type!=='contrem:academy-action'||frame.hidden||!opened)return;
   if(msg.action==='back'){hidePortalFrame();show('studentView');$('myAcademies')?.scrollIntoView({block:'start'});return;}
