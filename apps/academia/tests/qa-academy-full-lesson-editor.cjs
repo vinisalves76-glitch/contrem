@@ -31,7 +31,7 @@ function fixture(){
  };
  vm.runInNewContext(source,{window,document,crypto:webcrypto,URL,console});
  const editor=window.CONTREM_ACADEMY_LESSON_EDITOR;
- editor.open({programTitle:'Formação de Mecânicos',module:target,canEdit:true,
+ editor.open({programId:'academy-efm',programTitle:'Formação de Mecânicos',module:target,canEdit:true,
   onSave:async module=>{saved.push(JSON.parse(JSON.stringify(module)))},onClose:()=>{}});
  const root=document.getElementById('connectedFullLessonEditor');
  const click=selector=>{
@@ -83,10 +83,10 @@ test('Arquivos privados são anexados por módulo e links HTTPS persistem na aul
  input.dispatchEvent(new f.window.Event('change',{bubbles:true}));
  await sleep();
  assert.equal(f.uploaded.length,1);
- assert.equal(f.uploaded[0].folder,'academy-asset-module-teste-001');
+ assert.equal(f.uploaded[0].folder,'academy-asset-academy-efm-module-teste-001');
  f.click('[data-action="save"]');await sleep();
  assert.equal(f.saved.at(-1).lessons[0].supportLinks[0].url,'https://exemplo.com/manual.pdf');
- assert.match(f.saved.at(-1).lessons[0].previewMaterials[0].id,/^academy-asset-module-teste-001\/attachment-/);
+ assert.match(f.saved.at(-1).lessons[0].previewMaterials[0].id,/^academy-asset-academy-efm-module-teste-001\/attachment-/);
 });
 test('Não grava um Playback ID Mux inválido e não altera outros cursos',async()=>{
  const f=fixture();f.set('lessonUrl','https://youtube.com/watch?v=falha');
