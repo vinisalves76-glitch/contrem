@@ -24,7 +24,7 @@ Este pacote é deliberadamente preparatório: **não coloca a trilha em produç�
 
 ## O que falta para uma release real aprovada
 
-1. Confirmar o projeto Supabase da **CONTREM Academia**, cujo projeto não está disponível entre os projetos mostrados pela conexão atual; o catálogo acessível apresenta apenas \`heavymatch\` e \`relatoriopro\`. Não presumir que outro banco é o da CONTREM.
+1. **Projeto Supabase da CONTREM Academia confirmado**: o código de produção aponta para `relatoriopro` (ref `vwvesygsudhbaqmayhsz`). Foi realizada inspeção somente de leitura da estrutura e RLS, sem modificar dados.
 2. Criar migração **aditiva e versionada** de Academias, etapas, matrículas, progresso, tentativas, módulos ativos e certificados (ou modelo correspondente ao \`academy_editor_catalog\` existente), sem apagar ou substituir tabelas reais.
 3. Aplicar **RLS e verificação server-side**: ADM Master publica e controla matrículas, ADM de Conteúdo edita rascunhos, alunos acessam apenas suas matrículas ativas, módulos liberados e aulas autorizadas. Autorização não pode ser determinada apenas pelo \`localStorage\`.
 4. Preservar o fluxo Mux assinado do backend: a abertura do módulo **não** concede automaticamente acesso ao vídeo sem matrícula e ordem de progressão; concluir uma aula exige evidência verificável de reprodução e aprovação na atividade, quando configurada. Prova final e nova tentativa precisam de validação no servidor.
@@ -38,7 +38,14 @@ Este pacote é deliberadamente preparatório: **não coloca a trilha em produç�
 - Produção: mantida sem modificação.
 - Branch criada de main: sim.
 - Motor de regras e testes portados sem substituir os recursos de produção: sim.
-- Banco real da CONTREM acessível por esta conexão: não identificado.
-- Publicação real de novas Academias: **não liberada nesta etapa** para não perder segurança nem funcionamento existente.
+- Banco real da CONTREM acessível por esta conexão: **sim, verificado pelo projeto ref e pela configuração da aplicação**.
+- Publicação real de novas Academias: **não liberada nesta etapa**: o banco não possui o modelo de Academias, matrículas e progressão protegida no servidor; a preview usa armazenamento local.
 
 **Regra fixa:** não reutilizar diretamente \`admin-preview-service.js\`, \`academy-program-store.js\` local ou a conta de aluno fictício em produção. Não reduzir permissões nem ocultar alertas de conflito/salvamento por conveniência.
+
+
+## Inspeção read-only do backend confirmada
+
+A configuração da CONTREM Academia em produção aponta para o projeto Supabase `relatoriopro`, acessível pelo conector. As tabelas atuais `academy_members`, `academy_course_access`, `academy_editor_catalog`, `academy_learning_state`, `academy_videos` e `academy_stream_assets` já existem com RLS habilitado. As funções `academy_my_catalog` e `academy_save_learning` estão ativas. Não foram identificadas tabelas reais independentes para cadastro de Academias, matrículas nas formações e Ativar/Desativar de módulos com validação server-side.
+
+O projeto Supabase é compartilhado; somente uma migração aditiva revisada, com políticas e testes de acesso, poderá suportar a trilha real. Nenhum SQL de escrita foi executado nesta inspeção.
