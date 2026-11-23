@@ -42,11 +42,15 @@
   });
   return opening;
  }
- async function save(file,kind){
+ async function save(file,kind,academyFolder=''){
   const metadata=validate(file,kind);
   if(connected){
    if(!['admin','content_admin'].includes(window.AcademySession?.role))throw Error('Somente a equipe da Academia pode anexar materiais.');
-   const courseId=document.getElementById('editId')?.value||'';
+   // Reutiliza a MESMA validação e o MESMO bucket privado do construtor de cursos.
+   // O diretório da Academia é isolado do catálogo de Cursos Avulsos.
+   if(academyFolder&&!/^academy-asset-[A-Za-z0-9_-]{3,360}$/.test(academyFolder))
+    throw Error('Diretório de materiais da Academia inválido.');
+   const courseId=academyFolder||document.getElementById('editId')?.value||'';
    if(!/^[A-Za-z0-9_-]+$/.test(courseId))throw Error('Salve o curso antes de enviar materiais.');
    const storage=remote();if(!storage)throw Error('Armazenamento privado não conectado. Faça login novamente.');
    const id=courseId+'/attachment-'+crypto.randomUUID();

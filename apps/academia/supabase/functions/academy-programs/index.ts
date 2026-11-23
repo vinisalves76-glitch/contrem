@@ -6,7 +6,7 @@ const url=Deno.env.get('SUPABASE_URL')||'';
 const key=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||'';
 const db=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
 const preview='https://contrem-git-release-aca-bcdaf7-vinicius-alves-projects-fdea38e8.vercel.app';
-const permittedOrigin=(origin:string)=>origin==='https://contrem.vercel.app'||
+const permittedOrigin=(origin:string)=>origin==='https://contrem-git-fix-academi-3f153d-vinicius-alves-projects-fdea38e8.vercel.app'||origin==='https://contrem.vercel.app'||
   origin==='https://contrem-academia.vercel.app'||origin===preview||
   /^http:\/\/(localhost|127\.0\.0\.1):\d{2,5}$/.test(origin);
 const idPattern=/^academy-[a-z0-9-]{3,150}$/;
@@ -17,7 +17,84 @@ const error=(status:number,message:string)=>({status,error:message});
 type Json=Record<string,unknown>;
 type Member={id:string;user_id:string;role:string;active:boolean;display_name:string};
 const asObject=(v:unknown):Json=>v&&typeof v==='object'&&!Array.isArray(v)?v as Json:{};
-function clean(data:unknown){
+// Campos de conteúdo equivalentes aos do construtor de Cursos Avulsos.
+const muxId=(value:unknown)=>{
+ const raw=short(value,400);
+ if(!raw)return '';
+ const valid=(s:string)=>/^[A-Za-z0-9_-]{20,255}$/.test(s);
+ if(valid(raw))return raw;
+ try{
+  const u=new URL(raw);
+  if(u.protocol!=='https:'||u.username||u.password||u.search||u.hash)return null;
+  const id=u.hostname==='player.mux.com'?u.pathname.replace(/^\/(?:watch\/)?/,'').replace(/\/$/,''):
+   u.hostname==='stream.mux.com'?u.pathname.slice(1).replace(/\.m3u8$/,''):'';
+  return valid(id)?id:null;
+ }catch{return null;}
+};
+const httpsLink=(value:unknown)=>{
+ const raw=String(value??'').trim();
+ if(!raw||raw.length>2000)return null;
+ try{
+  const u=new URL(raw);
+  if(u.protocol!=='https:'||u.username||u.password||!u.hostname||['localhost','127.0.0.1'].includes(u.hostname))return null;
+  return u.href;
+ }catch{return null;}
+};
+function cleanLinks(value:unknown){
+ if(!Array.isArray(value))return [];
+ if(value.length>20)return null;
+ const links=[],seen=new Set<string>();
+ for(const raw of value){
+  const obj=asObject(raw),url=httpsLink(obj.url),title=short(obj.title,150);
+  if(!url||!title||seen.has(url))return null;
+  links.push({title,url});seen.add(url);
+ }
+ return links;
+}
+function cleanAttachments(value:unknown,folder:string){
+ if(!Array.isArray(value))return [];
+ if(value.length>20)return null;
+ const result=[],seen=new Set<string>();
+ const idPrefix=folder+'/attachment-';
+ for(const raw of value){
+  const obj=asObject(raw),id=short(obj.id,450),name=short(obj.name,200),mime=short(obj.type,120),size=Number(obj.size);
+  if(!id.startsWith(idPrefix)||!/^attachment-[0-9a-f-]{36}$/i.test(id.slice(folder.length+1))||
+    !name||!mime||!Number.isSafeInteger(size)||size<1||size>50*1024*1024||seen.has(id))return null;
+  seen.add(id);result.push({id,kind:'support',name,type:mime,size});
+ }
+ return result;
+}
+function cleanQuestions(value:unknown){
+ if(!Array.isArray(value))return [];
+ if(value.length>100)return null;
+ const result=[],seen=new Set<string>();
+ for(const raw of value){
+  const q=asObject(raw),type=short(q.type,12)||'single',id=short(q.id,120),
+   choices=Array.isArray(q.choices)?q.choices.map(c=>short(c,500)):[],
+   text=short(q.text,3000),correct=q.correct;
+  if(!['single','multi','order','match'].includes(type)||!text||choices.length<2||choices.length>8||
+   choices.some(c=>!c)||id&&!modulePattern.test(id)||id&&seen.has(id))return null;
+  if(type==='single'){
+   if(!Number.isInteger(correct)||Number(correct)<0||Number(correct)>=choices.length)return null;
+  }else{
+   if(!Array.isArray(correct)||!correct.length||
+    correct.some(n=>!Number.isInteger(n)||n<0||n>=choices.length)||
+    new Set(correct).size!==correct.length||
+    (type!=='multi'&&correct.length!==choices.length))return null;
+  }
+  const items=type==='match'&&Array.isArray(q.items)?q.items.map(v=>short(v,500)):[];
+  if(type==='match'&&(items.length!==choices.length||items.some(v=>!v)))return null;
+  if(id)seen.add(id);
+  const out:Json={id,type,text,choices,correct,competency:short(q.competency,150),
+   context:short(q.context,4000),explanation:short(q.explanation,4000)};
+  if(type==='match')out.items=items;
+  if(['engine','fluid','circuit'].includes(String(q.illustration||'')))out.illustration=q.illustration;
+  if(q.imageUrl){const url=httpsLink(q.imageUrl);if(!url)return null;out.imageUrl=url;}
+  result.push(out);
+ }
+ return result;
+}
+function clean(data:unknown,programId:string){
  const a=asObject(data),stageRows=Array.isArray(a.stages)?a.stages:[],
   moduleRows=Array.isArray(a.modules)?a.modules:[];
  if(stageRows.length>15||moduleRows.length>90)return null;
@@ -39,14 +116,25 @@ function clean(data:unknown){
    const val=asObject(l),lessonId=short(val.id,160);
    if(!modulePattern.test(lessonId)||lessonIds.has(lessonId))return null;
    lessonIds.add(lessonId);
-   const videoId=short(val.videoId,36);
-   if(videoId&&!uuid.test(videoId))return null;
+   const videoId=muxId(val.url||val.videoId);
+   if(videoId===null)return null;
+   const folder=('academy-asset-'+programId+'-'+id).replace(/[^A-Za-z0-9_-]/g,'');
+   const supportLinks=cleanLinks(val.supportLinks),previewMaterials=cleanAttachments(val.previewMaterials,folder),
+    questions=cleanQuestions(val.questions);
+   if(!supportLinks||!previewMaterials||!questions)return null;
    cleanLessons.push({id:lessonId,name:short(val.name,180),description:short(val.description,1200),
-     videoId,minutes:Math.min(600,Math.max(0,Number(val.minutes)||0))});
+     videoId,url:videoId?'https://player.mux.com/'+videoId:'',
+     minutes:Math.min(600,Math.max(0,Number(val.minutes)||0)),
+     supportLinks,previewMaterials,questions});
   }
+  const folder=('academy-asset-'+programId+'-'+id).replace(/[^A-Za-z0-9_-]/g,'');
+  const links=cleanLinks(m.supportLinks),files=cleanAttachments(m.previewMaterials,folder),
+   questions=cleanQuestions(m.questions);
+  if(!links||!files||!questions)return null;
   modules.push({id,name:short(m.name,180),description:short(m.description,1200),
    hours:Math.min(1000,Math.max(0,Number(m.hours)||0)),moduleEnabled:m.moduleEnabled===true,
-   lessons:cleanLessons,questions:[],passScore:Math.min(100,Math.max(0,Number(m.passScore)||75))});
+   lessons:cleanLessons,questions,previewMaterials:files,supportLinks:links,
+   passScore:Math.min(100,Math.max(0,Number(m.passScore)||75))});
  }
  const seen=new Set<string>();
  for(const stage of stages)for(const id of stage.moduleIds){
@@ -146,7 +234,7 @@ Deno.serve(async(req)=>{
   }
   if(action==='save'){
    if(!editor)return reply(403,error(403,'Você não tem permissão para editar Academias.'));
-   const id=short(input.id,160),revision=input.revision,definition=clean(input.definition);
+   const id=short(input.id,160),revision=input.revision,definition=clean(input.definition,id);
    if(!idPattern.test(id)||!definition||definition.title.length<3)return reply(400,error(400,'Verifique os campos da Academia.'));
    const {data:existing,error:readError}=await db.from('academy_programs')
     .select('id,status,revision').eq('id',id).maybeSingle();
