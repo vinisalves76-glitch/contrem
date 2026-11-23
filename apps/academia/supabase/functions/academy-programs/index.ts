@@ -208,7 +208,11 @@ Deno.serve(async(req)=>{
     db.from('academy_programs').select('id,status').eq('id',id).single(),
     db.from('academy_members').select('id,role,active').eq('id',memberId).single()
    ]);
-   if(!program||program.status!=='published'||!student||student.role!=='student')
+   // ADM Master pode preparar matrículas antes da publicação.
+   // Somente formações publicadas aparecem para o aluno (action=my).
+   // Revogações continuam permitidas em formações arquivadas/inativas.
+   if(!program||!student||student.role!=='student'||
+      (active&&(!student.active||!['draft','published'].includes(program.status))))
     return reply(409,error(409,'Academia ou aluno indisponível para matrícula.'));
    const {error:grantError}=await db.from('academy_program_enrollments').upsert({
     program_id:id,member_id:memberId,active,expires_on:until||null,granted_by:m.id,updated_at:new Date().toISOString()
