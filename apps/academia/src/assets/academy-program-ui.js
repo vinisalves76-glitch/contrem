@@ -249,7 +249,7 @@
    const result=updateProgram({...a,stages});if(result){save();refresh();notify('Módulo criado. Clique em Gerenciar aulas para cadastrar vídeos, materiais e prova.');}
    else courses.splice(courses.findIndex(c=>c.id===id),1);
   });
-  root.addEventListener('change',async event=>{
+  root.onchange=async event=>{
    const control=event.target.closest('input[data-module-enabled]');
    if(!control||!permitted())return;
    const course=courses.find(item=>item.id===control.dataset.moduleEnabled&&item.academyId===a.id);
@@ -273,7 +273,7 @@
     control.disabled=false;control.checked=core.moduleActive(course);
     notify('Não foi possível atualizar o módulo: '+error.message,true);
    }
-  });
+  };
   root.onclick=event=>{
    const button=event.target.closest('button');if(!button)return;
    const action=button.dataset.programAction;
