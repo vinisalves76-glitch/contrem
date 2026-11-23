@@ -10,7 +10,8 @@
   const activeEnrollment=(enrollment,date=today())=>!!enrollment&&enrollment.active===true&&(!enrollment.validUntil||validDate(enrollment.validUntil)&&enrollment.validUntil>=date);
   const validMux=url=>/^https:\/\/player\.mux\.com\/[A-Za-z0-9_-]{20,255}(?:[/?#].*)?$/.test(String(url||''));
   // Explicit toggles override legacy module records; legacy published modules stay enabled for compatibility.
-  const moduleActive=course=>!!course&&course.status==='published'&&course.moduleEnabled!==false;
+  // O acesso à Academia é controlado exclusivamente pelo botão do ADM; o status de rascunho do construtor não muda essa decisão.
+  const moduleActive=course=>!!course&&(typeof course.moduleEnabled==='boolean'?course.moduleEnabled:course.status==='published');
   const firstVideoReady=course=>!!course?.lessons?.length&&validMux(course.lessons[0].url);
   const lessonCheckpointKey=(courseId,lessonId)=>'lesson-assessment:'+courseId+':'+lessonId;
   const videoWatchKey=courseId=>'video-watched:'+courseId;
@@ -40,12 +41,12 @@
     return ordered.map((id,index)=>{
       const course=courseMap.get(id),priorClear=unlocked,done=lessonDone(course,state),history=attempts(id,state);
       const approved=!!course&&passed(course,state),retry=requestStatus(requests,studentId,id,history.length+1);
-      const enabled=moduleActive(course),hasVideo=firstVideoReady(course),canOpen=priorClear&&activeEnrollment(enrollment)&&enabled&&hasVideo;
+      const enabled=moduleActive(course),hasVideo=firstVideoReady(course),canOpen=priorClear&&activeEnrollment(enrollment)&&enabled;
       let status='blocked';
       if(!activeEnrollment(enrollment))status='expired';
       else if(priorClear&&approved)status='approved';
       else if(priorClear&&!enabled)status='inactive';
-      else if(priorClear&&!hasVideo)status='preparing';
+      else if(priorClear&&!hasVideo)status='preparing'; // Pode abrir o módulo ativo, mas nenhuma aula sem Mux pode ser concluída.
       else if(priorClear&&course?.questions?.length&&history.some(a=>!a.passed)&&!approved)
         status=retry==='approved'?'retry-approved':retry==='pending'?'retry-pending':'failed';
       else if(priorClear)status=done&&course?.questions?.length?'awaiting-exam':'available';
