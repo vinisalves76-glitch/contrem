@@ -92,9 +92,48 @@
    <label class="wide">Descrição<textarea name="description" maxlength="4000" rows="2">${e(a.description)}</textarea></label>
    <label>Público-alvo<input name="audience" maxlength="500" value="${e(a.audience)}"></label>
    <label>Objetivos<input name="objectives" maxlength="1200" value="${e(a.objectives)}"></label>
-   <label class="program-checkbox wide"><input name="certificateEnabled" type="checkbox" ${a.certificateEnabled?'checked':''}> Emitir certificado da Academia completa após aprovação em todos os módulos</label></div>
+   <label class="program-checkbox wide"><input name="certificateEnabled" type="checkbox" ${a.certificateEnabled?'checked':''}> Emitir certificado da Academia completa após aprovação em todos os módulos</label>
+   <div class="wide program-intro-title"><h4>Identidade e apresentação do portal</h4><p>Personalize o primeiro card sem alterar o layout oficial da CONTREM Academia.</p></div>
+   <label class="wide">Chamada acima do título<input name="heroKicker" maxlength="160" value="${e(a.heroKicker||'')}" placeholder="TRILHA DE CONHECIMENTO · NÍVEL INICIAL AO INTERMEDIÁRIO"></label>
+   <label class="wide">Título principal do banner<input name="heroTitle" maxlength="180" value="${e(a.heroTitle||a.title)}" placeholder="Formação de Mecânicos de Máquinas Pesadas"></label>
+   <label>Palavra ou expressão em laranja<input name="heroHighlight" maxlength="80" value="${e(a.heroHighlight||'')}" placeholder="Ex.: Mecânicos"></label>
+   <label>Título acima das etapas<input name="stageHeading" maxlength="130" value="${e(a.stageHeading||'')}" placeholder="Ex.: Três etapas. Uma evolução."></label>
+   <label class="wide">Descrição principal do banner<textarea name="heroDescription" maxlength="600" rows="3">${e(a.heroDescription||a.description||'')}</textarea></label>
+   <div class="wide program-cover-tools">
+    <label>Imagem de capa (JPG, PNG ou WebP até 900 KB)
+     <input type="file" id="programCoverUpload" name="coverUpload" accept="image/jpeg,image/png,image/webp">
+    </label>
+    <img id="programCoverPreview" alt="Imagem de capa selecionada para esta Academia" hidden>
+    <button type="button" id="programRemoveCover" class="outline">Remover capa personalizada</button>
+    <small>Sem imagem enviada, o portal utiliza a fotografia padrão do layout. Nesta preview, o arquivo é salvo apenas no navegador.</small>
+   </div></div>
    <button type="submit" class="primary">Salvar configurações</button><small>Preço apenas informativo nesta fase. Acesso liberado manualmente em Alunos.</small>`;
   root.append(form);
+  let coverValue=a.cover||'';
+  const coverInput=form.querySelector('#programCoverUpload');
+  const coverPreview=form.querySelector('#programCoverPreview');
+  const saveButton=form.querySelector('button[type="submit"]');
+  const showCover=()=>{
+   coverPreview.hidden=!coverValue;
+   if(coverValue)coverPreview.src=coverValue;
+   else coverPreview.removeAttribute('src');
+  };
+  showCover();
+  coverInput.addEventListener('change',()=>{
+   const image=coverInput.files?.[0];if(!image)return;
+   if(!['image/jpeg','image/png','image/webp'].includes(image.type)||image.size>900*1024){
+    notify('Envie uma imagem JPG, PNG ou WebP de até 900 KB para a preview.',true);
+    coverInput.value='';return;
+   }
+   saveButton.disabled=true;
+   const reader=new FileReader();
+   reader.onload=()=>{coverValue=String(reader.result||'');showCover();saveButton.disabled=false;};
+   reader.onerror=()=>{notify('Não foi possível ler a imagem enviada.',true);saveButton.disabled=false;};
+   reader.readAsDataURL(image);
+  });
+  form.querySelector('#programRemoveCover').onclick=()=>{
+   coverValue='';coverInput.value='';showCover();
+  };
   const title=document.createElement('h3');title.textContent='Etapas e módulos exclusivos';root.append(title);
   const note=document.createElement('p');note.className='muted';note.textContent='A ordenação das etapas e módulos define a liberação sequencial ao aluno. Para vídeos Mux, apostilas e provas, use Gerenciar aulas do módulo.';root.append(note);
   const stageList=document.createElement('div');stageList.className='program-stage-list';root.append(stageList);
@@ -144,7 +183,9 @@
   newStage.innerHTML='<input name="name" required maxlength="100" minlength="3" placeholder="Nome de uma nova etapa"><button class="outline" type="submit">+ Adicionar etapa</button>';
   root.append(newStage);
   form.onsubmit=event=>{event.preventDefault();const f=new FormData(form);
-   updateProgram({...a,title:f.get('title'),price:Number(f.get('price')),description:f.get('description'),audience:f.get('audience'),objectives:f.get('objectives'),certificateEnabled:f.has('certificateEnabled')});
+   updateProgram({...a,title:f.get('title'),price:Number(f.get('price')),description:f.get('description'),audience:f.get('audience'),objectives:f.get('objectives'),certificateEnabled:f.has('certificateEnabled'),
+    heroKicker:f.get('heroKicker'),heroTitle:f.get('heroTitle'),heroHighlight:f.get('heroHighlight'),
+    heroDescription:f.get('heroDescription'),stageHeading:f.get('stageHeading'),cover:coverValue});
   };
   newStage.onsubmit=event=>{event.preventDefault();const name=new FormData(newStage).get('name').trim();
    updateProgram({...a,stages:[...a.stages,{id:'stage-'+crypto.randomUUID(),title:name,moduleIds:[]}]});
