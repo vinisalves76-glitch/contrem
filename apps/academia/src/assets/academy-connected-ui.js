@@ -5,6 +5,7 @@
  const $=id=>document.getElementById(id),esc=value=>String(value??'').replace(/[&<>"']/g,
    x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
  const copy=value=>JSON.parse(JSON.stringify(value)),core=window.CONTREM_PROGRAM_CORE;
+ const newId=prefix=>prefix+'-'+crypto.randomUUID().replace(/-/g,'');
  let session=null,programs=[],selected=null,draft=null,students=[],enrollments=[],myPrograms=[],
   currentPayload=null,portalRequest=null,portalReady=false,currentModule=null;
  const studentView=$('studentView'),adminView=$('adminView'),adminNav=$('adminNav');
@@ -165,6 +166,57 @@
     item.cardTitle=fields.querySelector('[data-stage-card]').value.trim();
     item.cardDescription=fields.querySelector('[data-stage-description]').value.trim();}
   }
+  document.querySelectorAll('#connectedProgramDetails .connected-module-editor:not([hidden])').forEach(collectModuleFields);
+ }
+ function collectModuleFields(box){
+  const id=box.dataset.moduleId,mod=draft?.modules.find(m=>m.id===id);
+  if(!mod)return;
+  const title=box.querySelector('[data-module-name]');
+  const description=box.querySelector('[data-module-description]');
+  const hours=box.querySelector('[data-module-hours]');
+  if(title)mod.name=title.value.trim().slice(0,180);
+  if(description)mod.description=description.value.trim().slice(0,1200);
+  if(hours)mod.hours=Math.max(0,Math.min(1000,Number(hours.value)||0));
+  box.querySelectorAll('[data-lesson-name]').forEach(input=>{
+   const lesson=mod.lessons.find(l=>l.id===input.dataset.lessonName);
+   if(lesson)lesson.name=input.value.trim().slice(0,180);
+  });
+  box.querySelectorAll('[data-lesson-description]').forEach(input=>{
+   const lesson=mod.lessons.find(l=>l.id===input.dataset.lessonDescription);
+   if(lesson)lesson.description=input.value.trim().slice(0,1200);
+  });
+  box.querySelectorAll('[data-lesson-minutes]').forEach(input=>{
+   const lesson=mod.lessons.find(l=>l.id===input.dataset.lessonMinutes);
+   if(lesson)lesson.minutes=Math.max(0,Math.min(600,Number(input.value)||0));
+  });
+ }
+ function addStage(){
+  if(!draft)return;
+  collectForm();
+  const name=$('connectedNewStageName')?.value.trim();
+  if(!name){message('Informe o nome da etapa antes de adicionar.',true);$('connectedNewStageName')?.focus();return;}
+  if(draft.stages.length>=15){message('Limite de 15 etapas por Academia.',true);return;}
+  draft.stages.push({id:newId('stage'),title:name.slice(0,120),cardTitle:'',
+   cardDescription:'',moduleIds:[]});
+  renderDetails();
+  message('Etapa adicionada. Agora adicione um módulo e clique em Salvar configurações.');
+ }
+ function addModule(stageId){
+  if(!draft)return;
+  const stage=draft.stages.find(s=>s.id===stageId);
+  const input=document.querySelector('[data-new-module-name="'+CSS.escape(stageId)+'"]');
+  const name=input?.value.trim();
+  if(!stage||!name){message('Informe o nome do módulo antes de adicionar.',true);input?.focus();return;}
+  collectForm();
+  if(draft.modules.length>=90){message('Limite de 90 módulos por Academia.',true);return;}
+  const id=newId('module');
+  draft.modules.push({id,name:name.slice(0,180),description:'',hours:0,moduleEnabled:false,
+   lessons:[],questions:[],passScore:75});
+  stage.moduleIds.push(id);
+  renderDetails();
+  const editor=$('connectedModuleEditor-'+id);
+  if(editor){editor.hidden=false;renderModuleEditor(id,editor,true);editor.scrollIntoView({block:'nearest'});}
+  message('Módulo criado como Inativo. Cadastre as aulas e salve a Academia.');
  }
  function renderDetails(){
   const p=programs.find(p=>p.id===selected)||null,canEdit=isMaster()||!p||p.status==='draft';
@@ -188,7 +240,7 @@
     '<label>Chamada do cartão<input data-stage-card value="'+esc(stage.cardTitle||'')+'" maxlength="150"></label>'+
     '<label>Descrição resumida<input data-stage-description value="'+esc(stage.cardDescription||'')+'" maxlength="320"></label></div>';
   }
-  html+='</div><div class="connected-form-actions"><button type="submit" class="primary" '+(!canEdit?'disabled':'')+'>Salvar configurações</button>';
+  html+='</div><div class="connected-add-entry"><label>Nova etapa da Academia<input type="text" id="connectedNewStageName" maxlength="120" placeholder="Ex.: Fundamentos de manutenção" '+(!canEdit?'disabled':'')+'></label><button type="button" id="connectedAddStage" class="outline" '+(!canEdit?'disabled':'')+'>+ Adicionar etapa</button></div><div class="connected-form-actions"><button type="submit" class="primary" '+(!canEdit?'disabled':'')+'>Salvar configurações</button>';
   if(isMaster()&&p?.status!=='published')html+='<button type="button" id="connectedPublishProgram" class="outline">Publicar Academia completa</button>';
   html+='</div></form><h3>Liberação dos módulos</h3><p class="muted">Publicar a formação não libera aulas. O botão Ativar controla a entrada no módulo, mantendo a sequência e as aulas sem vídeo indisponíveis.</p><div id="connectedModulesList">';
   const byId=new Map(draft.modules.map(m=>[m.id,m]));
@@ -200,11 +252,13 @@
     if(isMaster()&&p)html+='<button type="button" data-toggle-module="'+esc(m.id)+'" data-enable="true" class="'+(m.moduleEnabled?'selected':'')+'">Ativar</button><button type="button" data-toggle-module="'+esc(m.id)+'" data-enable="false" class="'+(!m.moduleEnabled?'selected':'')+'">Desativar</button>';
     html+='<button type="button" data-edit-module="'+esc(m.id)+'" class="outline">Gerenciar aulas</button></div></div><div class="connected-module-editor" id="connectedModuleEditor-'+esc(m.id)+'" hidden></div>';
    }
-   html+='</div>';
+   html+='<div class="connected-add-entry"><label>Novo módulo nesta etapa<input type="text" data-new-module-name="'+esc(stage.id)+'" maxlength="180" placeholder="Ex.: Segurança e ferramentas" '+(!canEdit?'disabled':'')+'></label><button type="button" data-add-module="'+esc(stage.id)+'" class="outline" '+(!canEdit?'disabled':'')+'>+ Adicionar módulo</button></div></div>';
   }
   html+='</div>';
   if(isMaster()&&p?.status==='published')html+='<section class="connected-enrollment-panel"><h3>Gerenciar matrículas</h3><p>Somente o ADM Master pode liberar ou suspender acesso à formação.</p><div id="connectedEnrollmentEditor"><button class="outline" type="button" id="connectedLoadStudents">Carregar alunos</button></div></section>';
   holder.innerHTML=html;
+  $('connectedAddStage').onclick=addStage;
+  holder.querySelectorAll('[data-add-module]').forEach(button=>button.onclick=()=>addModule(button.dataset.addModule));
   $('connectedPreviewProgram').onclick=()=>{
    collectForm();
    const stages=draft.stages||[],modules=draft.modules||[];
@@ -278,19 +332,37 @@
  }
  function renderModuleEditor(id,box,canEdit){
   const m=draft.modules.find(x=>x.id===id);if(!m)return;
-  let html='<div class="connected-module-head"><h4>'+esc(m.name)+'</h4><p>As aulas futuras podem ser planejadas sem vídeo. Não exclua aulas já utilizadas por alunos.</p></div><label>Descrição do módulo<textarea id="connectedModuleDesc" maxlength="1200">'+esc(m.description||'')+'</textarea></label><div class="connected-lessons-list">';
+  box.dataset.moduleId=id;
+  let html='<div class="connected-module-head"><h4>'+esc(m.name)+'</h4><p>Planeje as aulas sem vídeos. Elas permanecem indisponíveis até a publicação do conteúdo e liberação pelo ADM.</p></div>'+
+    '<div class="connected-field-grid">'+
+    '<label>Nome do módulo<input data-module-name maxlength="180" value="'+esc(m.name)+'" '+(!canEdit?'disabled':'')+'></label>'+
+    '<label>Carga horária (horas)<input type="number" data-module-hours min="0" max="1000" step="0.5" value="'+Number(m.hours||0)+'" '+(!canEdit?'disabled':'')+'></label>'+
+    '<label class="wide">Descrição do módulo<textarea data-module-description maxlength="1200" rows="3" '+(!canEdit?'disabled':'')+'>'+esc(m.description||'')+'</textarea></label></div>'+
+    '<h4>Aulas deste módulo ('+m.lessons.length+')</h4><div class="connected-lessons-list">';
   for(const [i,lesson] of m.lessons.entries()){
-   html+='<label class="connected-lesson-field">Aula '+(i+1)+' · '+esc(lesson.id)+
-    '<input data-lesson-id="'+esc(lesson.id)+'" maxlength="180" value="'+esc(lesson.name)+'"></label>';
+   html+='<div class="connected-lesson-entry"><strong>Aula '+String(i+1).padStart(2,'0')+'</strong>'+
+    '<label>Título da aula<input data-lesson-name="'+esc(lesson.id)+'" maxlength="180" value="'+esc(lesson.name)+'" '+(!canEdit?'disabled':'')+'></label>'+
+    '<label>Descrição<textarea data-lesson-description="'+esc(lesson.id)+'" maxlength="1200" rows="2" '+(!canEdit?'disabled':'')+'>'+esc(lesson.description||'')+'</textarea></label>'+
+    '<label>Duração prevista (minutos)<input data-lesson-minutes="'+esc(lesson.id)+'" type="number" min="0" max="600" step="1" value="'+Number(lesson.minutes||0)+'" '+(!canEdit?'disabled':'')+'></label>'+
+    '<span class="connected-lesson-notice">'+(lesson.videoId?'Vídeo Mux vinculado ao conteúdo':'Vídeo Mux ainda não vinculado — aula em preparação')+'</span></div>';
   }
-  html+='</div><button type="button" class="primary" id="connectedSaveModule" '+(!canEdit?'disabled':'')+'>Salvar módulo e aulas planejadas</button>';
+  html+='</div><div class="connected-add-entry"><label>Nome da nova aula<input type="text" data-new-lesson-name maxlength="180" placeholder="Ex.: Introdução ao sistema hidráulico" '+(!canEdit?'disabled':'')+'></label>'+
+   '<button type="button" data-add-lesson class="outline" '+(!canEdit?'disabled':'')+'>+ Adicionar aula</button></div>'+
+   '<div class="connected-module-save"><button type="button" class="primary" data-save-module '+(!canEdit?'disabled':'')+'>Salvar módulo e aulas</button>'+
+   '<small>A matrícula e as liberações são gerenciadas separadamente. Aulas não podem ser excluídas neste fluxo.</small></div>';
   box.innerHTML=html;
-  $('connectedSaveModule').onclick=async()=>{
-   m.description=$('connectedModuleDesc').value.trim();
-   box.querySelectorAll('[data-lesson-id]').forEach(input=>{
-    const lesson=m.lessons.find(x=>x.id===input.dataset.lessonId);if(lesson)lesson.name=input.value.trim();
-   });
+  box.querySelector('[data-save-module]').onclick=async()=>{
    collectForm();await saveDraft();
+  };
+  box.querySelector('[data-add-lesson]').onclick=()=>{
+   const name=box.querySelector('[data-new-lesson-name]')?.value.trim();
+   if(!name){message('Digite o nome da nova aula.',true);box.querySelector('[data-new-lesson-name]')?.focus();return;}
+   collectForm();
+   if(m.lessons.length>=150){message('Limite de 150 aulas por módulo.',true);return;}
+   m.lessons.push({id:newId('lesson'),name:name.slice(0,180),description:'',minutes:0,videoId:''});
+   renderModuleEditor(id,box,canEdit);
+   box.querySelector('[data-save-module]')?.scrollIntoView({block:'nearest'});
+   message('Aula adicionada. Preencha as informações e clique em Salvar módulo e aulas.');
   };
  }
  async function loadStudents(){
