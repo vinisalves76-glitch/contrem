@@ -97,3 +97,25 @@ A main e o domínio contrem.vercel.app permanecem intactos.
 **Regressão:** `apps/academia/tests/qa-academy-builder-connected.cjs` — 6 cenários de criação de etapas, módulos, aulas, persistência de campos, URLs Mux opcionais e prontidão de publicação passaram em execução simulada.
 
 **Deploy:** realizar apenas na mesma branch `release/academia-formacoes-main-base-20261122` e URL estável de Preview; preservar `main`, `develop` e `contrem.vercel.app`.
+
+
+## Gestão unificada de acesso — Cursos Avulsos + Academias (23/11/2026)
+
+**Problema:** a tela **Alunos → Alunos cadastrados** apresentava checkboxes somente para os cursos avulsos do catálogo original, enquanto a liberação de Academias estava escondida dentro do editor de cada formação. O ADM não conseguia ver todos os acessos de cada aluno em um único lugar.
+
+**Nova experiência na branch de integração:**
+
+- Cada aluno aparece em um cartão com seu estado Ativo/Inativo e duas seções independentes: **Cursos Avulsos** e **Academias**.
+- O acesso aos Cursos Avulsos continua usando as permissões existentes (`academy_course_access`, serviço `academy-students`) sem alterar ou recriar liberações anteriores.
+- A seção Academias usa `academy-programs`: somente o ADM Master pode carregar as matrículas e marcar/desmarcar checkboxes. O backend valida JWT e identidade/role, e só aceita novas matrículas em Academias **publicadas**; formações em rascunho ou arquivadas são visíveis, porém bloqueadas para concessão.
+- A API `action=students` passa a devolver a lista leve `programs: [{id,title,status}]` junto com o resultado anterior `students` e `enrollments`. Não expõe `definition`, vídeos ou outros detalhes técnicos nessa consulta.
+- Matrículas concedidas continuam em `academy_program_enrollments`; desmarcar suspende o acesso, sem apagar a matrícula anterior, o progresso do aluno ou os dados dos Cursos Avulsos. Data de vencimento já cadastrada é preservada durante a alternância e identificada na tela.
+- O ADM de Conteúdo continua com as permissões já existentes para Cursos Avulsos, sem acesso a concessão ou consulta de matrículas de Academias.
+- Se a consulta adicional de Academias falhar, a lista de Cursos Avulsos continua disponível e aparece botão Recarregar Academias; não há perda silenciosa de permissões.
+- A seção Alunos recarrega permissões ao abrir; não é necessário entrar no editor de cada Academia para liberar matrícula.
+
+**Estado do banco no momento da inspeção:** as duas formações registradas ainda estão como `draft`, por isso aparecerão com o rótulo **Rascunho** e com o checkbox desabilitado até serem publicadas pelo ADM Master; a publicação não exige vídeos.
+
+**QA:** testes `qa-academy-roster-access.cjs` (6 contratos) + simulação de renderização e eventos: curso com acesso prévio preservado, Academy matriculada marcada, Academy em rascunho desabilitada, concessão/suspensão separada de curso.
+
+**Ambiente:** apenas branch `release/academia-formacoes-main-base-20261122` e preview estável; `main` e Vercel production intactos. Backend Supabase `academy-programs` v3 implantado com alteração aditiva apenas na resposta de consulta de alunos; tabelas e contas não sofreram modificação.
