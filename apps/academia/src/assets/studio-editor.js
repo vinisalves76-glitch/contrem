@@ -6,6 +6,7 @@
   const id = prefix => `${prefix}-${globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2,8)}`}`;
   const labels = {text:'Texto',image:'Imagem',video:'Vídeo Mux',material:'Material de apoio',activity:'Atividade'};
   let projects = [], project = null, lessonId = null, preview = false, enteredFromLogin = false, dirty = false;
+  let interactiveScenes = [], interactiveAnswers = {}, interactiveIndex = 0, interactiveAttempts = {}, interactiveResults = {}, interactiveBlocked = false, interactivePassed = false;
   const sessionKey = () => `contrem-academia-studio-local-v1:${window.AcademySession?.userId || 'browser-preview'}`;
   const activeLesson = () => project?.modules.flatMap(m => m.lessons).find(l => l.id === lessonId) || null;
   const markDirty = () => { dirty = true; $('studioSaveState').textContent = 'Alterações ainda não salvas'; };
@@ -80,7 +81,7 @@
   }
   function renderLearnerPreview() {
     const host=$('studioLearnerPreview');
-    host.innerHTML=`<div class="studio-preview-head"><div><p class="tag">PRÉVIA DO ALUNO · SEM PUBLICAÇÃO</p><h2>${esc(project.title||'Novo treinamento')}</h2><p>${esc(project.description||'')}</p></div><button type="button" class="outline" id="studioReturnEditor">← Voltar ao editor</button></div>`+project.modules.map(m=>`<section class="studio-preview-module"><h3>${esc(m.title)}</h3>${m.lessons.map(l=>`<article class="studio-preview-lesson"><h4>${esc(l.title)}</h4>${l.blocks.map(b=>{
+    host.innerHTML=`<div class="studio-preview-head"><div><p class="tag">PRÉVIA DO ALUNO · SEM PUBLICAÇÃO</p><h2>${esc(project.title||'Novo treinamento')}</h2><p>${esc(project.description||'')}</p></div><button type="button" class="outline" id="studioReturnEditor">← Voltar ao editor</button></div>`+project.modules.map(m=>`<section class="studio-preview-module"><h3>${esc(m.title)}</h3>${m.lessons.map(l=>`<article class="studio-preview-lesson"><div class="row"><h4>${esc(l.title)}</h4><button type="button" class="primary" data-open-lesson="${esc(l.id)}">▶ Abrir aula interativa</button></div>${l.blocks.map(b=>{
       if(b.type==='text')return `<section class="studio-preview-text"><h5>${esc(b.title)}</h5><p>${esc(b.text).replaceAll('\n','<br>')}</p></section>`;
       if(b.type==='image')return /^https:\/\//i.test(b.url||'')?`<figure><img src="${esc(b.url)}" alt="${esc(b.alt)}"><figcaption>${esc(b.alt)}</figcaption></figure>`:'';
       if(b.type==='video'){const pid=muxPlaybackId(b.url);return pid?`<div class="studio-preview-video"><iframe src="https://player.mux.com/${esc(pid)}?playsinline=true" title="${esc(b.description||'Vídeo Mux')}" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" allowfullscreen></iframe></div>`:'<p class="muted">Informe um Playback ID ou link player.mux.com para mostrar o vídeo.</p>';}
@@ -89,6 +90,41 @@
       return '';
     }).join('')}</article>`).join('')}</section>`).join('');
     host.hidden=false; $('studioBuild').hidden=true;
+    $('studioScormPlayer').hidden=true;
+  }
+  function openInteractiveLesson(selectedLessonId) {
+    interactiveScenes=[]; interactiveAnswers={}; interactiveIndex=0; interactiveBlocked=false; interactivePassed=false;
+    (project?.modules||[]).forEach(module=>(module.lessons||[]).filter(lesson=>lesson.id===selectedLessonId).forEach(lesson=>(lesson.blocks||[]).forEach(block=>interactiveScenes.push({module:module.title||'Etapa',lesson:lesson.title||'Aula',lessonId:lesson.id,block,final:/prova\s*final/i.test(`${module.title||''} ${lesson.title||''}`)}))));
+    const finalScenes=interactiveScenes.filter(scene=>scene.final&&scene.block.type==='activity');
+    interactivePassed=finalScenes.length>0&&interactiveResults[selectedLessonId]?.passed===true;
+    interactiveBlocked=finalScenes.length>0&&!interactivePassed&&(interactiveAttempts[selectedLessonId]||0)>=2;
+    $('studioLearnerPreview').hidden=true; $('studioScormPlayer').hidden=false; renderInteractiveLesson();
+  }
+  function renderInteractiveLesson() {
+    const host=$('studioScormPlayer'), total=interactiveScenes.length;
+    if(interactivePassed){const result=interactiveResults[interactiveScenes[0]?.lessonId];host.innerHTML=`<div class="studio-scorm-result"><p class="tag">PROVA FINAL</p><div class="studio-scorm-result-icon" aria-hidden="true">✓</div><h2>Prova aprovada nesta prévia</h2><p>Resultado demonstrativo: ${result.correct} de ${result.total} · ${result.score}%. Meta de 80% atingida.</p><p class="muted">A aprovação fica apenas nesta sessão da prévia e não é enviada à Academia.</p><button type="button" class="outline" data-player-action="overview">Voltar às aulas</button></div>`;return;}
+    if(interactiveBlocked){host.innerHTML='<div class="studio-scorm-result"><p class="tag">PROVA FINAL</p><h2>Tentativas da prévia encerradas</h2><p>Após duas reprovações, a regra da Academia prevê solicitação de intervenção do ADM.</p><p class="muted">Este bloqueio vale somente enquanto esta prévia permanecer aberta; não é um registro oficial.</p><button type="button" class="outline" data-player-action="overview">Voltar às aulas</button></div>';return;}
+    if(!total){host.innerHTML='<p>Adicione blocos à aula para abrir a experiência interativa.</p><button type="button" class="outline" data-player-action="overview">← Voltar ao treinamento</button>';return;}
+    if(interactiveIndex>=total){
+      const finalQuestions=interactiveScenes.filter(scene=>scene.final&&scene.block.type==='activity');
+      const correct=finalQuestions.filter(scene=>Number(interactiveAnswers[scene.block.id])===Number(scene.block.correct)).length;
+      const score=finalQuestions.length?Math.round(correct/finalQuestions.length*100):null;
+      const passed=score===null?true:score>=80;
+      const lessonIdForAttempt=interactiveScenes[0].lessonId;
+      const attempts=finalQuestions.length?(interactiveAttempts[lessonIdForAttempt]||0)+1:0;
+      if(finalQuestions.length)interactiveAttempts[lessonIdForAttempt]=attempts;
+      if(finalQuestions.length)interactiveResults[lessonIdForAttempt]={passed,attempts,correct,total:finalQuestions.length,score};
+      const canRetry=finalQuestions.length&&!passed&&attempts<2;
+      host.innerHTML=`<div class="studio-scorm-result"><p class="tag">FIM DA EXPERIÊNCIA</p><div class="studio-scorm-result-icon" aria-hidden="true">${passed?'✓':'↻'}</div><h2>${score===null?'Conteúdo concluído':passed?'Prova final aprovada':'Prova final concluída'}</h2><p>${score===null?'Você percorreu todas as telas desta prévia.':`Resultado demonstrativo: ${correct} de ${finalQuestions.length} · ${score}%. ${passed?'Meta de 80% atingida.':canRetry?'Abaixo da meta de 80%. Você ainda tem uma tentativa nesta prévia.':'Abaixo da meta após duas tentativas. Na Academia, solicite intervenção do ADM.'}`}</p><p class="muted">Este resultado e o limite de tentativas existem somente nesta prévia; não são enviados à Academia nem persistem após fechar a página.</p><div class="row"><button type="button" class="outline" data-player-action="overview">Voltar às aulas</button>${canRetry?'<button type="button" class="primary" data-player-action="restart">Tentar mais uma vez</button>':''}</div></div>`;return;
+    }
+    const scene=interactiveScenes[interactiveIndex], b=scene.block, answer=interactiveAnswers[b.id], isAnswered=Object.hasOwn(interactiveAnswers,b.id), pct=Math.round((interactiveIndex/total)*100);
+    let body='';
+    if(b.type==='text')body=`<section class="studio-scorm-copy"><h2>${esc(b.title||'Conteúdo')}</h2><div>${esc(b.text||'').replaceAll('\n','<br>')}</div></section>`;
+    if(b.type==='image')body=/^https:\/\//i.test(b.url||'')?`<figure><img src="${esc(b.url)}" alt="${esc(b.alt)}"><figcaption>${esc(b.alt)}</figcaption></figure>`:'<p class="muted">A imagem ainda não foi configurada.</p>';
+    if(b.type==='video'){const pid=muxPlaybackId(b.url);body=pid?`<div class="studio-preview-video"><iframe src="https://player.mux.com/${esc(pid)}?playsinline=true" title="${esc(b.description||'Vídeo Mux')}" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" allowfullscreen></iframe></div><p class="muted">${esc(b.description||'')}</p>`:'<p class="muted">Configure um Playback ID do Mux para incluir o vídeo nesta tela.</p>';}
+    if(b.type==='material')body=/^https:\/\//i.test(b.url||'')?`<a class="studio-scorm-material" href="${esc(b.url)}" target="_blank" rel="noopener noreferrer">↗ ${esc(b.title||'Abrir material de apoio')}</a>`:'<p class="muted">Material de apoio ainda não configurado.</p>';
+    if(b.type==='activity')body=`<section class="studio-scorm-question"><h2>${esc(b.prompt||'Atividade')}</h2><div class="studio-scorm-choices">${(b.choices||[]).map((choice,i)=>`<button type="button" class="studio-scorm-choice ${isAnswered&&Number(answer)===i?'selected':''}" data-scorm-answer="${i}" ${isAnswered?'disabled':''}><span>${String.fromCharCode(65+i)}</span>${esc(choice||`Alternativa ${String.fromCharCode(65+i)}`)}</button>`).join('')}</div>${isAnswered?`<p class="studio-scorm-feedback ${Number(answer)===Number(b.correct)?'correct':'incorrect'}" role="status">${Number(answer)===Number(b.correct)?esc(b.feedback||'Resposta correta.'):esc('Resposta incorreta. Revise o conteúdo antes de seguir.')}</p>`:'<p class="muted">Escolha uma alternativa para continuar.</p>'}</section>`;
+    host.innerHTML=`<div class="studio-scorm-top"><button type="button" class="outline" data-player-action="overview">← Sair da aula</button><span>PRÉVIA INTERATIVA · NÃO PUBLICADA</span><span>${interactiveIndex+1} / ${total}</span></div><div class="studio-scorm-progress" role="progressbar" aria-label="Progresso da aula" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${interactiveIndex}"><span style="width:${pct}%"></span></div><div class="studio-scorm-context"><span>${esc(scene.module)}</span><span>${esc(scene.lesson)}</span></div><article class="studio-scorm-slide">${body}</article><nav class="studio-scorm-nav" aria-label="Navegação da aula"><button type="button" class="outline" data-player-action="previous" ${interactiveIndex===0?'disabled':''}>← Anterior</button><span>${interactiveIndex+1} de ${total} telas</span><button type="button" class="primary" data-player-action="next" ${b.type==='activity'&&!isAnswered?'disabled':''}>${interactiveIndex===total-1?'Ver resultado':'Próxima →'}</button></nav>`;
   }
   function refresh() { renderOutline(); renderBlocks(); }
   function enterDemo() {
@@ -169,11 +205,21 @@
     else {preview=true;renderLearnerPreview();$('studioPreviewToggle').textContent='Voltar ao editor';}
   });
   $('studioLearnerPreview').addEventListener('click',event=>{
+    const openLesson=event.target.closest('[data-open-lesson]');if(openLesson){openInteractiveLesson(openLesson.dataset.openLesson);return;}
     if(event.target.id==='studioReturnEditor'){preview=false;$('studioBuild').hidden=false;$('studioLearnerPreview').hidden=true;$('studioPreviewToggle').textContent='Visualizar aluno';return;}
     const button=event.target.closest('[data-answer]');if(!button)return;
     const block=project?.modules.flatMap(m=>m.lessons).flatMap(l=>l.blocks).find(b=>b.id===button.dataset.block);if(!block)return;
     const feedback=document.querySelector(`[data-feedback="${CSS.escape(block.id)}"]`);if(!feedback)return;feedback.textContent=Number(button.dataset.answer)===Number(block.correct)?(block.feedback||'Resposta correta.'):'Revise o conteúdo e tente novamente.';
     feedback.classList.toggle('correct',Number(button.dataset.answer)===Number(block.correct));
+  });
+  $('studioScormPlayer').addEventListener('click',event=>{
+    const answer=event.target.closest('[data-scorm-answer]');
+    if(answer){const scene=interactiveScenes[interactiveIndex];if(scene?.block.type==='activity'&&!Object.hasOwn(interactiveAnswers,scene.block.id)){interactiveAnswers[scene.block.id]=Number(answer.dataset.scormAnswer);renderInteractiveLesson();}return;}
+    const action=event.target.closest('[data-player-action]')?.dataset.playerAction;if(!action)return;
+    if(action==='overview'){$('studioScormPlayer').hidden=true;$('studioLearnerPreview').hidden=false;return;}
+    if(action==='previous'){interactiveIndex=Math.max(0,interactiveIndex-1);renderInteractiveLesson();return;}
+    if(action==='next'){const scene=interactiveScenes[interactiveIndex];if(scene?.block.type==='activity'&&!Object.hasOwn(interactiveAnswers,scene.block.id))return;interactiveIndex=Math.min(interactiveScenes.length,interactiveIndex+1);renderInteractiveLesson();return;}
+    if(action==='restart'){interactiveAnswers={};interactiveIndex=0;renderInteractiveLesson();}
   });
   document.addEventListener('keydown',event=>{
     if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='s'&&!$('studioEditor').hidden){event.preventDefault();persist();}

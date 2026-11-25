@@ -24,7 +24,7 @@ test('Publicação da Academia mantém construtor completo do Developer',async()
 test('CONTREM Studio local está incluído no shell da Academia',async()=>{
  const html=await read('apps/academia/src/index.html');
  const [editor,sw,ui]=await Promise.all([read('apps/academia/src/assets/studio-editor.js'),read('apps/academia/src/sw.js'),read('apps/academia/src/assets/contrem.js')]);
- for(const id of ['openStudioPreview','studioView','studioHome','studioEditor','studioLearnerPreview','studio-local-banner'])assert.ok(html.includes('id="'+id+'"'),'Studio entry '+id);
+ for(const id of ['openStudioPreview','studioView','studioHome','studioEditor','studioLearnerPreview','studioScormPlayer','studio-local-banner'])assert.ok(html.includes('id="'+id+'"'),'Studio entry '+id);
  for(const asset of ['studio-editor.js','studio-editor.css']){
   assert.ok(html.includes('assets/'+asset),'Studio shell '+asset);
   assert.ok(sw.includes('/assets/'+asset),'Studio PWA shell '+asset);
@@ -32,6 +32,12 @@ test('CONTREM Studio local está incluído no shell da Academia',async()=>{
  }
  assert.match(editor,/localStorage\.setItem/);
  assert.match(editor,/Prévia demonstrativa/);
+ assert.match(editor,/data-open-lesson/);
+ assert.match(editor,/interactiveBlocked/);
+ assert.match(editor,/interactiveResults/);
+ assert.match(editor,/score>=80/);
+ assert.match(editor,/Resultado demonstrativo/);
+ assert.match(editor,/data-player-action="next"/);
  assert.ok(editor.includes('document.querySelector(`[data-feedback="${CSS.escape(block.id)}"]`)'),'activity feedback selector');
  assert.match(ui,/id === 'studioView' \? 'CONTREM Studio'/);
  assert.doesNotMatch(editor,/AcademyCloudService|writeCatalog|academy-workspace/);
@@ -73,7 +79,7 @@ test('Materiais privados, vídeo autorizado e atualização de PWA',async()=>{
  assert.match(ui,/service\.playback\(lesson\.videoId\)/);
  assert.match(media,/academy-materials/);
  assert.match(media,/createSignedUrl/);
- assert.match(sw,/20261125-studio-preview-v1/);
+ assert.match(sw,/20261125-studio-preview-v2/);
  assert.doesNotMatch(sw,/admin-preview-service\.js|assessment-demo\.js|assessment-student\.js/);
  assert.match(author,/mode==='connected'/);
 });
