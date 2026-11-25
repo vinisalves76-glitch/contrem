@@ -1,0 +1,38 @@
+name: Verificar CONTREM
+on:
+  push:
+    branches: [main, develop, 'feature/**', 'fix/**', 'chore/**']
+  pull_request:
+    branches: [main, develop]
+permissions:
+  contents: read
+concurrency:
+  group: contrem-check-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Verificar fontes
+        run: npm run check
+      - name: Instalar dependências de teste do ADM quando presentes
+        run: |
+          if [ -f apps/academia/package-lock.json ]; then npm ci --prefix apps/academia; fi
+      - name: Executar testes disponíveis
+        run: npm test
+      - name: Construir aplicações estáveis
+        run: |
+          npm run build:institucional
+          npm run build:academia
+      - name: Construir protótipos quando presentes
+        run: |
+          if [ -d apps/tec ]; then npm run build:tec; fi
+          if [ -d apps/guia ]; then npm run build:guia; fi
+
+      - name: Verificar a publicação central
+        run: |
+          npm run build
+          npm run test:central
