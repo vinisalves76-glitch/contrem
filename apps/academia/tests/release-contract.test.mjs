@@ -24,7 +24,7 @@ test('Publicação da Academia mantém construtor completo do Developer',async()
 test('CONTREM Studio local está incluído no shell da Academia',async()=>{
  const html=await read('apps/academia/src/index.html');
  const [editor,sw]=await Promise.all([read('apps/academia/src/assets/studio-editor.js'),read('apps/academia/src/sw.js')]);
- for(const id of ['openStudioPreview','studioView','studioHome','studioEditor','studioLearnerPreview'])assert.ok(html.includes('id="'+id+'"'),'Studio entry '+id);
+ for(const id of ['openStudioPreview','studioView','studioHome','studioEditor','studioLearnerPreview','studio-local-banner'])assert.ok(html.includes('id="'+id+'"'),'Studio entry '+id);
  for(const asset of ['studio-editor.js','studio-editor.css']){
   assert.ok(html.includes('assets/'+asset),'Studio shell '+asset);
   assert.ok(sw.includes('/assets/'+asset),'Studio PWA shell '+asset);
