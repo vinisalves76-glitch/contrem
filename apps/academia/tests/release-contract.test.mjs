@@ -23,7 +23,7 @@ test('Publicação da Academia mantém construtor completo do Developer',async()
 
 test('CONTREM Studio local está incluído no shell da Academia',async()=>{
  const html=await read('apps/academia/src/index.html');
- const [editor,sw]=await Promise.all([read('apps/academia/src/assets/studio-editor.js'),read('apps/academia/src/sw.js')]);
+ const [editor,sw,ui]=await Promise.all([read('apps/academia/src/assets/studio-editor.js'),read('apps/academia/src/sw.js'),read('apps/academia/src/assets/contrem.js')]);
  for(const id of ['openStudioPreview','studioView','studioHome','studioEditor','studioLearnerPreview','studio-local-banner'])assert.ok(html.includes('id="'+id+'"'),'Studio entry '+id);
  for(const asset of ['studio-editor.js','studio-editor.css']){
   assert.ok(html.includes('assets/'+asset),'Studio shell '+asset);
@@ -33,6 +33,7 @@ test('CONTREM Studio local está incluído no shell da Academia',async()=>{
  assert.match(editor,/localStorage\.setItem/);
  assert.match(editor,/Prévia demonstrativa/);
  assert.ok(editor.includes('document.querySelector(`[data-feedback="${CSS.escape(block.id)}"]`)'),'activity feedback selector');
+ assert.match(ui,/id === 'studioView' \? 'CONTREM Studio'/);
  assert.doesNotMatch(editor,/AcademyCloudService|writeCatalog|academy-workspace/);
 });
 

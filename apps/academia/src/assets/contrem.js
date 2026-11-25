@@ -46,7 +46,7 @@ const brandShow = show;
 show = function(id) {
  brandShow(id);
  document.querySelectorAll('.nav [data-jump]').forEach(b => b.classList.remove('active'));
- document.getElementById('workspaceLabel').textContent = id === 'adminView' ? 'Administração' : id === 'classView' ? 'Sala de aula' : 'Minha aprendizagem';
+ document.getElementById('workspaceLabel').textContent = id === 'adminView' ? 'Administração' : id === 'classView' ? 'Sala de aula' : id === 'studioView' ? 'CONTREM Studio' : 'Minha aprendizagem';
 };
 document.getElementById('studentTab').addEventListener('click', () => window.scrollTo({top:0,behavior:'instant'}));
 document.getElementById('adminTab').addEventListener('click', () => window.scrollTo({top:0,behavior:'instant'}));
