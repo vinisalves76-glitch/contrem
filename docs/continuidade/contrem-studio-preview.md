@@ -44,6 +44,7 @@ Próxima etapa: abrir a preview, verificar visualmente criação, salvamento, re
 - Respostas, nota e tentativas ficam somente em memória nesta prévia; não há gravação oficial de progresso, autenticação, pontuação no catálogo nem sincronização com aluno/backend. Fechar/recarregar limpa o estado demonstrativo.
 - O player é inspirado em microlearning/SCORM, mas ainda não produz pacote SCORM nem implementa API/runtime SCORM. Não alegar interoperabilidade com LMS nesta fase.
 - O treinamento EPI local pode ser revisado em telas pelo botão novo na visão do aluno; o rascunho permanece no navegador onde foi criado. Revisar responsividade e navegação por teclado antes de promover a preview.
+- Para que a avaliação da preview não dependa do `localStorage` de outra sessão, o Studio agora inclui um exemplo pronto de EPI acessível por **Ver exemplo interativo: EPI**. A amostra abre diretamente a visão do aluno, com uma aula sequencial e prova final demonstrativa de cinco questões, meta de 80% e até duas tentativas na sessão. Só passa ao armazenamento local se o usuário optar por salvar; não sincroniza nem publica.
 - Cache do service worker atualizado para v2 para entregar os novos recursos sem manter os assets antigos em instalações PWA.
 
 ### Verificação de código

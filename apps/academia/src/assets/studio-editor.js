@@ -35,6 +35,62 @@
     if (type === 'activity') return {id:id('block'),type,prompt:'',choices:['','','',''],correct:0,feedback:''};
     return {id:id('block'),type,title:'',text:'',url:'',alt:'',description:''};
   }
+  function sampleEpiProject() {
+    const text=(blockId,title,content)=>({id:blockId,type:'text',title,text:content});
+    const question=(blockId,prompt,choices,correct,feedback)=>({id:blockId,type:'activity',prompt,choices,correct,feedback});
+    return {id:'studio-demo-epi',title:'Uso correto de EPI na manutenção de máquinas pesadas',category:'Segurança do trabalho',description:'Treinamento demonstrativo da CONTREM Academia sobre seleção, inspeção e uso de EPI em atividades de manutenção e operação. Conteúdo para revisão do instrutor e adequação aos procedimentos da empresa.',modules:[{id:'module-demo-epi',title:'Uso e conservação de EPI',lessons:[
+      {id:'lesson-demo-epi',title:'Seleção e inspeção antes da tarefa',blocks:[
+        text('epi-objetivo','Objetivos da aula','Ao final, você deverá reconhecer por que a escolha do EPI começa pela análise da tarefa, identificar condições que exigem substituição e seguir os procedimentos de segurança da empresa.\n\nEPI é um dos recursos de proteção do trabalhador. Ele deve ser selecionado e utilizado junto às demais medidas de prevenção definidas para a atividade.'),
+        text('epi-selecao','Escolha adequada ao risco','Antes de iniciar, compreenda a tarefa, os perigos e as orientações de segurança aplicáveis. Utilize os equipamentos definidos para aquela exposição, confira o ajuste e solicite orientação se houver dúvida sobre compatibilidade ou uso.'),
+        question('epi-atividade-selecao','Antes de iniciar uma manutenção, como escolher os EPIs?',[
+          'Usar o equipamento mais confortável, sem verificar a tarefa.',
+          'Analisar os riscos e seguir os EPIs definidos para a atividade.',
+          'Escolher apenas pelo uniforme da equipe.',
+          'Começar o trabalho e colocar o EPI se surgir um risco.'
+        ],1,'Correto. A seleção deve considerar a tarefa, os riscos e as orientações de segurança.'),
+        text('epi-inspecao','Inspecione antes de usar','Verifique se o EPI está íntegro, limpo, ajustado e apropriado à tarefa. Se encontrar dano, defeito ou condição que comprometa a proteção, retire-o de uso, comunique a liderança e siga o procedimento de substituição.'),
+        question('epi-atividade-inspecao','Você encontra uma trinca no óculos de segurança. O que fazer?',[
+          'Continuar usando até o fim do turno.',
+          'Retirar de uso, comunicar a liderança e providenciar substituição.',
+          'Cobrir a trinca e seguir o trabalho.',
+          'Emprestar o óculos a outra pessoa.'
+        ],1,'Isso mesmo. Um equipamento danificado deve ser retirado de uso e substituído conforme o procedimento da empresa.'),
+        text('epi-checklist','Checklist de início','Confirme: o EPI está adequado à atividade? Está em boas condições? O ajuste está correto? Você sabe como usar, higienizar, guardar e comunicar danos?\n\nSiga a análise de risco, os procedimentos internos e as orientações do fabricante. Em caso de dúvida, pare e procure a liderança responsável.')
+      ]},
+      {id:'lesson-demo-epi-exam',title:'Prova final — EPI',blocks:[
+        question('epi-prova-1','A função do EPI na prevenção é:',[
+          'Substituir a análise de risco da tarefa.',
+          'Complementar as medidas de proteção definidas para a atividade.',
+          'Eliminar a necessidade de seguir procedimentos.',
+          'Ser escolhido somente pela preferência pessoal.'
+        ],1,'Correto. O EPI integra a prevenção e não substitui a análise e os controles de risco.'),
+        question('epi-prova-2','O que deve ser feito antes do uso?',[
+          'Verificar apenas se o equipamento tem a cor correta.',
+          'Usar qualquer item disponível, ainda que não seja adequado.',
+          'Inspecionar integridade, ajuste e adequação à tarefa.',
+          'Compartilhar o equipamento sem verificar as condições.'
+        ],2,'Correto. Confira as condições do EPI e se ele é adequado à atividade.'),
+        question('epi-prova-3','Se um EPI estiver danificado, a conduta segura é:',[
+          'Retirá-lo de uso e seguir o fluxo de comunicação e substituição.',
+          'Continuar usando se o dano parecer pequeno.',
+          'Consertá-lo improvisadamente no local.',
+          'Guardá-lo para uso em outra atividade.'
+        ],0,'Correto. Não improvise reparos nem continue usando um equipamento comprometido.'),
+        question('epi-prova-4','Em caso de dúvida sobre o EPI indicado para a tarefa:',[
+          'Decidir sem consultar ninguém para não atrasar o serviço.',
+          'Escolher o mesmo EPI usado em qualquer atividade.',
+          'Ignorar a dúvida se a tarefa for rápida.',
+          'Pausar e consultar a liderança ou orientação de segurança.'
+        ],3,'Correto. Esclareça a dúvida antes de iniciar a exposição ao risco.'),
+        question('epi-prova-5','Após a atividade, os EPIs devem ser:',[
+          'Deixados no local para a próxima equipe.',
+          'Higienizados e guardados conforme orientação e procedimento.',
+          'Armazenados ainda úmidos em qualquer recipiente.',
+          'Descartados todos os dias, independentemente do tipo.'
+        ],1,'Correto. Siga as instruções do fabricante e o procedimento da empresa para conservação.')
+      ]}
+    ]}],updatedAt:null};
+  }
   function newProject() {
     project = {id:id('studio'),title:'',category:'',description:'',modules:[{id:id('module'),title:'Etapa 1',lessons:[{id:id('lesson'),title:'Aula 1',blocks:[]}]}],updatedAt:null};
     lessonId = project.modules[0].lessons[0].id; preview = false; dirty = true;
@@ -52,6 +108,13 @@
     $('studioTitle').value=project.title||''; $('studioCategory').value=project.category||''; $('studioDescription').value=project.description||'';
     $('studioPreviewToggle').textContent='Visualizar aluno';
     renderOutline(); renderBlocks(); updateSaveState('Rascunho local aberto');
+  }
+  function openEpiDemo() {
+    project=sampleEpiProject(); lessonId=project.modules[0].lessons[0].id; preview=true; dirty=false;
+    $('studioHome').hidden=true; $('studioEditor').hidden=false; $('studioBuild').hidden=false; $('studioLearnerPreview').hidden=true;
+    $('studioTitle').value=project.title; $('studioCategory').value=project.category; $('studioDescription').value=project.description;
+    $('studioPreviewToggle').textContent='Voltar ao editor';
+    renderOutline(); renderBlocks(); renderLearnerPreview();
   }
   function renderOutline() {
     const host = $('studioOutline');
@@ -152,6 +215,7 @@
   $('studioBack').addEventListener('click',()=>{if(dirty&&!confirm('Há alterações não salvas. Sair sem salvar?'))return;if(enteredFromLogin)returnFromDemo();else window.show('adminView');});
   $('studioToList').addEventListener('click',showHome);
   $('studioCreate').addEventListener('click',newProject);
+  $('studioEpiDemo').addEventListener('click',openEpiDemo);
   $('studioProjects').addEventListener('click',event=>{
     const button=event.target.closest('[data-open-project]'); if(button)openProject(button.dataset.openProject);
   });
