@@ -172,7 +172,7 @@
     if(event.target.id==='studioReturnEditor'){preview=false;$('studioBuild').hidden=false;$('studioLearnerPreview').hidden=true;$('studioPreviewToggle').textContent='Visualizar aluno';return;}
     const button=event.target.closest('[data-answer]');if(!button)return;
     const block=project?.modules.flatMap(m=>m.lessons).flatMap(l=>l.blocks).find(b=>b.id===button.dataset.block);if(!block)return;
-    const feedback=$(`[data-feedback="${CSS.escape(block.id)}"]`);feedback.textContent=Number(button.dataset.answer)===Number(block.correct)?(block.feedback||'Resposta correta.'):'Revise o conteúdo e tente novamente.';
+    const feedback=document.querySelector(`[data-feedback="${CSS.escape(block.id)}"]`);if(!feedback)return;feedback.textContent=Number(button.dataset.answer)===Number(block.correct)?(block.feedback||'Resposta correta.'):'Revise o conteúdo e tente novamente.';
     feedback.classList.toggle('correct',Number(button.dataset.answer)===Number(block.correct));
   });
   document.addEventListener('keydown',event=>{

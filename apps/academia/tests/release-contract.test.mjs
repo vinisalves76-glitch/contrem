@@ -32,6 +32,7 @@ test('CONTREM Studio local está incluído no shell da Academia',async()=>{
  }
  assert.match(editor,/localStorage\.setItem/);
  assert.match(editor,/Prévia demonstrativa/);
+ assert.ok(editor.includes('document.querySelector(`[data-feedback="${CSS.escape(block.id)}"]`)'),'activity feedback selector');
  assert.doesNotMatch(editor,/AcademyCloudService|writeCatalog|academy-workspace/);
 });
 
