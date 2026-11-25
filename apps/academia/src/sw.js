@@ -1,8 +1,8 @@
 // Cada aplicação controla somente seu caminho e seu próprio cache de shell.
 const BASE = new URL(self.registration.scope);
 const PREFIX = 'contrem-academia-shell-' + encodeURIComponent(BASE.pathname) + '-';
-const CACHE_NAME = PREFIX + '20261122-staff-prod-v1';
-const SHELL = ["/", "/index.html", "/manifest.webmanifest", "/assets/contrem.css", "/assets/contrem.js", "/assets/pwa.js", "/assets/cloud.css", "/assets/cloud-store.js", "/assets/cloud-config.js", "/assets/admin-manager.js", "/assets/assessment-core.js", "/assets/assessment-author.js", "/assets/assessment.css", "/assets/assessment-author.css", "/assets/admin-manager.css", "/assets/admin-preview-media.js", "/assets/cloud-service.js", "/assets/cloud-ui.js", "/assets/vendor/supabase-2.119.0.js", "/assets/logo.svg", "/assets/campo.webp", "/icons/icon-192.png", "/icons/icon-512.png", "/icons/maskable-512.png", "/icons/apple-touch-icon.png"].map(path => new URL('.' + path, BASE).pathname);
+const CACHE_NAME = PREFIX + '20261125-studio-preview-v1';
+const SHELL = ["/", "/index.html", "/manifest.webmanifest", "/assets/contrem.css", "/assets/contrem.js", "/assets/pwa.js", "/assets/cloud.css", "/assets/cloud-store.js", "/assets/cloud-config.js", "/assets/admin-manager.js", "/assets/assessment-core.js", "/assets/assessment-author.js", "/assets/assessment.css", "/assets/assessment-author.css", "/assets/studio-editor.js", "/assets/studio-editor.css", "/assets/admin-manager.css", "/assets/admin-preview-media.js", "/assets/cloud-service.js", "/assets/cloud-ui.js", "/assets/vendor/supabase-2.119.0.js", "/assets/logo.svg", "/assets/campo.webp", "/icons/icon-192.png", "/icons/icon-512.png", "/icons/maskable-512.png", "/icons/apple-touch-icon.png"].map(path => new URL('.' + path, BASE).pathname);
 const SHELL_PATHS = new Set(SHELL);
 const HOME = new URL('index.html', BASE).pathname;
 const FALLBACK = new URL('index.html', BASE).pathname;

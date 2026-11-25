@@ -33,7 +33,7 @@
   document.getElementById('sidebarContext').textContent=editor?'GESTÃO DA ACADEMIA':'AMBIENTE DE APRENDIZAGEM';
   document.getElementById('adminTab').hidden=!editor;
   document.getElementById('studentsTab').hidden=!editor;
-  document.getElementById('staffTab').hidden=!master;
+  document.getElementById('staffTab').hidden=!master;document.getElementById('studioTab').hidden=!editor;
   document.getElementById('adminStudents').hidden=!editor;
   document.getElementById('studentForm').hidden=!master;
   document.getElementById('adminStaff').hidden=!master;
@@ -135,7 +135,7 @@
   academyStorage.setScope(null);bar.hidden=true;syncAlert.hidden=true;syncAlert.textContent='';
   courses=config?.preview?read(KEY,demo):[];progress=config?.preview?read(PK,{}):{};certificates=config?.preview?read(CK,[]):[];profile=config?.preview?read(PROFILE_KEY,{fullName:'',email:'',company:'',role:''}):{fullName:'',email:'',company:'',role:''};activity=config?.preview?read(ACTIVITY_KEY,{}):{};
   selectedCourse=null;studentName=profile.fullName||(config?.preview?'Aluno demonstração':'Aluno');document.getElementById('hello').textContent=studentName;
-  document.getElementById('studentNav').hidden=false;document.getElementById('adminNav').hidden=!config?.preview;document.getElementById('sidebarContext').textContent='AMBIENTE DE APRENDIZAGEM';document.getElementById('adminTab').hidden=!config?.preview;document.getElementById('adminStudents').hidden=true;document.getElementById('adminStaff').hidden=true;document.getElementById('staffTab').hidden=true;document.getElementById('studentForm').hidden=false;document.getElementById('adminView').classList.remove('content-admin');setAdminSection('courses');document.querySelector('.demo-chip').textContent=config?.preview?'DEMONSTRAÇÃO · DADOS LOCAIS':'CONTREM ACADEMIA · CONECTADA';
+  document.getElementById('studentNav').hidden=false;document.getElementById('adminNav').hidden=!config?.preview;document.getElementById('sidebarContext').textContent='AMBIENTE DE APRENDIZAGEM';document.getElementById('adminTab').hidden=!config?.preview;document.getElementById('adminStudents').hidden=true;document.getElementById('adminStaff').hidden=true;document.getElementById('staffTab').hidden=true;document.getElementById('studioTab').hidden=true;document.getElementById('studentForm').hidden=false;document.getElementById('adminView').classList.remove('content-admin');setAdminSection('courses');document.querySelector('.demo-chip').textContent=config?.preview?'DEMONSTRAÇÃO · DADOS LOCAIS':'CONTREM ACADEMIA · CONECTADA';
   document.getElementById('player').src='about:blank';
   document.querySelector('#my-profile .row p').textContent='Nome e dados de exibição ficam salvos somente neste navegador.';
   document.querySelector('#adminView > .muted').textContent='Demonstração: as alterações são salvas somente neste navegador.';
@@ -366,7 +366,7 @@
   }
   permissions();
  };
- const baseShow=show;show=function(id){if(mode==='cloud'&&id==='adminView'&&!isEditor())id='studentView';baseShow(id);permissions();};
+ const baseShow=show;show=function(id){if(mode==='cloud'&&(id==='adminView'||id==='studioView')&&!isEditor())id='studentView';baseShow(id);permissions();};
  const demoButton=document.getElementById('enter'),demoPanel=document.getElementById('demoAccess');
  if(!config?.preview){
   if(demoPanel)demoPanel.hidden=true;

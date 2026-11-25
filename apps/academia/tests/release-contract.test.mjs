@@ -21,7 +21,21 @@ test('Publicação da Academia mantém construtor completo do Developer',async()
  assert.match(await read('apps/academia/src/assets/admin-manager.js'),/newAdminLesson/);
 });
 
-test('Autenticação real, sem acesso demonstrativo',async()=>{
+test('CONTREM Studio local está incluído no shell da Academia',async()=>{
+ const html=await read('apps/academia/src/index.html');
+ const [editor,sw]=await Promise.all([read('apps/academia/src/assets/studio-editor.js'),read('apps/academia/src/sw.js')]);
+ for(const id of ['openStudioPreview','studioView','studioHome','studioEditor','studioLearnerPreview'])assert.ok(html.includes('id="'+id+'"'),'Studio entry '+id);
+ for(const asset of ['studio-editor.js','studio-editor.css']){
+  assert.ok(html.includes('assets/'+asset),'Studio shell '+asset);
+  assert.ok(sw.includes('/assets/'+asset),'Studio PWA shell '+asset);
+  assert.ok(await exists('apps/academia/src/assets/'+asset),'Studio source '+asset);
+ }
+ assert.match(editor,/localStorage\.setItem/);
+ assert.match(editor,/Prévia demonstrativa/);
+ assert.doesNotMatch(editor,/AcademyCloudService|writeCatalog|academy-workspace/);
+});
+
+test('Autenticação real da Academia preservada',async()=>{
  const [html,config,ui,service]=await Promise.all([
   read('apps/academia/src/index.html'),
   read('apps/academia/src/assets/cloud-config.js'),
@@ -57,7 +71,7 @@ test('Materiais privados, vídeo autorizado e atualização de PWA',async()=>{
  assert.match(ui,/service\.playback\(lesson\.videoId\)/);
  assert.match(media,/academy-materials/);
  assert.match(media,/createSignedUrl/);
- assert.match(sw,/20261122-staff-prod-v1/);
+ assert.match(sw,/20261125-studio-preview-v1/);
  assert.doesNotMatch(sw,/admin-preview-service\.js|assessment-demo\.js|assessment-student\.js/);
  assert.match(author,/mode==='connected'/);
 });
@@ -72,6 +86,11 @@ test('Build entrega o mesmo código sem alterar outras rotas',async t=>{
  assert.equal(config,await read('apps/academia/src/assets/cloud-config.js'));
  assert.equal(JSON.parse(info).modules.academia,'conectada');
  assert.equal(JSON.parse(info).mode,'estavel');
+ for(const asset of ['studio-editor.js','studio-editor.css']){
+  const path='dist/academia/assets/'+asset;
+  assert.ok(await exists(path),'Asset do Studio no build: '+asset);
+  assert.equal(await read(path),await read('apps/academia/src/assets/'+asset));
+ }
  for(const path of ['dist/index.html','dist/contremtec/index.html','dist/contremtec/guia/index.html']){
   assert.ok(await exists(path),path);
  }
