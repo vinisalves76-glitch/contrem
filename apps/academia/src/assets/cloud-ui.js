@@ -17,6 +17,14 @@
  function snapshot(){return {courses:copy(courses),progress:copy(progress),certificates:copy(certificates),profile:copy(profile),activity:copy(activity)};}
  function savePending(){if(!identity||conflicted)return;localStorage.setItem(pendingKey(identity.user.id),JSON.stringify({...snapshot(),catalogRevision,stateRevision,dirtyCatalog,dirtyState}));}
  function clearPending(){if(identity)localStorage.removeItem(pendingKey(identity.user.id));}
+ function failureReference(){return globalThis.crypto?.randomUUID?.().slice(0,8)||Math.random().toString(36).slice(2,10);}
+ function logCloudFailure(error,operation,reference){
+  console.error('[CONTREM Academia] falha de sincronização',{
+   operation,reference,name:String(error?.name||'Error').slice(0,80),
+   code:String(error?.code||'').slice(0,40),status:Number.isFinite(error?.status)?error.status:null,
+   online:navigator.onLine,at:new Date().toISOString()
+  });
+ }
  function message(text,error=false){
   status.textContent=config?.preview?text.replaceAll('na sua conta','neste navegador de teste').replace('Conta conectada. Dados carregados.','Prévia isolada. Dados de teste carregados.'):text;
   bar.classList.toggle('sync-error',error);
@@ -98,15 +106,18 @@
   if(!navigator.onLine){message('Sem conexão. Alterações guardadas neste aparelho para enviar quando a conexão voltar.',true);savePending();return;}
   const runEpoch=epoch;
   saving=(async()=>{
+   let operation='a sincronização da conta';
    try{
     while(mode==='cloud'&&!conflicted&&(dirtyCatalog||dirtyState)){
      const data=snapshot(),catalogWrite=dirtyCatalog&&isEditor(),stateWrite=dirtyState;
      dirtyCatalog=false;dirtyState=false;message('Salvando na sua conta…');
      if(catalogWrite&&JSON.stringify(data.courses)!==catalogSaved){
+      operation='o salvamento do catálogo';
       validateCourses(data.courses);const row=await service.writeCatalog(data.courses,catalogRevision);
       if(epoch!==runEpoch)return;catalogRevision=row.revision;catalogSaved=JSON.stringify(data.courses);
      }
      if(stateWrite&&stateJSON(data)!==stateSaved){
+      operation='a sincronização do progresso';
       const row=await service.writeState(data,stateRevision);
       if(epoch!==runEpoch)return;stateRevision=row.revision;stateSaved=stateJSON(data);
      }
@@ -117,7 +128,10 @@
     if(epoch!==runEpoch)return;
     dirtyCatalog=isEditor()&&JSON.stringify(courses)!==catalogSaved;
     dirtyState=stateJSON(snapshot())!==stateSaved;
-    savePending();conflicted=error.name==='AcademyConflict';message(errorText(error),true);permissions();
+    savePending();conflicted=error.name==='AcademyConflict';
+    if(conflicted)message(errorText(error),true);
+    else{const reference=failureReference();logCloudFailure(error,operation,reference);message(errorText(error,{operation,reference,pendingData:true}),true);}
+    permissions();
    }
   })().finally(()=>{saving=null;});
   return saving;
@@ -147,13 +161,17 @@
   ['importBackupBtn','importBackupText'].forEach(id=>{document.getElementById(id).disabled=!config?.preview;});
   loadProfile();refresh();show('studentView');document.getElementById('app').classList.add('hidden');document.getElementById('login').classList.remove('hidden');
  }
- function errorText(error){
+ function errorText(error,{operation='o acesso à conta',reference='',pendingData=false}={}){
   if(error.name==='AcademyConflict')return error.message;
-  if(!navigator.onLine)return 'Sem conexão. As alterações estão guardadas neste aparelho; conecte-se e tente novamente.';
+  if(!navigator.onLine)return pendingData?'Sem conexão. Suas alterações continuam guardadas neste aparelho; conecte-se e toque em “Salvar agora”.':'Sem conexão. Verifique sua conexão e tente novamente.';
   if(error.code==='invalid_credentials')return 'Não foi possível entrar. Confira seu e-mail e sua senha.';
   if(error.message?.includes('desativado')||error.message?.includes('ainda não foi liberado'))return error.message;
   if(config?.preview)return error.message||'Não foi possível concluir a operação na prévia.';
-  return 'Não foi possível concluir a operação. Seus dados locais foram preservados. Verifique a conexão e tente novamente.';
+  const code=String(error?.code||error?.status||'').replace(/[^A-Za-z0-9_-]/g,'').slice(0,24);
+  const technicalCode=code?` (código ${code})`:'';
+  const recovery=pendingData?'As alterações continuam guardadas neste aparelho. Toque em “Salvar agora” para tentar novamente.':'Tente novamente ou informe a referência ao administrador.';
+  const referenceText=reference?` Referência: ${reference}.`:'';
+  return `Não foi possível concluir ${operation}${technicalCode}. ${recovery}${referenceText}`;
  }
  async function loadStudentRoster(){
   const roster=document.getElementById('studentRoster');if(mode!=='cloud'||!isEditor())return;
