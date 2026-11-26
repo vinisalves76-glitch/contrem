@@ -94,6 +94,18 @@ test('Barra de conta removida visualmente, mantendo autosave e alertas de falha'
  assert.match(ui,/syncAlert\.hidden=true;syncAlert\.textContent=''/,'Aviso deve sumir ao sair');
 });
 
+test('Falha de sincronização identifica a etapa e conserva alterações locais',async()=>{
+ const ui=await read('apps/academia/src/assets/cloud-ui.js');
+ assert.match(ui,/operation='o salvamento do catálogo'/);
+ assert.match(ui,/operation='a sincronização do progresso'/);
+ assert.match(ui,/savePending\(\);conflicted=error\.name==='AcademyConflict'/,'Preserva o backup pendente antes do aviso');
+ assert.match(ui,/logCloudFailure\(error,operation,reference\)/,'Registra contexto técnico para diagnóstico');
+ assert.match(ui,/pendingData\?'Sem conexão\. Suas alterações continuam guardadas neste aparelho/);
+ assert.match(ui,/Toque em “Salvar agora” para tentar novamente/);
+ assert.match(ui,/Referência: \$\{reference\}/);
+ assert.doesNotMatch(ui,/console\.error\([^\n]*error\.message/,'Não registra mensagem que possa conter dados sensíveis');
+});
+
 test('Funcionários com login real, rascunhos privados e aprovação do ADM Master',async()=>{
  const [html,ui,service,editor,backend,migration]=await Promise.all([
   read('apps/academia/src/index.html'),
