@@ -6,6 +6,10 @@ O proprietário solicitou expressamente: “Coloque em produção o contremtec�
 
 ## Autoridade e organização
 
+### Regra inviolável de estabilidade da produção
+
+Produção é serviço crítico: trabalho paralelo nunca pode escrever na `main`, alterar o alias/domínio de produção ou publicar diretamente. Cada agente trabalha em branch `feature/*` ou `fix/*` própria, aberta a partir da base de integração atual; mudanças entram por pull request, passam pelo CI obrigatório e por revisão antes de integrar. A `main` só recebe uma release revisada e validada em preview. Previews ficam em aliases de preview e não recebem tráfego/domínio de produção. Antes de cada release, confirmar projeto, branch, commit, build, smoke check dos caminhos publicados e plano de rollback para o último deploy estável. Se qualquer verificação falhar, interromper a release e manter o deployment estável ativo. Nenhum agente pode contornar essas etapas, mesmo quando estiver trabalhando em paralelo.
+
 O pedido do proprietário em 15/11/2026 autoriza um único código-fonte CONTREM, organizado por setores e módulos, com GitHub para versionamento e Vercel para hospedagem. Esta decisão substitui instruções históricas que proibiam o compartilhamento de repositório entre Academia e ContremTec. A separação funcional, de dados e de permissões continua obrigatória.
 
 1. Leia `00_LEIA_PRIMEIRO.md`, `docs/ESTADO_ATUAL.md`, `docs/FRENTES_DE_TRABALHO.md` e a continuidade do módulo antes de editar.
