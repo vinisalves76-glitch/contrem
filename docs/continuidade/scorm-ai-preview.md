@@ -127,3 +127,9 @@ Projetos com cartões agora usam presentation=cards-v1: prévia e player publica
 
 - `apps/academia/src/assets/contrem.js`: oculta o banner institucional em Meus cursos, Meu desempenho, Meu perfil, Certificados, ADM e sala de aula; volta a exibir no botão Minha aprendizagem.
 - `node --check` e `npm run check` passaram (68 scripts). A prévia mantém o fluxo de apresentação ao entrar pela demonstração.
+
+## Validação do vídeo Mux — 27/11/2026
+
+- O ID informado no relato foi testado em `stream.mux.com`: resposta 400 `Invalid Playback ID. It looks like you used an Asset ID, but we needed a Playback ID.`
+- `apps/academia/src/criador-ia/app.js`: valida o vídeo ao alterar o campo e antes de salvar/publicar. Identifica Asset ID, reprodução assinada e vídeo indisponível com mensagem específica, impedindo publicação de aula que ficará carregando.
+- `node --check` e `npm run check` (68 scripts) passaram. É necessário substituir no rascunho o Asset ID pelo Playback ID público correspondente.
