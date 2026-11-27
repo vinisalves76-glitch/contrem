@@ -16,7 +16,7 @@
   const id=button?.dataset.courseEdit||button?.dataset.courseCopy;
   if(!id||!isScorm({id}))return;
   event.preventDefault();event.stopImmediatePropagation();
-  location.href='/academia/criador-ia/?draft='+encodeURIComponent(id.slice(6));
+  window.CONTREM_AUTHORING_NAV?.openDraft(id.slice(6));
  },true);
  window.addEventListener('message',event=>{
   const player=document.getElementById('player');

@@ -60,3 +60,12 @@ Migrations aditivas aplicadas: 20261127120827_academy_scorm_publication_and_runt
 Testes: publicação visível nos catálogos ADM/aluno; preservação dos cursos existentes; negação sem matrícula/revogação; gabarito removido; sequência; nota e duas tentativas, idempotência do envio; proteção do progresso contra autodeclaração; versões imutáveis; negação de publicação a funcionário. QA DOM do criador estendido para confirmação da revisão, botão Publicar e link de matrículas; teste da sala interativa confirma isolamento de conclusão manual e restauração da sala Mux. QA autenticado real em navegador segue dependente da conta do proprietário; não confundir os testes SQL/DOM com esse QA.
 
 Esta seção substitui os limites anteriores de publicação e player pendentes. Continua pendente ativar a API de pesquisa/geração real (sem chave disponível) e extração de documentos PDF/Word/PPT. A exportação ZIP é separada da publicação nativa deste conteúdo.
+
+
+## Criação no mesmo menu da Academia — 27/11/2026
+
+Ajuste na mesma branch feature/academia-scorm-connected-20261127. Criar com IA mantém o menu e cabeçalho administrativos existentes e abre diretamente Tema e público em uma superfície de conteúdo incorporada. O criador deixa de apresentar seu menu lateral próprio. Edição de treinamento interativo publicado também abre nessa área. Retornar pelo menu conserva a edição da superfície enquanto a sessão permanece ativa. Links antigos do criador encaminham para o painel original após autenticação. URLs de rascunho preservam o modo incorporado.
+
+Após publicar, o retorno ao menu solicita a atualização do catálogo existente; o link de matrículas abre o painel completo atualizado. Preservados os controles de sessão/papel e o aviso existente de edição pendente do ADM. Nenhuma alteração no backend, no banco ou na main neste ajuste.
+
+Validação: build central; check de 65 scripts; sete contratos release; QA DOM ADM e funcionário; sete testes proxy/central; QA DOM do criador tanto pela entrada comum quanto pela entrada direta no wizard; QA da sala SCORM; novo teste de navegação (menu preservado, criação direta, edição, retenção de iframe, bloqueio por edição pendente, origem de mensagem e encerramento de sessão). QA visual com conta autenticada continua dependente da validação do proprietário na prévia.
