@@ -115,7 +115,7 @@
  function renderEditor(){
   if(!editing)return;
   const d=state(),readonly=isReadOnly();
-  root.innerHTML='<div class="studio-academy-head"><div><button type="button" class="studio-academy-back" data-academy-action="back">← Voltar à biblioteca</button><div class="eyebrow">CONSTRUTOR DE ACADEMIAS</div><h1>'+esc(d.title||'Nova Academia')+'</h1><p>Defina a apresentação, organize as etapas e prepare as aulas.</p></div><div class="studio-academy-actions">'+btn('Exportar JSON','export')+'<button type="button" class="primary" data-academy-action="save" '+(readonly?'disabled':'')+'>Salvar rascunho</button></div></div>'+
+  root.innerHTML='<div class="studio-academy-head"><div><button type="button" class="studio-academy-back" data-academy-action="back">← Voltar à biblioteca</button><div class="eyebrow">CONSTRUTOR DE ACADEMIAS</div><h1>'+esc(d.title||'Nova Academia')+'</h1><p>Defina a apresentação, organize as etapas e prepare as aulas.</p></div><div class="studio-academy-actions">'+btn('Exportar JSON','export')+'<button type="button" class="primary" data-academy-action="save" '+(readonly?'disabled':'')+'>'+(editing.status==='published'?'Salvar alterações':'Salvar rascunho')+'</button></div></div>'+
    '<div class="studio-academy-note">'+(localOnly?'Ambiente de teste: salvar cria uma cópia apenas neste navegador. Importe ou exporte JSON sem alterar o sistema em produção.':readonly?'Esta Academia está publicada. Apenas o ADM Master pode alterar o conteúdo.':'Salve a estrutura como rascunho. Somente o ADM Master publica e libera módulos pelo gerenciamento em Treinamentos.')+'</div>'+
    '<div id="studioAcademyMessage" class="studio-academy-message" role="status" hidden></div>'+
    '<div class="studio-academy-editor"><section class="studio-academy-panel"><div class="studio-academy-section-head"><h2>1. Identificação</h2><span class="studio-state">'+esc(editing.status==='published'?'Publicada':'Rascunho')+'</span></div>'+
@@ -204,6 +204,7 @@
   }
   if(action==='save'){
    try{
+    if(!localOnly&&editing.status==='published'&&!confirm('Esta Academia já está publicada. Salvar atualizará o conteúdo disponível aos alunos. Deseja continuar?'))return;
     core.validate(state());loading=true;button.disabled=true;
     if(localOnly){
      const now=new Date().toISOString();
