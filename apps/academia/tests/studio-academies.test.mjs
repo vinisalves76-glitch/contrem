@@ -89,3 +89,15 @@ test('Biblioteca Treinamentos mostra Cursos e Academias com filtro de tipo',asyn
  assert.doesNotMatch(studio,/Academias da biblioteca/,'Studio não deve duplicar listagem de Academias');
  assert.match(studio,/contrem:studio-academy-saved/);
 });
+
+test('Home do Studio não exibe bloco de teste nem projeto de exemplo',async()=>{
+ const studio=await read('apps/academia/src/criador-ia/app.js');
+ assert.doesNotMatch(studio,/TESTE O FLUXO COMPLETO/);
+ assert.doesNotMatch(studio,/Carregar projeto de exemplo/);
+ assert.doesNotMatch(studio,/Baixar projeto JSON/);
+ assert.doesNotMatch(studio,/sampleimport/);
+ assert.doesNotMatch(studio,/samples\/contrem-loto\.json/);
+ assert.match(studio,/Crie, importe e revise treinamentos/);
+ assert.match(studio,/libraryCards\(\)/);
+ assert.match(studio,/if\(a==='import'\)/);
+});
