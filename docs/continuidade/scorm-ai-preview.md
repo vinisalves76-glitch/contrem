@@ -102,3 +102,18 @@ Menu ADM passou a CONTREM Studio, com biblioteca de rascunhos, importação JSON
 ## Preservar layout do curso importado — 27/11/2026
 
 Projetos com cartões agora usam presentation=cards-v1: prévia e player publicado apresentam cartões grandes em grade, revelação ao clicar e decisão destacada, conforme HTML editável de origem. O editor reserva largura para visualizar esse layout sem comprimir os cartões. Importações JSON antigas sem o campo presentation inferem o modo pela presença de cards. Migrations 20261127150000_academy_scorm_cards_layout e 20261127150500_academy_scorm_infer_cards_layout foram aplicadas: versões publicadas futuramente preservam o modo de apresentação no snapshot. O conteúdo já publicado requer nova revisão/publicação para atualizar sua versão; histórico de alunos permanece. Build, check, contratos e QA DOM passaram. Não houve promoção da main.
+
+## Correção do aviso de publicação — 27/11/2026
+
+- Base: `origin/feature/academia-scorm-connected-20261127` (`67274ce`); branch `fix/academia-studio-publicacao-aviso`.
+- Arquivo: `apps/academia/src/criador-ia/app.js`. Removido o painel que apresentava uma publicação existente como alerta; o link para matricular alunos no ADM permanece.
+- Verificações: `node --check apps/academia/src/criador-ia/app.js` e `npm run check` (68 scripts). Sem mudança em banco, no fluxo de publicação ou na main.
+- Próximo passo: integrar via PR na frente conectada e conferir a tela de revisão após publicar na preview.
+
+## Vídeo por aula no Studio — 27/11/2026
+
+- Branch local: `fix/academia-studio-publicacao-aviso`, baseada na frente conectada (`67274ce`).
+- Editor: campo de ID/link de reprodução Mux por módulo e três posições na aula (antes do conteúdo, depois do conteúdo, depois dos cartões). O vídeo aparece na prévia e na visão do aluno.
+- Publicação: migração `20261127170000_academy_scorm_lesson_video.sql` valida e inclui vídeo e posição no snapshot publicado; a sala do aluno exibe o vídeo na posição escolhida. Aplicar a migração somente ao ambiente de homologação conectado antes de testar publicação.
+- Verificações: `node --check` no editor e no runtime; `npm run check` verificou 68 scripts. Sem deploy ou alteração de banco neste ciclo.
+- Pendente: publicação de branch/PR e teste integrado no ambiente conectado. `git push` pelo terminal falhou por falta de autenticação do GitHub nesta sessão.
