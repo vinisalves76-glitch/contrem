@@ -31,3 +31,7 @@ A página inicial do Studio deixou de exibir o painel de demonstração "TESTE O
 ## Prévia de imagens personalizáveis no Studio — 27/11/2026
 
 Branch `feature/studio-imagens-curso-card` derivada da `main` `9e18c2c`. O editor de treinamentos permite enviar JPG/PNG/WebP ou informar URL HTTPS para a capa do curso e para a imagem do card, salvando ambas no rascunho e no JSON editável. O player e o catálogo usam essas imagens após a publicação. A migration `20261127213000_academy_studio_course_images.sql` cria o bucket público com envio restrito à equipe e estende a publicação e a compatibilidade visual do progresso. Migration aplicada no projeto Supabase compartilhado após os checks, sem publicar o frontend em produção neste ponto.
+
+## Foto nos cards da biblioteca — 27/11/2026
+
+Branch `fix/treinamentos-foto-card-descricoes` derivada da `main` `27c2b81`. O Studio explica junto de cada campo onde a capa e a foto do card aparecem. A biblioteca ADM de Treinamentos mostra a foto salva no curso publicado (`photo`, alimentada por `cardImage` no Studio) e a capa das Academias quando disponível. Sem mudanças de banco. Testes e build locais passaram; integração e deploy são registrados no PR.

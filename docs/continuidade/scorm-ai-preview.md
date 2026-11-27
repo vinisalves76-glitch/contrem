@@ -155,3 +155,7 @@ Projetos com cartões agora usam presentation=cards-v1: prévia e player publica
 ### Personalização visual do curso (27/11/2026)
 
 Em `feature/studio-imagens-curso-card`, o Studio adiciona `coverImage` e `cardImage` ao projeto. A imagem enviada é reduzida a JPEG de até 400 KB e gravada em `academy-course-images` sob o ID do usuário; uma URL HTTPS também pode ser usada. O card da biblioteca e do catálogo usa `cardImage`; o player usa `coverImage`. O importador preserva ambos e a exportação JSON os inclui. A migration `20261127213000_academy_studio_course_images.sql` foi aplicada no projeto Supabase compartilhado após inspeção do esquema, criando bucket e política de envio. Alterações apenas visuais da capa/card preservam o progresso do aluno na troca de versão. Não substituir a versão estável sem validar a migration e a prévia.
+
+### Foto visível em Treinamentos (27/11/2026)
+
+A biblioteca ADM (`admin-manager.js`) agora mostra `course.photo` nos cards de cursos comuns e interativos e `definition.cover` nos cards de Academias. O Studio apresenta explicações sob `coverImage` e `cardImage` para orientar o instrutor. A imagem do card publicada pelo Studio já é enviada à propriedade `photo` no catálogo pela migration anterior; esta alteração torna a miniatura visível na aba Treinamentos, sem modificar a publicação ou as matrículas.

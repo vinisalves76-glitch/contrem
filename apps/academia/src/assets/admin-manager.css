@@ -51,3 +51,5 @@
 @media(max-width:1350px){#adminView .adm-library #adminCourses{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:1050px){#adminView .adm-filter-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}#adminView .adm-filter-search{grid-column:1/-1}}
 @media(max-width:680px){#adminView .adm-library #adminCourses{grid-template-columns:minmax(0,1fr)}#adminView .adm-filter-toolbar{grid-template-columns:minmax(0,1fr);padding:12px}#adminView .adm-filter-search{grid-column:auto}#adminView .adm-library-heading{gap:10px}#adminView .adm-library-heading h2{font-size:24px}#adminView .adm-library .adm-course-card{padding:17px}#adminView .adm-library .adm-card-actions{gap:7px}}
+#adminView .adm-library .adm-card-photo{height:160px;margin:-19px -19px 17px;overflow:hidden;background:#e8eef2;border-radius:10px 10px 0 0}
+#adminView .adm-library .adm-card-photo img{display:block;width:100%;height:100%;object-fit:cover;object-position:center}
