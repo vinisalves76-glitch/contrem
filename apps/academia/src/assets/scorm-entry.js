@@ -8,19 +8,19 @@
  const baseShow=show;
  const close=()=>{panel.hidden=true;button.classList.remove('active')};
  show=function(id){close();return baseShow(id)};
- function open(draft){
+ function open(draft,duplicate=false){
   if(!['admin','content_admin'].includes(session?.role))return;
   if(window.AcademyAdminEdits&&!window.AcademyAdminEdits.canLeave())return;
   ['studentView','adminView','classView'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.querySelectorAll('#adminNav button').forEach(b=>b.classList.remove('active'));button.classList.add('active');
   document.getElementById('workspaceLabel').textContent=draft?'Editar treinamento':'CONTREM Studio';panel.hidden=false;
   if(!frame){frame=document.createElement('iframe');frame.id='scormAuthoringFrame';frame.title='CONTREM Studio';frame.style.cssText='display:block;width:100%;height:850px;min-height:700px;border:0';panel.append(frame)}
-  const key=draft||'create';
-  if(loadedKey!==key){loadedKey=key;frame.src='/academia/criador-ia/?embedded=1&'+(draft?'draft='+encodeURIComponent(draft):'start=home')}
+  const key=duplicate?'copy:'+draft:draft||'create';
+  if(duplicate||loadedKey!==key){loadedKey=key;frame.src='/academia/criador-ia/?embedded=1&'+(draft?(duplicate?'copy=':'draft=')+encodeURIComponent(draft):'start=home')}
   window.scrollTo({top:0,behavior:'instant'});
  }
  button.onclick=()=>open();
- window.CONTREM_AUTHORING_NAV={openCreate:()=>open(),openDraft:id=>{if(/^[a-f0-9-]{36}$/i.test(id||''))open(id)}};
+ window.CONTREM_AUTHORING_NAV={openCreate:()=>open(),openDraft:id=>{if(/^[a-f0-9-]{36}$/i.test(id||''))open(id)},openCopy:id=>{if(/^[a-f0-9-]{36}$/i.test(id||''))open(id,true)}};
  adminNav.addEventListener('click',async event=>{
   const target=event.target.closest('button');if(!target||target===button||panel.hidden||!needsReload)return;
   event.preventDefault();event.stopImmediatePropagation();close();needsReload=false;
