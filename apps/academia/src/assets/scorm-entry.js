@@ -38,7 +38,7 @@
   }
   if(event.data?.type==='contrem:authoring-published')needsReload=true;
   if(event.data?.type==='contrem:studio-academy-saved')void window.CONTREM_CONNECTED_PROGRAMS?.refreshAdmin?.();
-  if(event.data?.type==='contrem:studio-open-academies')document.getElementById('academiasConnectedTab')?.click();
+  if(event.data?.type==='contrem:studio-open-trainings')document.getElementById('adminTab')?.click();
  });
  window.addEventListener('contrem:academy-session-ready',event=>{
   session=event.detail;button.hidden=!['admin','content_admin'].includes(session.role);
