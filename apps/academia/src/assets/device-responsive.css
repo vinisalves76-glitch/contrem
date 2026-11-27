@@ -1,0 +1,76 @@
+/* CONTREM Academia — device-adaptive layout (phone and tablet).
+   Isolated overrides, loaded after existing styles to avoid changing desktop. */
+@media (max-width: 1024px) {
+  #app, #studentView, #adminView, #classView, #my-profile { min-width:0; }
+  #app .wrap, #app .panel, #app .admin, #app .videoLayout,
+  #app .grid, #app .adm-workspace, #app .adm-library, #app .adm-editor {
+    min-width:0;
+  }
+  #app img, #app video, #app iframe { max-width:100%; }
+  #app .video, #app .video iframe { width:100%; }
+  #app .video { aspect-ratio:16/9; height:auto; }
+  #app .video iframe, #app .video video { display:block; height:100%; }
+  #app h1, #app h2, #app h3, #app p, #app a,
+  #app .item, #app .adm-course-card { overflow-wrap:anywhere; }
+  #app table { display:block; max-width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  #app input, #app select, #app textarea { min-width:0; max-width:100%; }
+  #app .adm-review-meta, #app .adm-stats { min-width:0; }
+}
+@media (min-width:761px) and (max-width:1024px) {
+  :root { --sidebar:200px; }
+  .top .wrap { padding:22px 12px; }
+  .top .contrem-brand { gap:7px; }
+  .top .contrem-brand strong { font-size:21px; }
+  .top .contrem-brand small { letter-spacing:2.7px; }
+  .top .nav button { padding:12px 9px; gap:9px; }
+  #app > .wrap { padding:24px 22px; }
+  #app .workspace-header { padding-inline:22px; }
+  #app .stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  #adminView .adm-workspace, #app .admin, #app .videoLayout { grid-template-columns:minmax(0,1fr); }
+  #app .welcome-row { flex-wrap:wrap; }
+  #app .grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  #app .course { display:block; }
+  #app .art { height:165px; min-height:0; }
+}
+@media (max-width:760px) {
+  html, body { max-width:100%; overflow-x:clip; }
+  body { -webkit-text-size-adjust:100%; }
+  #app { width:100%; min-width:0; }
+  #app .wrap { width:100%; max-width:100%; padding-inline:clamp(14px,4vw,24px); }
+  #app .workspace-header { flex-wrap:wrap; gap:8px; padding-inline:clamp(14px,4vw,24px); }
+  #app .welcome-row, #app .courses-heading, #app .row { min-width:0; flex-wrap:wrap; }
+  #app .welcome-row > *, #app .courses-heading > * { min-width:0; }
+  #app .grid, #app .admin, #app .videoLayout, #adminView .adm-workspace,
+  #app .adm-review-meta { grid-template-columns:minmax(0,1fr); }
+  #app .stats, #app .adm-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  #app .panel, #adminView .panel, #app .body { min-width:0; padding:clamp(14px,4vw,22px); }
+  #app .videoLayout > .panel, #app .videoLayout > aside { min-width:0; }
+  #app .videoLayout aside { width:100%; }
+  #app .nav { scroll-snap-type:x proximity; overscroll-behavior-x:contain; }
+  #app .nav button, .top .nav button { scroll-snap-align:start; min-height:44px; }
+  #app button, #app .buttonLink { max-width:100%; min-height:44px; white-space:normal; }
+  #app .row > button, #app .row > .buttonLink { flex:0 1 auto; }
+  #app input:not([type=checkbox]):not([type=radio]), #app select, #app textarea,
+  .cloud-login-form input { font-size:16px; }
+  #app .field { min-width:0; }
+  #app .field input, #app .field textarea, #app .field select { width:100%; }
+  #app .adm-steps { display:flex; overflow-x:auto; max-width:100%; padding-bottom:6px; -webkit-overflow-scrolling:touch; }
+  #app .adm-steps button { flex:0 0 auto; }
+  #app .adm-lesson-actions { justify-content:flex-start; }
+  #app .adm-lesson-actions button { min-height:44px!important; }
+  #app .learning-banner { min-height:220px; }
+  #app .learning-banner h2 { font-size:clamp(30px,8vw,40px); }
+  #app #classCourseHeading { font-size:clamp(27px,7vw,34px); }
+  #app .art { width:100%; }
+  .pwa-status, .pwa-update, .android-install-offer { max-width:calc(100vw - 24px); }
+}
+@media (max-width:380px) {
+  #app .stats, #app .adm-stats { gap:8px; }
+  #app .stat, #app .adm-stats > div { padding:12px 9px; }
+  #app .stat b { font-size:23px; }
+  #app .learning-banner { padding:20px 16px; }
+}
+@media (orientation:landscape) and (max-height:500px) and (max-width:960px) {
+  #app .learning-banner { min-height:170px; }
+  .login-story, .login-story-content { min-height:130px; }
+}
