@@ -1,0 +1,70 @@
+/* CONTREM Studio - Academias. Preserves the existing Navy/Orange design system. */
+#studioModeNav{display:flex;align-items:center;gap:8px;max-width:1510px;margin:22px auto 0;padding:0 36px}
+#studioModeNav button{padding:11px 22px;border-radius:8px;background:#fff;color:#466176;border:1px solid #dce3e9;font-size:14px}
+#studioModeNav button.selected{background:#102a43;color:#fff;border-color:#102a43;box-shadow:inset 0 -3px #f47b20}
+#studioAcademiesView{max-width:1510px;margin:0 auto;padding:28px 36px 70px}
+#studioAcademiesView[hidden]{display:none!important}
+.studio-academy-head{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:20px}
+.studio-academy-head h1{font-size:clamp(29px,3.4vw,43px);margin:5px 0 10px}
+.studio-academy-head p{font-size:14px;color:#627382;margin:0;max-width:620px}
+.studio-academy-actions{display:flex;flex-wrap:wrap;gap:10px}
+.studio-academy-actions button{min-height:43px}
+.studio-academy-note{padding:13px 16px;border-radius:9px;background:#f9f0e7;color:#765134;border:1px solid #f4dfcb;font-size:13px;line-height:1.6;margin:17px 0 22px}
+.studio-academy-stats{display:flex;gap:13px;flex-wrap:wrap;margin:17px 0 25px}
+.studio-academy-stats>span{background:white;border:1px solid #dce3e9;border-radius:10px;padding:13px 18px;flex:1 1 130px;color:#627382;font-size:13px}
+.studio-academy-stats strong{font-size:23px;color:#102a43;margin-right:6px}
+.studio-academy-section-head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:0 0 18px}
+.studio-academy-section-head h2{font-size:26px;margin:0}
+.studio-academy-section-head h4{font-size:18px;margin:0}
+.studio-academy-section-head p{font-size:13px;color:#627382;margin:5px 0 0}
+.studio-academy-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.studio-academy-card{display:flex;flex-direction:column;min-width:0;background:white;border:1px solid #dce3e9;border-radius:12px;padding:20px}
+.studio-academy-card-top{display:flex;align-items:center;justify-content:space-between;gap:9px;font-size:12px;color:#627382}
+.studio-academy-card h3{font-size:23px;line-height:1.25;margin:18px 0 11px;overflow-wrap:anywhere}
+.studio-academy-card p{font-size:13px;line-height:1.7;color:#627382;flex:1}
+.studio-academy-card-meta{padding-top:12px;border-top:1px solid #e8edf1;color:#627382;font-size:13px;margin-bottom:16px}
+.studio-state{display:inline-block;border-radius:6px;padding:6px 9px;background:#eff2f5;color:#567087;font-size:11px;font-weight:700}
+.studio-state.live{background:#e5f3eb;color:#26744c}
+.studio-academy-empty{background:white;border:1px dashed #cfd9e1;border-radius:12px;padding:42px 24px;text-align:center}
+.studio-academy-empty h3{font-size:27px}.studio-academy-empty p{font-size:14px;color:#627382}
+.studio-link{display:inline-flex;padding:11px 14px;font-size:13px;color:#285b83;text-decoration:underline}
+.studio-academy-message{padding:14px 17px;border-radius:8px;background:#e9f3f8;color:#234f6b;font-size:13px;margin:12px 0}
+.studio-academy-message[hidden]{display:none}
+.studio-academy-back{background:transparent;color:#446176;padding:5px 0;margin:0 0 12px;font-size:13px}
+.studio-academy-back:hover{color:#b95d16}
+.studio-academy-editor{display:grid;grid-template-columns:minmax(0,1fr) minmax(215px,.29fr);gap:18px;align-items:start}
+.studio-academy-panel{min-width:0;background:white;border:1px solid #dce3e9;border-radius:12px;padding:24px;margin-bottom:18px}
+.studio-academy-panel h2{font-size:26px;margin:0}
+.studio-academy-panel h3{font-size:23px;margin:0}
+.studio-academy-panel h4{font-size:18px;margin:0}
+.studio-academy-panel:nth-child(2){grid-column:1;grid-row:2}
+.studio-academy-summary{grid-column:2;grid-row:1 / 3;position:sticky;top:18px}
+.studio-academy-summary p{margin:14px 0;font-size:14px;color:#627382}
+.studio-academy-summary p b{color:#102a43;font-size:21px;margin-right:8px}
+.studio-academy-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px}
+.studio-academy-field{display:block;margin:0 0 14px;min-width:0}
+.studio-academy-field span{display:block;font-size:12px;font-weight:700;margin:0 0 6px;color:#304e65}
+.studio-academy-field input:not([type=checkbox]),.studio-academy-field textarea{font-size:14px;width:100%;margin:0;padding:11px 12px;border:1px solid #d0dbe3;border-radius:8px;background:#fbfcfd;color:#102a43}
+.studio-academy-field textarea{min-height:77px;resize:vertical}
+.studio-academy-check{display:flex;align-items:center;gap:9px;font-size:13px;margin:10px 0 19px;font-weight:600}
+.studio-academy-check input{width:17px;height:17px;accent-color:#f47b20}
+.studio-academy-stage{padding:18px;border:1px solid #dce3e9;border-radius:10px;margin-bottom:14px}
+.studio-academy-stage-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:15px}
+.studio-academy-module-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:15px 0 12px}
+.studio-academy-module{border:1px solid #dce3e9;border-radius:9px;margin:9px 0;overflow:hidden}
+.studio-academy-module>summary{list-style:none;cursor:pointer;background:#f6f8fa;padding:15px;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.studio-academy-module>summary::-webkit-details-marker{display:none}
+.studio-academy-module>summary strong{font-size:14px}
+.studio-academy-module>summary span{font-size:11px;color:#627382;text-align:right}
+.studio-academy-module-body{padding:16px}
+.studio-academy-module-state{background:#f4f7fa;border-radius:7px;padding:11px 12px;color:#627382;font-size:12px;line-height:1.55;margin-bottom:18px}
+.studio-academy-lesson{display:flex;gap:12px;align-items:flex-start;padding:15px 0;border-top:1px solid #e8edf1}
+.studio-academy-lesson-order{flex:0 0 28px;height:28px;display:grid;place-items:center;background:#edf2f6;border-radius:7px;font-size:12px;font-weight:700}
+.studio-academy-lesson-fields{flex:1;min-width:0;display:grid;grid-template-columns:minmax(0,2fr) minmax(100px,.7fr);gap:0 12px}
+.studio-academy-lesson-fields .studio-academy-field:last-child{grid-column:1/-1}
+.studio-academy-hint{padding:15px;border-radius:8px;background:#f7f9fb;color:#627382;font-size:13px}
+.studio-academy-danger-row{border-top:1px solid #e8edf1;margin-top:12px;padding-top:13px;text-align:right}
+#studioAcademiesView .danger{background:#fff0ed;color:#9e3b2d}
+#studioAcademiesView button{white-space:normal}
+@media(max-width:1150px){#studioModeNav{padding:0 24px}#studioAcademiesView{padding:22px 24px 56px}.studio-academy-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.studio-academy-editor{grid-template-columns:1fr}.studio-academy-panel:nth-child(2),.studio-academy-summary{grid-column:auto;grid-row:auto}.studio-academy-summary{position:static}}
+@media(max-width:700px){#studioModeNav{padding:0 16px;gap:6px}#studioModeNav button{flex:1;padding:10px}#studioAcademiesView{padding:18px 16px 45px}.studio-academy-grid,.studio-academy-fields{grid-template-columns:1fr}.studio-academy-panel{padding:17px}.studio-academy-card{padding:17px}.studio-academy-head{align-items:stretch}.studio-academy-actions{width:100%}.studio-academy-actions button{flex:1}.studio-academy-stage{padding:12px}.studio-academy-lesson{flex-wrap:wrap}.studio-academy-lesson-fields{grid-template-columns:1fr}.studio-academy-lesson>button{margin-left:auto}.studio-academy-module-heading{align-items:flex-start}.studio-academy-section-head button{min-height:44px}}
