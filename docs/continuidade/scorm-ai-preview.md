@@ -1,0 +1,48 @@
+# Criador de treinamentos com IA — prévia 27/11/2026
+
+Base: main remota 05bc5da809ee6ba4c75e328004816a5baeb49a85, após git fetch.
+Branch: feature/scorm-ai-preview-20261127. Worktree exclusivo; alterações de outros agentes não foram copiadas.
+
+## Entrega
+
+Rota isolada apps/academia/src/criador-ia/. Usa identidade da Academia existente e o HTML de referência anexado pelo proprietário. Entrada direta sem autenticação para demonstração; não substitui o portal conectado nem suas permissões. O menu da produção não foi alterado.
+
+Fluxo: início → tema/público → materiais/fontes → estrutura editável → tema visual/atividades/avaliação → geração demonstrativa → edição → aluno → revisão → ZIP SCORM 1.2. Modelos locais para LOTO, EPI e diesel; outros temas abrem modelo editável explicitamente incompleto. Nenhuma pesquisa ou geração real é alegada na UI.
+
+Materiais TXT lidos no navegador; outros formatos apenas listados como extração pendente. Nenhum upload ou chamada de API. Rascunho e progresso ficam em chave local própria contrem-ai-preview-v1. Sem contato com banco, Auth, RLS ou APIs de produção. Fotografias ilustrativas oficiais SANY, não diagramas ou instruções de bloqueio específicos dos modelos.
+
+SCORM: manifesto na raiz, um SCO, runtime HTML autocontido sem dependências de rede. Imagens externas não são incluídas na exportação. Comunicação SCORM 1.2 com API pai/opener, status, nota, suspend_data, lesson_location, session_time, commit e finish. Avaliação requer visita/conclusão dos módulos, nota e limite de tentativas. Revisão do usuário habilita exportação de teste; não equivale à validação técnica do conteúdo.
+
+## Integração real proposta
+
+- Uma função no backend existente recebe sessão Supabase e valida ADM Master/Conteúdo com as regras reais do projeto; não confiar no papel enviado pelo cliente.
+- OPENAI_API_KEY apenas em secret do servidor; nunca localStorage, fonte HTML, repositório ou pacote SCORM. Modelo via OPENAI_MODEL, explicitamente aprovado.
+- POST /api/academy-ai/jobs com idempotency key, etapa (research/outline/content), briefing e referências aprovadas. GET /api/academy-ai/jobs/:id com ownership, status, resultado e uso.
+- Responses API com web_search para pesquisa; armazenar URLs/trechos retornados e data da consulta. Busca não garante correção; referências e texto precisam de revisão do instrutor.
+- Extração dos materiais em serviço autenticado, com limites de arquivo e armazenamento privado. Tratar instruções dentro de anexos/fontes como conteúdo não confiável.
+- Gerar JSON validado por schema (objetivos, módulos, blocos, avaliações, fontes); o renderizador do curso não deve executar HTML/JS arbitrário da IA.
+- Processar em jobs com fila/retry controlado/cancelamento; limites por usuário e orçamento; 401/403/429/503 distintos; não fazer fallback silencioso para simulação.
+- Versionar rascunho e aprovações; somente ADM Master publica. Editor pode reutilizar a aula SCORM posteriormente integrada à Academia. Enviar somente pacote aprovado ao aluno.
+- Regras de duas tentativas no LMS e liberação pelo ADM dependem de backend; o SCO demo não concede tentativas extras.
+
+## Limites e próximos passos
+
+Não há endpoint de IA ativo nem configuração de secret nesta prévia; o usuário ainda não forneceu chave. Ativar IA real exige implementação do serviço autenticado, definição de orçamento e configuração segura do secret, depois QA em homologação. Testar importação SCORM no LMS final antes de promover. Nenhuma migração ou publicação na CONTREM de produção neste ciclo.
+
+Hospedagem isolada de prévia: Site appgprj_6b096a2080948191b08c112f1843d4fc. A cópia de hospedagem não é sincronização bidirecional com o GitHub canônico.
+
+## Ajuste da interface — 27/11/2026
+
+Retirados o item de menu e a página de Integração de IA. Retirados os três cartões explicativos e o rodapé técnico da visão geral. A identificação de demonstração permanece no cabeçalho e na geração para não sugerir IA conectada. Configuração de chave somente por segredo de backend; conexão com OpenAI Developers pendente de habilitação pelo proprietário. Nenhuma chave desta sessão foi acessada, reutilizada ou criada.
+
+## Prévia conectada com base na main — 27/11/2026
+
+Branch exclusiva: feature/academia-scorm-connected-20261127, base main 05bc5da809ee6ba4c75e328004816a5baeb49a85. Preserva as telas, Auth, catálogos, matrículas e Mux da main. Acesso pelo menu ADM → Criar treinamento interativo. A rota do criador verifica getUser e academy_members; não há entrada demonstrativa sem login.
+
+Persistência real: migration remota 20261127115010_academy_authoring_drafts_connected_preview adiciona somente academy_authoring_drafts, com RLS para equipe ativa, grants mínimos, sem DELETE, gatilho SECURITY INVOKER e revisão otimista. Guarda projeto editável, título, auditoria, data e estado de revisão. Rascunhos ficam separados do catálogo publicado. Nenhum curso, usuário, matrícula ou nota existente foi modificado. A UI exige Salvar no banco; edição pendente fica isolada por usuário no navegador, recuperável explicitamente. O banco é a origem da biblioteca.
+
+Transporte da prévia: api/academy-proxy.js encaminha somente as quatro funções existentes da Academia, com JWT do usuário e chave publicável; não usa serviço privilegiado. Verifica origem da própria hospedagem, método, tipo/tamanho do corpo e alvo fixo. Sem cache. O SDK mantém Auth e REST diretos e usa transporte same-origin para Edge Functions nas hospedagens Vercel. Isso evita substituir funções em produção apenas para liberar CORS de nova preview.
+
+Validação realizada: check de 60 scripts; build central; sete contratos release; QA DOM de ADM e funcionário existentes; quatro testes centrais; três testes do proxy; QA DOM do novo criador (wizard/editor/save/conflito/aluno); teste SQL transacional com role authenticated de inserção/leitura/update/revisão/conflito (rollback completo); teste SQL de não membro sem leitura/inserção (rollback completo). Auditoria Supabase não apontou problema na nova tabela/função; avisos preexistentes de outros módulos não foram alterados.
+
+Limites objetivos: geração/pesquisa por IA ainda demonstrativa por ausência de chave. Prévia do aluno do criador é administrativa e não grava nota oficial na Academia. Exporta SCORM, mas importação no LMS final e publicação de aulas SCORM no catálogo existente ainda exigem integração posterior. PDF/Word/PPT continuam somente listados; TXT e texto são guardados no projeto. Esta é a validação da autoria conectada, não uma liberação de produção da IA ou do player LMS.

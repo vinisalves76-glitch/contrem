@@ -446,7 +446,7 @@
   return;
  }
  if(!config||config.mode!=='connected'||config.preview!==false||config.url!=='https://vwvesygsudhbaqmayhsz.supabase.co'||!/^sb_publishable_[A-Za-z0-9_-]+$/.test(config.publishableKey||'')||!window.supabase||!window.AcademyCloudService){loginStatus.textContent='A conexão segura da Academia não está disponível. Não há acesso por demonstração.';form.querySelector('button').disabled=true;return;}
- client=window.supabase.createClient(config.url,config.publishableKey,{auth:{storageKey:'contrem-academia-auth-v1',persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
+ client=window.supabase.createClient(config.url,config.publishableKey,{...(window.contremAcademyFetch?{global:{fetch:window.contremAcademyFetch}}:{}),auth:{storageKey:'contrem-academia-auth-v1',persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
  service=window.AcademyCloudService.create(client);
  window.AcademyCloudMediaClient=client; // publishable key only; Storage and Auth enforce RLS.
  client.auth.onAuthStateChange((event,session)=>{if(mode==='cloud'&&(event==='SIGNED_OUT'||(session?.user?.id&&session.user.id!==identity.user.id)))resetToDemo();});
