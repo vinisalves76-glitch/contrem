@@ -24,7 +24,9 @@ test('Studio mantém identidade do menu e acesso à criação de Academias',asyn
  for(const action of ['add-stage','add-module','add-lesson','remove-module','import','export','save'])
   assert.ok(ui.includes("'"+action+"'"),'Ação disponível: '+action);
  assert.match(css,/@media\(max-width:700px\)/);
- assert.match(nav,/contrem:studio-open-academies/);
+ assert.match(nav,/contrem:studio-open-trainings/);
+ assert.match(nav,/openAcademy/);
+ assert.match(nav,/openAcademyCopy/);
 });
 test('Preview não faz gravações no backend real ao salvar Academias',async()=>{
  const ui=await read('apps/academia/src/criador-ia/academy-studio.js');
@@ -63,4 +65,27 @@ test('Importação rejeita JSON inválido e duplicidades',()=>{
  assert.throws(()=>core.fromJSON({title:'Falha',stages:[{title:'A',moduleIds:['inexistente']}],modules:[]}),/não foi encontrado/);
  const bad={title:'Falha',stages:[{title:'A',modules:[{name:'Módulo',lessons:[{name:'Aula',videoId:'https://player.mux.com/x'}]}]}]};
  assert.throws(()=>core.fromJSON(bad),/vídeo incompatível/);
+});
+
+test('Biblioteca Treinamentos mostra Cursos e Academias com filtro de tipo',async()=>{
+ const [admin,connected,studio]=await Promise.all([
+  read('apps/academia/src/assets/admin-manager.js'),
+  read('apps/academia/src/assets/academy-connected-ui.js'),
+  read('apps/academia/src/criador-ia/academy-studio.js')
+ ]);
+ assert.match(admin,/id="adminTypeFilter"/);
+ assert.match(admin,/value="academy">Academias/);
+ assert.match(admin,/academyPrograms\.map/);
+ assert.match(admin,/data-academy-edit/);
+ assert.match(admin,/data-academy-manage/);
+ assert.match(admin,/data-academy-copy/);
+ assert.match(admin,/contrem:academy-catalog-updated/);
+ assert.match(admin,/academia formação trilha/);
+ assert.match(connected,/adminBtn\.hidden=true/,'Menu Academias deve permanecer oculto');
+ assert.doesNotMatch(connected,/adminBtn\.hidden=!isEditor\(\)/);
+ assert.match(connected,/openAdmin:async id/);
+ assert.match(connected,/contrem:academy-catalog-updated/);
+ assert.match(studio,/pesquise por “Academia” na aba Treinamentos/);
+ assert.doesNotMatch(studio,/Academias da biblioteca/,'Studio não deve duplicar listagem de Academias');
+ assert.match(studio,/contrem:studio-academy-saved/);
 });
