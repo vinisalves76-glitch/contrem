@@ -1,7 +1,7 @@
 // Authoring stays inside the existing Academy workspace and navigation.
 (() => {
  const adminNav=document.getElementById('adminNav'),button=document.createElement('button');
- button.type='button';button.hidden=true;button.id='scormAuthoringTab';button.innerHTML='<span aria-hidden="true">✦</span> CONTREM Studio';adminNav.append(button);
+ button.type='button';button.hidden=true;button.id='scormAuthoringTab';button.innerHTML='<span aria-hidden="true">✦</span> Studio';adminNav.append(button);
  const panel=document.createElement('section');panel.id='scormAuthoringPanel';panel.hidden=true;panel.setAttribute('aria-label','CONTREM Studio');
  panel.style.cssText='padding:0;width:100%;min-height:75vh';document.getElementById('app').append(panel);
  let session=null,frame=null,loadedKey=null,needsReload=false;
@@ -32,6 +32,7 @@
    const height=Number(event.data.height);if(Number.isFinite(height))frame.style.height=Math.max(700,Math.min(30000,height))+'px';
   }
   if(event.data?.type==='contrem:authoring-published')needsReload=true;
+  if(event.data?.type==='contrem:studio-open-academies')document.getElementById('academiasConnectedTab')?.click();
  });
  window.addEventListener('contrem:academy-session-ready',event=>{
   session=event.detail;button.hidden=!['admin','content_admin'].includes(session.role);
