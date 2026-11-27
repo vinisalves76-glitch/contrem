@@ -1,0 +1,199 @@
+{
+  "format": "contrem-course-v1",
+  "presentation": "cards-v1",
+  "mode": "editable",
+  "title": "Bloqueio e etiquetagem em equipamentos pesados",
+  "audience": "Mecânicos, eletricistas, operadores e supervisores",
+  "level": "Básico",
+  "duration": "45 minutos",
+  "brief": "Treinamento introdutório de bloqueio e etiquetagem com decisões de campo. Requer revisão técnica e adequação a procedimentos locais.",
+  "materials": "Conteúdo criado para edição no CONTREM Studio. Não é procedimento operacional de bloqueio.",
+  "files": [],
+  "web": false,
+  "refs": [
+    {
+      "name": "NR-12 — Ministério do Trabalho e Emprego",
+      "url": "https://www.gov.br/trabalho-e-emprego/pt-br/acesso-a-informacao/participacao-social/conselhos-e-orgaos-colegiados/comissao-tripartite-partitaria-permanente/normas-regulamentadora/normas-regulamentadoras-vigentes/norma-regulamentadora-no-12-nr-12",
+      "on": true
+    },
+    {
+      "name": "NR-22 — Ministério do Trabalho e Emprego",
+      "url": "https://www.gov.br/trabalho-e-emprego/pt-br/acesso-a-informacao/participacao-social/conselhos-e-orgaos-colegiados/comissao-tripartite-partitaria-permanente/normas-regulamentadora/normas-regulamentadoras-vigentes/norma-regulamentadora-no-22-nr-22",
+      "on": true
+    }
+  ],
+  "modules": [
+    {
+      "title": "Por que bloquear e etiquetar?",
+      "goal": "Reconhecer o propósito do controle de energias perigosas.",
+      "body": "Uma máquina desligada ainda pode conter energia capaz de causar movimento, choque, pressão ou calor. O bloqueio e a etiquetagem ajudam a evitar partida inesperada e liberação de energia durante uma intervenção. Em equipamentos pesados, a condição segura depende do equipamento, da tarefa e do procedimento aprovado.\n\nO objetivo não é apenas parar o motor. É reconhecer as fontes relevantes, controlar a possibilidade de acionamento e confirmar a condição necessária antes de iniciar o serviço. Um botão de parada ou a retirada da chave, isoladamente, não substitui a avaliação das fontes de energia.",
+      "question": "A escavadeira está com o motor desligado. Isso basta para iniciar a intervenção?",
+      "options": [
+        "Sim, desde que a chave tenha sido retirada.",
+        "Não. É preciso seguir o procedimento e controlar as fontes de energia relevantes.",
+        "Sim, se um colega estiver observando."
+      ],
+      "correct": 1,
+      "cards": [
+        [
+          "Desligado ≠ seguro",
+          "O equipamento pode manter pressão hidráulica, energia elétrica, partes elevadas ou superfícies quentes."
+        ],
+        [
+          "Finalidade do bloqueio",
+          "Evitar acionamento inesperado ou liberação de energia durante a intervenção."
+        ],
+        [
+          "Etiqueta informa",
+          "Identifica a condição de bloqueio e orienta a equipe; não substitui o dispositivo de isolamento."
+        ],
+        [
+          "Antes de tocar",
+          "Confirme a condição segura pelo procedimento e com pessoas autorizadas."
+        ]
+      ],
+      "image": "",
+      "type": "decision"
+    },
+    {
+      "title": "Reconhecer as energias perigosas",
+      "goal": "Identificar exemplos de energia e riscos residuais.",
+      "body": "Antes da manutenção, a equipe precisa reconhecer as fontes e as formas de energia armazenada relacionadas à tarefa. Em equipamentos pesados, podem existir circuitos elétricos, sistemas hidráulicos e pneumáticos, combustíveis, calor, gravidade, molas e movimento mecânico.\n\nO equipamento e seus implementos exigem análise específica. Não infira que um componente está seguro apenas pela ausência de ruído ou movimento. Consulte manual, análise de risco e procedimento local para identificar os pontos e controles previstos.",
+      "question": "Qual alternativa descreve um risco que pode permanecer com o motor parado?",
+      "options": [
+        "Pressão hidráulica acumulada e implemento elevado.",
+        "Somente o combustível no tanque.",
+        "Nenhuma: motor parado elimina toda energia."
+      ],
+      "correct": 0,
+      "cards": [
+        [
+          "Gravidade",
+          "Implementos e partes suspensas podem mover-se mesmo sem motor."
+        ],
+        [
+          "Hidráulica",
+          "Pressão residual exige controle conforme o procedimento aplicável."
+        ],
+        [
+          "Elétrica",
+          "Baterias e circuitos podem permanecer energizados."
+        ],
+        [
+          "Térmica",
+          "Superfícies e fluidos podem continuar quentes."
+        ]
+      ],
+      "image": "",
+      "type": "decision"
+    },
+    {
+      "title": "Planejar, isolar e verificar",
+      "goal": "Explicar a sequência conceitual antes da intervenção.",
+      "body": "O planejamento identifica máquina, tarefa, fontes de energia, responsáveis, limites de acesso e procedimento vigente. As pessoas autorizadas seguem os controles especificados para parada, isolamento, bloqueio, identificação, controle de energia armazenada e verificação da condição segura.\n\nEsta aula apresenta princípios de decisão. Não define pontos de bloqueio, métodos de teste ou sequência operacional para um modelo específico. Se houver fonte não prevista, divergência no procedimento ou dúvida sobre a condição segura, a intervenção deve ser interrompida e o responsável acionado.",
+      "question": "Durante o planejamento, uma fonte de energia não consta do procedimento disponível. O que fazer?",
+      "options": [
+        "Seguir com atenção redobrada.",
+        "Pedir a um colega para observar.",
+        "Interromper e solicitar revisão do planejamento antes da intervenção."
+      ],
+      "correct": 2,
+      "cards": [
+        [
+          "Planejar",
+          "Delimite tarefa, equipe, equipamento e fontes relevantes."
+        ],
+        [
+          "Isolar",
+          "Use os dispositivos definidos no procedimento autorizado."
+        ],
+        [
+          "Identificar",
+          "Cada bloqueio deve ter identificação clara conforme regra local."
+        ],
+        [
+          "Verificar",
+          "A condição segura precisa ser confirmada por método aprovado antes do trabalho."
+        ]
+      ],
+      "image": "",
+      "type": "decision"
+    },
+    {
+      "title": "Equipe, turno e mudanças",
+      "goal": "Reconhecer a continuidade do controle entre pessoas e turnos.",
+      "body": "A proteção precisa ser mantida enquanto houver pessoas expostas. Mudanças de equipe, turno, tarefa ou condição do equipamento devem ser comunicadas e tratadas segundo o procedimento local. Ninguém deve presumir que o bloqueio de outra pessoa cobre automaticamente sua exposição.\n\nA transferência da proteção e a liberação da área exigem coordenação e autorização. Quando as condições mudam, reavalie a tarefa e interrompa o trabalho se a proteção não puder ser confirmada.",
+      "question": "A equipe mudou de turno. Qual é a decisão adequada antes de retomar?",
+      "options": [
+        "Confirmar a transferência e a continuidade da proteção conforme o procedimento.",
+        "Retirar os dispositivos do turno anterior por conta própria.",
+        "Retomar porque a máquina continua parada."
+      ],
+      "correct": 0,
+      "cards": [
+        [
+          "Proteção individual",
+          "Cada pessoa exposta deve estar contemplada pelo controle previsto."
+        ],
+        [
+          "Troca de turno",
+          "Confirme formalmente a continuidade da proteção."
+        ],
+        [
+          "Mudança de escopo",
+          "Reavalie as fontes quando a tarefa mudar."
+        ],
+        [
+          "Comunicação",
+          "Informe envolvidos antes de qualquer liberação."
+        ]
+      ],
+      "image": "",
+      "type": "decision"
+    },
+    {
+      "title": "Decidir com segurança",
+      "goal": "Aplicar os princípios a situações de campo.",
+      "body": "A boa decisão em campo começa por reconhecer o que não está confirmado. Implementos elevados, pressão residual, sinais de intervenção de outra equipe e divergências entre máquina e procedimento são razões para pausar, comunicar e reavaliar.\n\nAo final, lembre-se: este treinamento introdutório apoia o raciocínio; a prática depende de treinamento, autorização, análise de risco, manual e procedimento específico. Não execute bloqueios com base apenas neste conteúdo.",
+      "question": "Você identifica um implemento elevado sem retenção prevista no plano. O que fazer?",
+      "options": [
+        "Entrar rapidamente para concluir o serviço.",
+        "Interromper e providenciar o controle aprovado antes do acesso.",
+        "Confiar somente no cilindro hidráulico."
+      ],
+      "correct": 1,
+      "cards": [
+        [
+          "Pare",
+          "Se a condição segura não estiver confirmada, não comece."
+        ],
+        [
+          "Comunique",
+          "Acione quem responde pela tarefa e pelo equipamento."
+        ],
+        [
+          "Reavalie",
+          "Atualize a análise da situação e os controles previstos."
+        ],
+        [
+          "Retome",
+          "Somente depois da confirmação pela equipe autorizada."
+        ]
+      ],
+      "image": "",
+      "type": "decision"
+    }
+  ],
+  "theme": "contrem",
+  "interactive": true,
+  "quiz": true,
+  "score": 80,
+  "attempts": 2,
+  "status": "Rascunho",
+  "selected": 0,
+  "done": [],
+  "answers": {},
+  "attemptCount": 0,
+  "finalScore": null,
+  "reviewed": false
+}

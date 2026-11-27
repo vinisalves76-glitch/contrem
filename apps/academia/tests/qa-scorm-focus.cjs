@@ -1,0 +1,7 @@
+const {parseHTML}=require('linkedom'),vm=require('node:vm'),fs=require('node:fs'),assert=require('node:assert/strict');
+const {document}=parseHTML('<html><body><div id="classView" class="hidden"><button id="back"></button><h1 id="classCourseHeading"></h1><div class="videoLayout"></div></div></body></html>');
+const listeners={};let backClicks=0,scrolls=0;document.getElementById('back').click=()=>backClicks++;
+const ctx={document,selectedCourse:{id:'scorm-01234567-1234-1234-1234-123456789abc'},show(id){document.getElementById('classView').classList.toggle('hidden',id!=='classView')},renderClass(){},addEventListener:(type,fn)=>listeners[type]=fn,scrollTo(){scrolls++}};ctx.window=ctx;vm.createContext(ctx);vm.runInContext(fs.readFileSync('src/assets/scorm-focus.js','utf8'),ctx);
+ctx.show('classView');assert(document.documentElement.classList.contains('scorm-focused'));assert(document.getElementById('back').hidden);assert(!document.getElementById('scormLeave').closest('.scorm-focus-header').hidden);document.getElementById('scormLeave').onclick();assert.equal(backClicks,1);assert.equal(scrolls,1);
+ctx.show('studentView');assert(!document.documentElement.classList.contains('scorm-focused'));assert(!document.getElementById('back').hidden);ctx.selectedCourse={id:'video-course'};ctx.show('classView');assert(!document.documentElement.classList.contains('scorm-focused'));
+console.log('PASS SCORM focus: isolated course, explicit exit, restoration and ordinary video isolation.');

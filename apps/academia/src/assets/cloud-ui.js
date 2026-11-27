@@ -341,6 +341,21 @@
    return service.unpublishCourse(courseId);
   }
  };
+
+ // Refresh server-verified SCORM completion without overwriting pending local edits.
+ window.AcademyCloudReloadLearning=async()=>{
+  if(mode!=='cloud'||!identity||saving||dirtyState||dirtyCatalog||conflicted)return false;
+  const runEpoch=epoch;
+  const response=await client.from('academy_learning_state').select('*').eq('member_id',identity.member.id).single();
+  if(response.error||epoch!==runEpoch||dirtyState||dirtyCatalog||saving)return false;
+  const row=response.data;
+  progress=Object.fromEntries(courses.map(c=>[c.id,(row.progress?.[c.id]||[]).filter(id=>c.lessons.some(l=>l.id===id))]));
+  activity=Object.fromEntries(courses.filter(c=>row.activity?.[c.id]).map(c=>[c.id,row.activity[c.id]]));
+  profile=copy(row.profile||{});certificates=[];stateRevision=row.revision;
+  stateSaved=stateJSON({profile,progress,activity,certificates});
+  academyStorage.quiet(()=>{[progress,certificates,profile,activity].forEach((value,i)=>academyStorage.setItem(keys[i+1],JSON.stringify(value)));});
+  refresh();return true;
+ };
  const baseRefresh=refresh;refresh=function(){baseRefresh();permissions();};
  const baseRenderClass=renderClass;
  let playbackGeneration=0;
@@ -446,7 +461,7 @@
   return;
  }
  if(!config||config.mode!=='connected'||config.preview!==false||config.url!=='https://vwvesygsudhbaqmayhsz.supabase.co'||!/^sb_publishable_[A-Za-z0-9_-]+$/.test(config.publishableKey||'')||!window.supabase||!window.AcademyCloudService){loginStatus.textContent='A conexão segura da Academia não está disponível. Não há acesso por demonstração.';form.querySelector('button').disabled=true;return;}
- client=window.supabase.createClient(config.url,config.publishableKey,{auth:{storageKey:'contrem-academia-auth-v1',persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
+ client=window.supabase.createClient(config.url,config.publishableKey,{...(window.contremAcademyFetch?{global:{fetch:window.contremAcademyFetch}}:{}),auth:{storageKey:'contrem-academia-auth-v1',persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
  service=window.AcademyCloudService.create(client);
  window.AcademyCloudMediaClient=client; // publishable key only; Storage and Auth enforce RLS.
  client.auth.onAuthStateChange((event,session)=>{if(mode==='cloud'&&(event==='SIGNED_OUT'||(session?.user?.id&&session.user.id!==identity.user.id)))resetToDemo();});
