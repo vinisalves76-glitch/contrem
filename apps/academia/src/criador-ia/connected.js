@@ -11,7 +11,20 @@ window.CONTREM_AUTHORING_BOOT=(async()=>{
  const table='academy_authoring_drafts';let rows=[];
  const unwrap=r=>{if(r.error)throw Error('Não foi possível consultar ou salvar o rascunho. Confira sua conexão e tente novamente.');return r.data};
  const connection={client,userId:data.user.id,role:member.role,name:member.display_name,localKey:'contrem-authoring-pending:'+data.user.id,rows,
-  async list(){rows=unwrap(await client.from(table).select('id,title,status,revision,updated_at,published_course_id,published_at').order('updated_at',{ascending:false}).limit(100));this.rows=rows;return rows},
+  async list(){rows=unwrap(await client.from(table).select('id,title,status,revision,updated_at,published_course_id,published_at,project').order('updated_at',{ascending:false}).limit(100));this.rows=rows;return rows},
+  async uploadImage(file){
+   if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>12*1024*1024)throw Error('Escolha uma foto JPG, PNG ou WebP de até 12 MB.');
+   const bitmap=await createImageBitmap(file),canvas=document.createElement('canvas'),scale=Math.min(1,1200/bitmap.width,800/bitmap.height);
+   canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+   const context=canvas.getContext('2d');if(!context){bitmap.close();throw Error('Não foi possível preparar a foto.');}
+   context.drawImage(bitmap,0,0,canvas.width,canvas.height);bitmap.close();
+   let image;for(let quality=.82;quality>=.42;quality-=.1){image=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',quality));if(image?.size<=400*1024)break}
+   if(!image||image.size>400*1024)throw Error('A foto é grande demais. Escolha uma imagem menor.');
+   const path=data.user.id+'/'+crypto.randomUUID()+'.jpg';
+   const bucket=client.storage.from('academy-course-images');const {error}=await bucket.upload(path,image,{contentType:'image/jpeg',upsert:false});
+   if(error)throw Error('Não foi possível enviar a foto. Tente novamente.');
+   return bucket.getPublicUrl(path).data.publicUrl;
+  },
   async publish(id,revision){const r=await client.rpc('academy_publish_authoring_draft',{p_id:id,p_revision:revision});if(r.error)throw Error(r.error.message||'Não foi possível publicar.');return r.data},
   async load(id){return unwrap(await client.from(table).select('*').eq('id',id).single())},
   async save(project){
@@ -22,7 +35,7 @@ window.CONTREM_AUTHORING_BOOT=(async()=>{
    let row;
    if(project.draftId){row=unwrap(await client.from(table).update({title:value.title,project:value,status:value.reviewed?'reviewed':'draft'}).eq('id',project.draftId).eq('revision',project.draftRevision).select('*').maybeSingle());if(!row)throw Error('Este rascunho mudou em outra sessão. Baixe seu projeto editável e reabra a versão do banco antes de salvar.');}
    else row=unwrap(await client.from(table).insert({id:crypto.randomUUID(),title:value.title,project:value,created_by:data.user.id,status:value.reviewed?'reviewed':'draft'}).select('*').single());
-   this.rows=[{id:row.id,title:row.title,status:row.status,revision:row.revision,updated_at:row.updated_at,published_course_id:row.published_course_id,published_at:row.published_at},...this.rows.filter(r=>r.id!==row.id)];return row;
+   this.rows=[{id:row.id,title:row.title,status:row.status,revision:row.revision,updated_at:row.updated_at,published_course_id:row.published_course_id,published_at:row.published_at,project:value},...this.rows.filter(r=>r.id!==row.id)];return row;
   }
  };
  client.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_OUT'||(session?.user?.id&&session.user.id!==data.user.id))location.replace('/academia/')});
