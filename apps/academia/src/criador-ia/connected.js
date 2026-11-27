@@ -31,6 +31,7 @@ window.CONTREM_AUTHORING_BOOT=(async()=>{
    // Preview learning activity is not an official student record.
    const value=structuredClone(project);delete value.draftId;delete value.draftRevision;value.done=[];value.answers={};value.attemptCount=0;value.finalScore=null;value.page='home';value.selected=0;
    if(!value.title?.trim()||!Array.isArray(value.modules)||value.modules.length>100)throw Error('Revise o título e a quantidade de módulos.');
+   if(!['Básico','Intermediário','Avançado'].includes(value.level)||!Number.isFinite(value.hours)||value.hours<.25||value.hours>200)throw Error('Revise a classificação e a carga horária do treinamento.');
    if(new TextEncoder().encode(JSON.stringify(value)).length>600000)throw Error('O rascunho excede 600 KB. Reduza os materiais em texto antes de salvar.');
    let row;
    if(project.draftId){row=unwrap(await client.from(table).update({title:value.title,project:value,status:value.reviewed?'reviewed':'draft'}).eq('id',project.draftId).eq('revision',project.draftRevision).select('*').maybeSingle());if(!row)throw Error('Este rascunho mudou em outra sessão. Baixe seu projeto editável e reabra a versão do banco antes de salvar.');}
