@@ -101,3 +101,18 @@ test('Home do Studio não exibe bloco de teste nem projeto de exemplo',async()=>
  assert.match(studio,/libraryCards\(\)/);
  assert.match(studio,/if\(a==='import'\)/);
 });
+
+test('Studio não exibe recuperação nem campo técnico de arquivo na tela inicial',async()=>{
+ const [app,css]=await Promise.all([
+  read('apps/academia/src/criador-ia/app.js'),
+  read('apps/academia/src/criador-ia/style.css')
+ ]);
+ const home=app.match(/function home\(\)\{[\s\S]*?\}\s*function validateImport\(/)?.[0];
+ assert.ok(home,'A home deve continuar disponível');
+ assert.doesNotMatch(home,/Recuperar edição deste navegador/);
+ assert.match(home,/Importar treinamento/);
+ assert.match(home,/<input id="importProject" type="file"[^>]* hidden>/);
+ assert.match(css,/#importProject\[hidden\]\s*\{\s*display:\s*none\s*!important\s*\}/);
+ assert.match(app,/if\(a==='import'\)\{\$\('#importProject'\)\?\.click\(\)/,'Importação pelo botão segue disponível');
+ assert.match(app,/if\(\$\('#importProject'\)\)\$\('#importProject'\)\.onchange=/,'Leitura do arquivo continua funcionando');
+});
