@@ -133,3 +133,9 @@ Projetos com cartões agora usam presentation=cards-v1: prévia e player publica
 - O ID informado no relato foi testado em `stream.mux.com`: resposta 400 `Invalid Playback ID. It looks like you used an Asset ID, but we needed a Playback ID.`
 - `apps/academia/src/criador-ia/app.js`: valida o vídeo ao alterar o campo e antes de salvar/publicar. Identifica Asset ID, reprodução assinada e vídeo indisponível com mensagem específica, impedindo publicação de aula que ficará carregando.
 - `node --check` e `npm run check` (68 scripts) passaram. É necessário substituir no rascunho o Asset ID pelo Playback ID público correspondente.
+
+## Correção dos cartões e promoção — 27/11/2026
+
+- `apps/academia/src/criador-ia/style.css`: a regra `display:block` nos versos anulava o atributo `hidden`. Adicionado seletor para ocultar o verso até o clique, tanto na prévia quanto no player publicado, que compartilha a folha de estilo.
+- A versão publicada existente do treinamento permanece no banco; o rascunho editado possui revisão posterior à publicada. A migração de vídeo só altera a função de publicação e não apaga rascunhos, matrículas ou versões SCORM.
+- Verificações: `npm run build`, `npm test`, `npm run check` e os quatro testes de autoria/sala SCORM passaram.
