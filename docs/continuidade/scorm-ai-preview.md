@@ -86,3 +86,10 @@ A sala SCORM apresenta o retorno de resposta correta/incorreta junto à questão
 ## Estado de resposta do aluno — 27/11/2026
 
 Na publicação examinada, os dois primeiros módulos já tinham resposta correta registrada no histórico do aluno. O servidor valida a alternativa e só aceita concluir o módulo quando a resposta correta do mesmo módulo consta em activities. A interface agora distingue esse estado persistido, desabilita escolhas após acerto e mantém o próximo módulo bloqueado até a conclusão. Resposta errada isolada segue sem liberar o botão. QA de decisão incorreta/correta, build, check e contratos ADM passaram. Nenhum progresso de aluno foi apagado ou alterado manualmente.
+
+
+## Geração por API em preview — 27/11/2026
+
+A chave enviada pelo proprietário foi configurada como OPENAI_API_KEY criptografada na Vercel, exclusivamente para preview da branch feature/academia-scorm-connected-20261127. O endpoint /api/academy-ai usa a chave somente no servidor, verifica JWT real no Supabase e papel ativo de equipe de conteúdo, limita corpo e quantidade de módulos e chama Responses com saída JSON estruturada. A UI envia título, público, briefing, texto, referências declaradas e estrutura, recebe módulos/questões, abre o editor e mantém a publicação como ação separada e revisada. Sem busca automática no conteúdo de URLs e sem extração de PDF/Word/PPT. A credencial não entra no repositório nem no pacote web. Recomenda-se rotacionar a chave exposta na conversa após a homologação.
+
+QA local: endpoint não autenticado bloqueado; mock de usuário/equipe/modelo com segredo ausente da resposta; DOM do criador com geração, editor e publicação; build/check/contratos. Teste real com conta da equipe e saldo API ainda depende da validação na prévia.
