@@ -341,6 +341,21 @@
    return service.unpublishCourse(courseId);
   }
  };
+
+ // Refresh server-verified SCORM completion without overwriting pending local edits.
+ window.AcademyCloudReloadLearning=async()=>{
+  if(mode!=='cloud'||!identity||saving||dirtyState||dirtyCatalog||conflicted)return false;
+  const runEpoch=epoch;
+  const response=await client.from('academy_learning_state').select('*').eq('member_id',identity.member.id).single();
+  if(response.error||epoch!==runEpoch||dirtyState||dirtyCatalog||saving)return false;
+  const row=response.data;
+  progress=Object.fromEntries(courses.map(c=>[c.id,(row.progress?.[c.id]||[]).filter(id=>c.lessons.some(l=>l.id===id))]));
+  activity=Object.fromEntries(courses.filter(c=>row.activity?.[c.id]).map(c=>[c.id,row.activity[c.id]]));
+  profile=copy(row.profile||{});certificates=[];stateRevision=row.revision;
+  stateSaved=stateJSON({profile,progress,activity,certificates});
+  academyStorage.quiet(()=>{[progress,certificates,profile,activity].forEach((value,i)=>academyStorage.setItem(keys[i+1],JSON.stringify(value)));});
+  refresh();return true;
+ };
  const baseRefresh=refresh;refresh=function(){baseRefresh();permissions();};
  const baseRenderClass=renderClass;
  let playbackGeneration=0;

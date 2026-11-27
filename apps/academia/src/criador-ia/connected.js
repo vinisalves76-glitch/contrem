@@ -11,7 +11,8 @@ window.CONTREM_AUTHORING_BOOT=(async()=>{
  const table='academy_authoring_drafts';let rows=[];
  const unwrap=r=>{if(r.error)throw Error('Não foi possível consultar ou salvar o rascunho. Confira sua conexão e tente novamente.');return r.data};
  const connection={client,userId:data.user.id,role:member.role,name:member.display_name,localKey:'contrem-authoring-pending:'+data.user.id,rows,
-  async list(){rows=unwrap(await client.from(table).select('id,title,status,revision,updated_at').order('updated_at',{ascending:false}).limit(100));this.rows=rows;return rows},
+  async list(){rows=unwrap(await client.from(table).select('id,title,status,revision,updated_at,published_course_id,published_at').order('updated_at',{ascending:false}).limit(100));this.rows=rows;return rows},
+  async publish(id,revision){const r=await client.rpc('academy_publish_authoring_draft',{p_id:id,p_revision:revision});if(r.error)throw Error(r.error.message||'Não foi possível publicar.');return r.data},
   async load(id){return unwrap(await client.from(table).select('*').eq('id',id).single())},
   async save(project){
    // Preview learning activity is not an official student record.
@@ -20,8 +21,8 @@ window.CONTREM_AUTHORING_BOOT=(async()=>{
    if(new TextEncoder().encode(JSON.stringify(value)).length>600000)throw Error('O rascunho excede 600 KB. Reduza os materiais em texto antes de salvar.');
    let row;
    if(project.draftId){row=unwrap(await client.from(table).update({title:value.title,project:value,status:value.reviewed?'reviewed':'draft'}).eq('id',project.draftId).eq('revision',project.draftRevision).select('*').maybeSingle());if(!row)throw Error('Este rascunho mudou em outra sessão. Baixe seu projeto editável e reabra a versão do banco antes de salvar.');}
-   else row=unwrap(await client.from(table).insert({id:crypto.randomUUID(),title:value.title,project:value,created_by:data.user.id,status:'draft'}).select('*').single());
-   this.rows=[{id:row.id,title:row.title,status:row.status,revision:row.revision,updated_at:row.updated_at},...this.rows.filter(r=>r.id!==row.id)];return row;
+   else row=unwrap(await client.from(table).insert({id:crypto.randomUUID(),title:value.title,project:value,created_by:data.user.id,status:value.reviewed?'reviewed':'draft'}).select('*').single());
+   this.rows=[{id:row.id,title:row.title,status:row.status,revision:row.revision,updated_at:row.updated_at,published_course_id:row.published_course_id,published_at:row.published_at},...this.rows.filter(r=>r.id!==row.id)];return row;
   }
  };
  client.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_OUT'||(session?.user?.id&&session.user.id!==data.user.id))location.replace('/academia/')});

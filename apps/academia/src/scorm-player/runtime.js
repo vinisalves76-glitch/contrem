@@ -1,0 +1,33 @@
+(async()=>{
+ 'use strict';const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const id=new URLSearchParams(location.search).get('course');
+ if(!/^scorm-[a-f0-9-]{36}$/i.test(id||''))throw Error('Curso interativo inválido.');
+ const c=window.CONTREM_ACADEMY_CONFIG,client=window.supabase.createClient(c.url,c.publishableKey,{auth:{storageKey:'contrem-academia-auth-v1',persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
+ const auth=await client.auth.getUser();if(auth.error||!auth.data.user)throw Error('Entre na Academia para acessar este treinamento.');
+ let data,index=0,busy=false,examRequest=null,feedback='';
+ const call=async(action,extra={})=>{
+  const result=await client.rpc('academy_scorm_runtime',{p_course_id:id,p_action:action,...extra});
+  if(result.error)throw Error(result.error.message||'Não foi possível consultar o treinamento. Tente novamente.');
+  return result.data;
+ };
+ function post(){if(window.parent!==window)window.parent.postMessage({type:'contrem:scorm-state',courseId:id,passed:data.passed},location.origin)}
+ async function operation(action,extra={}){
+  if(busy)return;busy=true;document.querySelectorAll('#runtime button').forEach(b=>b.disabled=true);$('runtimeMessage').textContent='Salvando na sua conta…';
+  try{data=await call(action,extra);if(action==='decision')feedback=data.correctDecision?'Resposta adequada. Você pode avançar.':'Revise o conteúdo e tente novamente.';if(action==='complete'){index=Math.min(data.completed,data.content.modules.length-1);feedback=''}if(action==='exam'){examRequest=null;feedback='Avaliação registrada na sua conta.'}render();$('runtimeMessage').textContent=feedback;post()}
+  catch(e){$('runtimeMessage').textContent=e.message;render()}
+  finally{busy=false}
+ }
+ function render(){
+  const course=data.content,modules=course.modules,m=modules[index],done=data.completed,pct=Math.round(done/modules.length*100);
+  document.documentElement.style.setProperty('--accent',course.theme==='blue'?'#58a9dc':course.theme==='safety'?'#dfac34':'#f47b20');
+  $('runtimeState').textContent=data.preview?'Prévia administrativa':data.passed?'Concluído':'Progresso salvo na conta';
+  const all=done===modules.length,quiz=course.quiz,canAnswer=!data.preview&&index===done&&done<modules.length;
+  $('runtime').innerHTML=`<h1>${esc(course.title)}</h1>${data.preview?'<div class="note">Prévia administrativa da versão publicada. Atividades e notas oficiais são registradas somente para alunos matriculados.</div>':''}<div class="row spread"><span>Progresso dos módulos</span><b>${pct}%</b></div><div class="progress"><span style="width:${pct}%"></span></div><div class="learnerNav">${modules.map((a,i)=>`<button data-nav="${i}" class="${i===index?'primary':'secondary'}" ${!data.preview&&i>done?'disabled':''}>${i<done?'✓ ':''}${i+1}. ${esc(a.title)}</button>`).join('')}</div><article class="course-preview"><div class="playerbody"><div class="eyebrow">MÓDULO ${index+1} DE ${modules.length}</div><h2>${esc(m.title)}</h2><p class="muted">${esc(m.goal)}</p>${/^https:\/\//.test(m.image||'')?`<img class="photo" src="${esc(m.image)}" alt="Imagem ilustrativa do treinamento">`:''}<p>${esc(m.body)}</p>${course.interactive&&!data.preview?`<section class="question"><h3>${esc(m.question)}</h3>${index<done?'<p>Atividade já concluída.</p>':`<div class="answers">${m.options.map((o,i)=>`<button data-answer="${i}" ${!canAnswer?'disabled':''}>${esc(o)}</button>`).join('')}</div>`}</section>`:''}${!data.preview&&canAnswer?'<button id="completeModule" class="primary" style="margin-top:20px">Concluir módulo e continuar</button>':''}</div></article>${all&&!data.preview?`<section class="panel" style="margin-top:25px"><h2>${quiz?'Avaliação final':'Treinamento concluído'}</h2>${data.score!==null?`<p>Nota: <b>${data.score}%</b> · ${data.passed?'Aprovado':'Revise o conteúdo antes de tentar novamente.'}</p>`:''}${data.passed?'<div class="note">Conclusão registrada na sua conta. Atualize o painel da Academia para visualizar o progresso.</div>':`<p>Nota mínima: ${course.score}% · Tentativas utilizadas: ${data.attempts} de ${course.attempts}</p>${data.attempts>=course.attempts?'<div class="note">Tentativas esgotadas. Solicite ao ADM a análise de uma tentativa adicional.</div>':quiz?`<form id="finalExam">${modules.map((a,i)=>`<fieldset><legend>${esc(a.question)}</legend>${a.options.map((o,j)=>`<label class="check"><input type="radio" name="q${i}" value="${j}" required>${esc(o)}</label>`).join('')}</fieldset>`).join('')}<button class="primary">Enviar avaliação</button></form>`:''}`}</section>`:''}`;
+  document.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>{index=+b.dataset.nav;render()});
+  document.querySelectorAll('[data-answer]').forEach(b=>b.onclick=()=>operation('decision',{p_index:index,p_answers:+b.dataset.answer}));
+  if($('completeModule'))$('completeModule').onclick=()=>operation('complete',{p_index:index});
+  if($('finalExam'))$('finalExam').onsubmit=e=>{e.preventDefault();const form=new FormData(e.target),answers=modules.map((m,i)=>Number(form.get('q'+i)));examRequest=examRequest||crypto.randomUUID();operation('exam',{p_answers:answers,p_request_id:examRequest})};
+ }
+ data=await call('load');index=Math.min(data.completed,data.content.modules.length-1);render();post();
+ client.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_OUT'||(session?.user?.id&&session.user.id!==auth.data.user.id))location.replace('/academia/')});
+})().catch(e=>{document.getElementById('runtime').textContent=e.message;document.getElementById('runtimeState').textContent='Acesso indisponível'});

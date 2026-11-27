@@ -1,0 +1,9 @@
+const {parseHTML}=require('linkedom'),vm=require('node:vm'),fs=require('node:fs'),assert=require('node:assert/strict');
+const {document}=parseHTML('<html><head></head><body><div class="video"><iframe id="player"></iframe></div><button id="markDone"></button><div id="assessmentPanel"></div><div id="lessonVideoStatus"></div><div id="adminCourses"></div><button id="studentsTab"></button></body></html>');
+let called=0,refresh=0;const listeners={};const source={};Object.defineProperty(document.getElementById('player'),'contentWindow',{value:source});
+const context={document,URLSearchParams,location:{origin:'https://preview.vercel.app',search:'',href:''},renderClass:()=>called++,selectedCourse:{id:'scorm-01234567-1234-1234-1234-123456789abc'},AcademyCloudReloadLearning:async()=>{refresh++},addEventListener:(k,fn)=>listeners[k]=fn};context.window=context;vm.createContext(context);vm.runInContext(fs.readFileSync('src/assets/scorm-room.js','utf8'),context);
+context.renderClass();assert.equal(called,1);assert(document.getElementById('player').src.includes('/academia/scorm-player/?course=scorm-'));assert(document.getElementById('markDone').hidden);assert(document.getElementById('assessmentPanel').hidden);
+listeners.message({origin:'https://evil.invalid',source,data:{type:'contrem:scorm-state',courseId:context.selectedCourse.id,passed:true}});assert.equal(refresh,0);
+listeners.message({origin:context.location.origin,source,data:{type:'contrem:scorm-state',courseId:context.selectedCourse.id,passed:true}});assert.equal(refresh,1);
+context.selectedCourse={id:'video-course'};context.renderClass();assert.equal(called,2);assert(!document.getElementById('markDone').hidden);assert(!document.getElementById('assessmentPanel').hidden);assert(!document.querySelector('.video').classList.contains('scorm-room'));
+console.log('PASS SCORM classroom: authenticated runtime URL, no manual completion, trusted status event and video UI restoration.');
