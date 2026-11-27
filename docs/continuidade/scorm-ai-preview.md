@@ -69,3 +69,8 @@ Ajuste na mesma branch feature/academia-scorm-connected-20261127. Criar com IA m
 Após publicar, o retorno ao menu solicita a atualização do catálogo existente; o link de matrículas abre o painel completo atualizado. Preservados os controles de sessão/papel e o aviso existente de edição pendente do ADM. Nenhuma alteração no backend, no banco ou na main neste ajuste.
 
 Validação: build central; check de 65 scripts; sete contratos release; QA DOM ADM e funcionário; sete testes proxy/central; QA DOM do criador tanto pela entrada comum quanto pela entrada direta no wizard; QA da sala SCORM; novo teste de navegação (menu preservado, criação direta, edição, retenção de iframe, bloqueio por edição pendente, origem de mensagem e encerramento de sessão). QA visual com conta autenticada continua dependente da validação do proprietário na prévia.
+
+
+## Cartão do curso interativo no aluno — 27/11/2026
+
+O cartão publicado usa capa confinada à arte, texto e ação em área legível. O botão Abrir treinamento e um clique no cartão usam a sala autenticada existente; matrícula continua obrigatória no serviço. A imagem enviada mostrou sobreposição da capa e ausência de ação visível; corrigidos estilos e marcação HTML sem mudar cursos Mux ou permissões. Validação local: check, build, sete contratos e QA ADM/funcionário, QA sala SCORM e navegação de autoria. Conferência visual com conta real e matrícula fica para a prévia do proprietário.

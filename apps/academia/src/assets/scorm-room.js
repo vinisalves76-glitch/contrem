@@ -10,6 +10,10 @@
   document.getElementById('lessonVideoStatus').hidden=true;document.getElementById('assessmentPanel').hidden=true;
   document.getElementById('markDone').disabled=true;
  };
+ document.getElementById('courseGrid')?.addEventListener('click',event=>{
+  const card=event.target.closest('.scorm-course');if(!card||event.target.closest('button,a'))return;
+  card.querySelector('.footrow button')?.click();
+ });
  const style=document.createElement('style');style.textContent='.video.scorm-room{aspect-ratio:auto;min-height:78vh;background:#f2f4f6}.video.scorm-room iframe{min-height:78vh}';document.head.append(style);
  document.getElementById('adminCourses').addEventListener('click',event=>{
   const button=event.target.closest('[data-course-edit],[data-course-copy]');

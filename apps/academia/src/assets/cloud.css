@@ -27,3 +27,13 @@
 #adminView.content-admin #studentForm{display:none!important}
 #staffCreateForm input[type=password]{width:100%;min-width:0}
 #staffFormStatus:not(:empty){margin:14px 0;line-height:1.5}
+
+#courseGrid .scorm-course{overflow:hidden;cursor:pointer;min-width:0}
+#courseGrid .scorm-course .art{overflow:hidden;padding:0;min-width:0;isolation:isolate}
+#courseGrid .scorm-course .art .course-cover{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+#courseGrid .scorm-course .art:before{z-index:1;text-shadow:0 1px 5px #0008}
+#courseGrid .scorm-course .body{min-width:0;position:relative;z-index:1;background:#fff;overflow-wrap:anywhere}
+#courseGrid .scorm-course .body h3{color:var(--navy)}
+#courseGrid .scorm-course .footrow{flex-wrap:wrap;gap:10px}
+#courseGrid .scorm-course .footrow button{min-height:42px}
+#courseGrid .scorm-course:focus-within{outline:2px solid var(--orange);outline-offset:2px}
