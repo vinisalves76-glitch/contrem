@@ -139,3 +139,9 @@ Projetos com cartões agora usam presentation=cards-v1: prévia e player publica
 - `apps/academia/src/criador-ia/style.css`: a regra `display:block` nos versos anulava o atributo `hidden`. Adicionado seletor para ocultar o verso até o clique, tanto na prévia quanto no player publicado, que compartilha a folha de estilo.
 - A versão publicada existente do treinamento permanece no banco; o rascunho editado possui revisão posterior à publicada. A migração de vídeo só altera a função de publicação e não apaga rascunhos, matrículas ou versões SCORM.
 - Verificações: `npm run build`, `npm test`, `npm run check` e os quatro testes de autoria/sala SCORM passaram.
+
+## Atualizações publicadas para alunos matriculados — 27/11/2026
+
+- Diagnóstico: catálogo e SCORM versão 2 já contêm os dois vídeos, mas uma matrícula ainda apontava para a versão 1. As versões têm conteúdo de aula e avaliação idêntico quando se desconsidera vídeo/posição.
+- Migração `20261127173000_academy_scorm_upgrade_compatible_versions.sql`: ao carregar a sala, alunos sem atividade podem ir à versão corrente; alunos com progresso só migram automaticamente se o conteúdo e a avaliação forem iguais e apenas os vídeos/posição diferirem. Mantém notas e tentativas.
+- Cursos cujas aulas/avaliações mudaram continuam na versão matriculada até uma política de migração explícita, protegendo o histórico.
