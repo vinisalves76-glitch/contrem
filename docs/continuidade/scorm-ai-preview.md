@@ -145,3 +145,9 @@ Projetos com cartões agora usam presentation=cards-v1: prévia e player publica
 - Diagnóstico: catálogo e SCORM versão 2 já contêm os dois vídeos, mas uma matrícula ainda apontava para a versão 1. As versões têm conteúdo de aula e avaliação idêntico quando se desconsidera vídeo/posição.
 - Migração `20261127173000_academy_scorm_upgrade_compatible_versions.sql`: ao carregar a sala, alunos sem atividade podem ir à versão corrente; alunos com progresso só migram automaticamente se o conteúdo e a avaliação forem iguais e apenas os vídeos/posição diferirem. Mantém notas e tentativas.
 - Cursos cujas aulas/avaliações mudaram continuam na versão matriculada até uma política de migração explícita, protegendo o histórico.
+
+## Matrícula acompanha publicação corrente — 27/11/2026
+
+- Antes desta revisão, matrículas com progresso ficavam na versão anterior quando o instrutor modificava aulas ou provas. Esse comportamento não atendia ao pedido de carregar sempre a publicação mais recente.
+- Migração `20261127180000_academy_scorm_latest_with_history.sql`: na abertura da sala, compara a matrícula com o `scormVersion` do catálogo. Mudança apenas de vídeo mantém o progresso. Mudança de conteúdo ou avaliação arquiva o estado anterior em `academy_scorm_learning_history` (RLS ativa, sem acesso direto do cliente) e reinicia o progresso na versão atual. Uma ação enviada de uma aula antiga solicita recarregar antes de alterar dados.
+- Certificados existentes não são apagados. O progresso visível para o curso passa a refletir a nova versão. A migração foi aplicada ao banco compartilhado, sem alterar os rascunhos e versões já publicados.
