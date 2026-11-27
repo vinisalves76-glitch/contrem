@@ -182,26 +182,38 @@
   updateEditStatus();
  }
  function renderLibrary(){
-  byId('admStats').innerHTML=[['Cursos',courses.length],['Rascunhos',courses.filter(c=>c.status!=='published').length],['Publicados na prévia',courses.filter(c=>c.status==='published').length],['Aulas',courses.reduce((n,c)=>n+c.lessons.length,0)]].map(([label,n])=>'<div><small>'+label+'</small><strong>'+n+'</strong></div>').join('');
-  const categories=[...new Set(courses.map(c=>String(c.category||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  const academies=academyPrograms.map(p=>({
+   recordType:'academy',id:p.id,name:p.title||p.definition?.title||'Academia sem título',
+   category:'Academia',description:p.definition?.description||'Formação técnica',
+   status:p.status,stages:p.definition?.stages||[],modules:p.definition?.modules||[]
+  }));
+  const entries=[...courses.map(c=>({...c,recordType:'course'})),...academies];
+  byId('admStats').innerHTML=[['Treinamentos',entries.length],['Rascunhos',entries.filter(c=>c.status!=='published').length],['Publicados',entries.filter(c=>c.status==='published').length],['Academias',academies.length]].map(([label,n])=>'<div><small>'+label+'</small><strong>'+n+'</strong></div>').join('');
+  const categories=[...new Set(entries.map(c=>String(c.category||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
   const categorySelect=byId('adminCategoryFilter');
   categorySelect.innerHTML='<option value="all">Todas as categorias</option>'+categories.map((name,index)=>'<option value="'+index+'">'+esc(name)+'</option>').join('');
-  const selectedIndex=categories.findIndex(name=>name===categoryFilter);
-  if(categoryFilter!=='all'&&selectedIndex<0)categoryFilter='all';
+  if(categoryFilter!=='all'&&!categories.includes(categoryFilter))categoryFilter='all';
   categorySelect.value=categoryFilter==='all'?'all':String(categories.indexOf(categoryFilter));
-  const list=courses.filter(c=>{
+  const list=entries.filter(c=>{
    const published=c.status==='published';
    return (statusFilter==='all'||(statusFilter==='published'?published:!published)) &&
+    (typeFilter==='all'||c.recordType===typeFilter) &&
     (categoryFilter==='all'||c.category===categoryFilter) &&
-    fold([c.name,c.category,c.description].join(' ')).includes(filter);
+    fold([c.name,c.category,c.description,c.recordType==='academy'?'academia formação trilha':'curso treinamento'].join(' ')).includes(filter);
   }).sort((a,b)=>sortOrder==='za'?String(b.name||'').localeCompare(String(a.name||''),'pt-BR'):String(a.name||'').localeCompare(String(b.name||''),'pt-BR'));
-  byId('adminLibraryTotal').textContent=courses.length+' treinamento'+(courses.length===1?'':'s');
-  byId('adminResultCount').textContent=list.length+' de '+courses.length+' treinamento'+(courses.length===1?'':'s');
-  byId('adminClearFilters').hidden=!(filter||statusFilter!=='all'||categoryFilter!=='all'||sortOrder!=='az');
+  byId('adminLibraryTotal').textContent=entries.length+' treinamento'+(entries.length===1?'':'s');
+  byId('adminResultCount').textContent=list.length+' de '+entries.length+' treinamento'+(entries.length===1?'':'s');
+  byId('adminClearFilters').hidden=!(filter||statusFilter!=='all'||typeFilter!=='all'||categoryFilter!=='all'||sortOrder!=='az');
   byId('adminCourses').innerHTML=list.length?list.map(c=>{
-   const scorm=isScorm(c),published=c.status==='published',kind=scorm?'Interativo':typeOf(c)==='single'?'Aula única':'Série de aulas';
+   const published=c.status==='published';
+   if(c.recordType==='academy'){
+    const stages=c.stages||[],modules=c.modules||[],lessons=modules.reduce((n,m)=>n+(m.lessons?.length||0),0);
+    return '<article class="adm-course-card adm-academy-card"><div class="adm-card-top"><span class="adm-badge '+(published?'published':'')+'">'+(published?'Publicada':'Rascunho')+'</span><small>Academia · Formação</small></div><h3>'+esc(c.name)+'</h3><p class="adm-course-meta">Academia <span aria-hidden="true">·</span> '+stages.length+' etapa(s) <span aria-hidden="true">·</span> '+modules.length+' módulo(s) <span aria-hidden="true">·</span> '+lessons+' aula(s)</p><div class="adm-card-actions"><button type="button" class="outline" data-academy-edit="'+esc(c.id)+'" aria-label="Editar Academia '+esc(c.name)+'">Editar no Studio →</button><button type="button" class="outline" data-academy-manage="'+esc(c.id)+'" aria-label="Gerenciar publicação e matrículas da Academia '+esc(c.name)+'">Gerenciar</button><button type="button" class="outline" data-academy-copy="'+esc(c.id)+'" aria-label="Duplicar Academia '+esc(c.name)+'">Duplicar</button></div></article>';
+   }
+   const scorm=isScorm(c),kind=scorm?'Interativo':typeOf(c)==='single'?'Aula única':'Série de aulas';
    return '<article class="adm-course-card"><div class="adm-card-top"><span class="adm-badge '+(published?'published':'')+'">'+(published?'Publicado':'Rascunho')+'</span><small>'+kind+'</small></div><h3>'+esc(c.name)+'</h3><p class="adm-course-meta">'+esc(c.category||'Sem categoria')+' <span aria-hidden="true">·</span> '+(c.lessons?.length||0)+' aula(s) <span aria-hidden="true">·</span> '+Number(c.hours||8)+'h</p><div class="adm-card-actions"><button type="button" class="outline" data-course-edit="'+esc(c.id)+'" aria-label="Editar '+esc(c.name)+'">Editar <span aria-hidden="true">→</span></button><button type="button" class="outline" data-course-copy="'+esc(c.id)+'" aria-label="Duplicar '+esc(c.name)+'">Duplicar</button><button type="button" class="danger" data-course-delete="'+esc(c.id)+'" aria-label="Excluir '+esc(c.name)+'">Excluir</button></div></article>';
-  }).join(''):'<div class="adm-empty"><b>'+(courses.length?'Nenhum treinamento encontrado.':'Nenhum treinamento publicado ainda.')+'</b><span>'+(courses.length?'Experimente limpar os filtros ou buscar outro termo.':'Crie e publique um treinamento pelo CONTREM Studio para aparecer aqui.')+'</span></div>';
+  }).join(''):'<div class="adm-empty"><b>'+(entries.length?'Nenhum treinamento encontrado.':'Nenhum treinamento cadastrado ainda.')+'</b><span>'+(entries.length?'Experimente limpar os filtros ou buscar Academia.':'Crie treinamentos e Academias pelo Studio para aparecerem aqui.')+'</span></div>';
+  if(academyLoadError&&isAdmin())byId('adminResultCount').textContent+=' · Academias indisponíveis: tente atualizar.';
   renderEditor();
  }
  const oldRefresh=refresh;refresh=function(){
