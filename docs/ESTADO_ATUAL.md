@@ -35,3 +35,7 @@ Branch `feature/studio-imagens-curso-card` derivada da `main` `9e18c2c`. O edito
 ## Foto nos cards da biblioteca — 27/11/2026
 
 Branch `fix/treinamentos-foto-card-descricoes` derivada da `main` `27c2b81`. O Studio explica junto de cada campo onde a capa e a foto do card aparecem. A biblioteca ADM de Treinamentos mostra a foto salva no curso publicado (`photo`, alimentada por `cardImage` no Studio) e a capa das Academias quando disponível. Sem mudanças de banco. Testes e build locais passaram; integração e deploy são registrados no PR.
+
+## Limpeza da tela inicial do Studio — 27/11/2026
+
+A home do CONTREM Studio deixa de exibir o atalho **Recuperar edição deste navegador**. O seletor técnico de arquivo JSON permanece no DOM com `hidden` e estilo explícito para não aparecer como campo solto; a importação funciona somente pelo botão **Importar treinamento**. A lógica de recuperação local e dados existentes não são apagados. Mudança isolada na branch `fix/studio-limpar-atalho-recuperacao-20261127` a partir da main vigente, sem alterações de Supabase, backend, credenciais ou outros módulos.
