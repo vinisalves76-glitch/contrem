@@ -82,3 +82,7 @@ Ao entrar em curso SCORM, a Academia esconde menus, painel, cabeçalho e painel 
 ## Feedback da atividade e avanço — 27/11/2026
 
 A sala SCORM apresenta o retorno de resposta correta/incorreta junto à questão. O botão Concluir módulo fica indisponível até que o servidor registre a resposta correta; então o aluno pode prosseguir. A resposta errada conserva o módulo atual e permite nova escolha. Corrigida a ordem de renderização para preservar mensagens de erro de rede/servidor. Teste dedicado simula as duas respostas e confirma bloqueio e avanço; build, check e contratos ADM também passaram. Nenhuma alteração no banco nem no gabarito protegido.
+
+## Estado de resposta do aluno — 27/11/2026
+
+Na publicação examinada, os dois primeiros módulos já tinham resposta correta registrada no histórico do aluno. O servidor valida a alternativa e só aceita concluir o módulo quando a resposta correta do mesmo módulo consta em activities. A interface agora distingue esse estado persistido, desabilita escolhas após acerto e mantém o próximo módulo bloqueado até a conclusão. Resposta errada isolada segue sem liberar o botão. QA de decisão incorreta/correta, build, check e contratos ADM passaram. Nenhum progresso de aluno foi apagado ou alterado manualmente.
