@@ -19,3 +19,7 @@ O registro da publicação central e os commits remotos devem ser consultados em
 ## Prévia da biblioteca de treinamentos — 27/11/2026
 
 A branch `feature/academia-biblioteca-treinamentos-20261127` parte da `main` e mantém toda mudança fora da produção. A aba Treinamentos passa a ser biblioteca para busca, filtros e gerenciamento, com edição de cursos comuns em tela separada e edição/duplicação SCORM no CONTREM Studio. Build preview `dpl_A8Q7XKZQW3rj4o2H9KQwVf7Pna4c` pronto no projeto Vercel `contrem`; CI GitHub aprovado na revisão do teste de contrato (commit `09b5288`). Sem alterações em Supabase, RLS ou produção. Ver `docs/continuidade/academia-biblioteca-treinamentos.md`.
+
+## Preview do CONTREM Studio com criação de Academias — 27/11/2026
+
+Branch `feature/studio-criacao-academias-json-20261127` derivada da `main` `0ab867e`. Menu com botão **Studio** e construtor local de Academias integrado ao editor de treinamentos já existente. Importação/exportação JSON, etapas, módulos, aulas e exemplo de formação. Preview isolada: rascunhos locais por usuário, sem gravar no backend compartilhado. Nenhuma alteração de banco, Auth ou produção. Registros em `docs/continuidade/studio-academias-json.md`.
