@@ -159,3 +159,7 @@ Em `feature/studio-imagens-curso-card`, o Studio adiciona `coverImage` e `cardIm
 ### Foto visível em Treinamentos (27/11/2026)
 
 A biblioteca ADM (`admin-manager.js`) agora mostra `course.photo` nos cards de cursos comuns e interativos e `definition.cover` nos cards de Academias. O Studio apresenta explicações sob `coverImage` e `cardImage` para orientar o instrutor. A imagem do card publicada pelo Studio já é enviada à propriedade `photo` no catálogo pela migration anterior; esta alteração torna a miniatura visível na aba Treinamentos, sem modificar a publicação ou as matrículas.
+
+### Configurações antes dos módulos (27/11/2026)
+
+O editor agrupa dados gerais, imagens, nível, carga horária e regras de avaliação antes do primeiro campo de módulo. `hours` é numérico (0,25 a 200, com até duas casas), e `duration` permanece como rótulo de compatibilidade. Importações anteriores, incluindo `90 minutos`, são convertidas sem perder o texto. O catálogo publicado recebe horas reais e classificação; o player mostra esses metadados. A migration `20261127223000_academy_studio_course_settings.sql` ajusta o snapshot e a publicação; somente mudança de nível, duração ou imagens mantém o progresso do aluno.
