@@ -23,3 +23,7 @@ A branch `feature/academia-biblioteca-treinamentos-20261127` parte da `main` e m
 ## Preview do CONTREM Studio com criação de Academias — 27/11/2026
 
 Branch `feature/studio-criacao-academias-json-20261127` derivada da `main` `0ab867e`. Menu com botão **Studio** e construtor local de Academias integrado ao editor de treinamentos já existente. Importação/exportação JSON, etapas, módulos, aulas e exemplo de formação. Preview isolada: rascunhos locais por usuário, sem gravar no backend compartilhado. Nenhuma alteração de banco, Auth ou produção. Registros em `docs/continuidade/studio-academias-json.md`.
+
+## Ajuste visual do Studio — 27/11/2026
+
+A página inicial do Studio deixou de exibir o painel de demonstração "TESTE O FLUXO COMPLETO" (bloqueio e etiquetagem) e os atalhos para carregar/baixar seu JSON de exemplo. A criação normal de cursos, a importação de JSON, o catálogo e as Academias permanecem inalterados. Branch `fix/studio-remover-bloco-exemplo-20261127` criada a partir da `main`; publicação somente via PR protegido após testes.
