@@ -78,3 +78,7 @@ O cartão publicado usa capa confinada à arte, texto e ação em área legível
 ## Sala imersiva do treinamento interativo — 27/11/2026
 
 Ao entrar em curso SCORM, a Academia esconde menus, painel, cabeçalho e painel lateral de aula. A sala autenticada ocupa toda a largura e a altura útil da tela; um cabeçalho próprio mostra Tela cheia e Sair do curso. A ação Sair restaura o painel do aluno e encerra a sala carregada. A experiência de aulas Mux permanece como antes. O conteúdo SCORM aumenta até 1280px e a rolagem principal fica no treinamento; o modo tela cheia é opcional pelo botão. Validação: build, check de 66 scripts, sete contratos e QA ADM/funcionário, QA de sala SCORM e teste dedicado de entrada/saída e vídeo convencional. QA visual autenticado pendente na prévia.
+
+## Feedback da atividade e avanço — 27/11/2026
+
+A sala SCORM apresenta o retorno de resposta correta/incorreta junto à questão. O botão Concluir módulo fica indisponível até que o servidor registre a resposta correta; então o aluno pode prosseguir. A resposta errada conserva o módulo atual e permite nova escolha. Corrigida a ordem de renderização para preservar mensagens de erro de rede/servidor. Teste dedicado simula as duas respostas e confirma bloqueio e avanço; build, check e contratos ADM também passaram. Nenhuma alteração no banco nem no gabarito protegido.
