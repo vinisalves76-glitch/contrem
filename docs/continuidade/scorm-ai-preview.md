@@ -117,3 +117,8 @@ Projetos com cartões agora usam presentation=cards-v1: prévia e player publica
 - Publicação: migração `20261127170000_academy_scorm_lesson_video.sql` valida e inclui vídeo e posição no snapshot publicado; a sala do aluno exibe o vídeo na posição escolhida. Aplicar a migração somente ao ambiente de homologação conectado antes de testar publicação.
 - Verificações: `node --check` no editor e no runtime; `npm run check` verificou 68 scripts. Sem deploy ou alteração de banco neste ciclo.
 - Pendente: publicação de branch/PR e teste integrado no ambiente conectado. `git push` pelo terminal falhou por falta de autenticação do GitHub nesta sessão.
+
+## Certificação fora da página da aula — 27/11/2026
+
+- Removido o painel demonstrativo de certificados no rodapé de `apps/academia/src/index.html`, mantendo o fluxo de aula e avaliação.
+- Terceira correção agrupada à branch de vídeo e aviso de publicação para preview. `npm run check`: 68 scripts verificados.
