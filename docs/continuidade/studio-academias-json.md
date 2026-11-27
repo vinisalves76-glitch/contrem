@@ -38,3 +38,14 @@ Simplificar o botão do menu para **Studio** e incluir dentro dele a criação e
 - `apps/academia/src/criador-ia/samples/contrem-academia-modelo.json`
 - `apps/academia/tests/studio-academies.test.mjs`
 - `apps/academia/package.json`
+
+## Consolidação em produção — 27/11/2026
+
+- Menu administrativo mantém somente **Treinamentos, Alunos, Funcionários e Studio** como entradas de gestão. O antigo botão lateral `Academias` fica oculto, mas o controlador de matrículas/publicação continua disponível pelo botão **Gerenciar** no cartão da formação.
+- A aba **Treinamentos** consulta em paralelo o catálogo de cursos e o catálogo administrativo de Academias da API já existente. Pesquisa por "academia" encontra formações; o filtro **Tipo** separa Cursos / Academias; Situação e Categoria continuam funcionando.
+- Para uma Academia listada: **Editar no Studio** abre o construtor de formação e edição de dados; **Gerenciar** abre o painel de publicação, liberação dos módulos e matrícula; **Duplicar** abre uma cópia nova no Studio. O botão Excluir não é ofertado para Academias porque a API existente não tem operação segura de exclusão.
+- **Studio** serve somente à criação/edição de conteúdo, e não é um segundo catálogo. A busca e gerenciamento de Academias já cadastradas acontecem em **Treinamentos**.
+- No domínio canônico `contrem.vercel.app`, Studio usa a API `academy-programs` existente, com controle de revisão e papéis já aplicados no servidor. Na preview Vercel, os rascunhos do Studio continuam locais; a API bloqueia alterações originadas na preview. Nenhum schema, role, login ou função backend foi modificado.
+- Edição de formação publicada no Studio solicita confirmação explícita, pois sua versão publicada é atualizada no backend ao salvar.
+- O envio de mensagem após salvar sincroniza o catálogo na aba Treinamentos sem alterar matrículas ou a publicação de outros cursos.
+- Validar o CI e o PR antes de promover: assinatura de `academy-programs`, catálogo com Cursos/Academias, interface de gerenciamento e Studio, mobile e não regressão dos cursos avulsos.
