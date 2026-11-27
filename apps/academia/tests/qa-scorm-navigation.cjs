@@ -5,7 +5,7 @@ const ctx={document,URLSearchParams,console,location:{origin:'https://preview.ex
 const button=document.getElementById('scormAuthoringTab'),panel=document.getElementById('scormAuthoringPanel'),menu=document.getElementById('originalMenu');
 assert(button.hidden);button.onclick();assert(!document.querySelector('iframe'),'no editor before staff session');
 listeners.get('contrem:academy-session-ready')({detail:{role:'admin'}});
-const frame=document.querySelector('iframe');assert(frame);assert.equal(frame.src,'/academia/criador-ia/?embedded=1&start=create');assert(!panel.hidden);assert(button.classList.contains('active'));assert.equal(document.getElementById('originalMenu'),menu);assert(!menu.hidden);assert.equal(urls.at(-1),'/academia/','one-shot route consumed');
+const frame=document.querySelector('iframe');assert(frame);assert.equal(frame.src,'/academia/criador-ia/?embedded=1&start=home');assert(!panel.hidden);assert(button.classList.contains('active'));assert.equal(document.getElementById('originalMenu'),menu);assert(!menu.hidden);assert.equal(urls.at(-1),'/academia/','one-shot route consumed');
 ctx.show('adminView');assert(panel.hidden);assert(!document.getElementById('adminView').classList.contains('hidden'));button.onclick();assert.equal(document.querySelector('iframe'),frame,'return keeps pending editor');assert(!panel.hidden);
 canLeave=false;ctx.show('adminView');button.onclick();assert(panel.hidden,'existing editor leave guard respected');canLeave=true;
 ctx.CONTREM_AUTHORING_NAV.openDraft('01234567-1234-1234-1234-123456789abc');assert(frame.src.includes('embedded=1&draft='));assert.equal(document.getElementById('workspaceLabel').textContent,'Editar treinamento');

@@ -1,8 +1,8 @@
 // Authoring stays inside the existing Academy workspace and navigation.
 (() => {
  const adminNav=document.getElementById('adminNav'),button=document.createElement('button');
- button.type='button';button.hidden=true;button.id='scormAuthoringTab';button.innerHTML='<span aria-hidden="true">✦</span> Criar com IA';adminNav.append(button);
- const panel=document.createElement('section');panel.id='scormAuthoringPanel';panel.hidden=true;panel.setAttribute('aria-label','Criação de treinamento com IA');
+ button.type='button';button.hidden=true;button.id='scormAuthoringTab';button.innerHTML='<span aria-hidden="true">✦</span> CONTREM Studio';adminNav.append(button);
+ const panel=document.createElement('section');panel.id='scormAuthoringPanel';panel.hidden=true;panel.setAttribute('aria-label','CONTREM Studio');
  panel.style.cssText='padding:0;width:100%;min-height:75vh';document.getElementById('app').append(panel);
  let session=null,frame=null,loadedKey=null,needsReload=false;
  const baseShow=show;
@@ -13,10 +13,10 @@
   if(window.AcademyAdminEdits&&!window.AcademyAdminEdits.canLeave())return;
   ['studentView','adminView','classView'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.querySelectorAll('#adminNav button').forEach(b=>b.classList.remove('active'));button.classList.add('active');
-  document.getElementById('workspaceLabel').textContent=draft?'Editar treinamento':'Criar com IA';panel.hidden=false;
-  if(!frame){frame=document.createElement('iframe');frame.id='scormAuthoringFrame';frame.title='Criar treinamento com IA';frame.style.cssText='display:block;width:100%;height:850px;min-height:700px;border:0';panel.append(frame)}
+  document.getElementById('workspaceLabel').textContent=draft?'Editar treinamento':'CONTREM Studio';panel.hidden=false;
+  if(!frame){frame=document.createElement('iframe');frame.id='scormAuthoringFrame';frame.title='CONTREM Studio';frame.style.cssText='display:block;width:100%;height:850px;min-height:700px;border:0';panel.append(frame)}
   const key=draft||'create';
-  if(loadedKey!==key){loadedKey=key;frame.src='/academia/criador-ia/?embedded=1&'+(draft?'draft='+encodeURIComponent(draft):'start=create')}
+  if(loadedKey!==key){loadedKey=key;frame.src='/academia/criador-ia/?embedded=1&'+(draft?'draft='+encodeURIComponent(draft):'start=home')}
   window.scrollTo({top:0,behavior:'instant'});
  }
  button.onclick=()=>open();
