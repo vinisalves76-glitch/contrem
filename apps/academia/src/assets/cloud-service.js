@@ -75,7 +75,7 @@
   }
   return {
    clearIdentity,
-   async signIn(email,password){const version=clearIdentity();unwrap(await client.auth.signInWithPassword({email,password}));try{current(version);const verified=unwrap(await client.auth.getUser());return await load(verified.user,version);}catch(error){if(version===generation)await client.auth.signOut({scope:'local'});throw error;}},
+   async signIn(email,password){const version=clearIdentity();const signed=unwrap(await client.auth.signInWithPassword({email,password}));try{current(version);return await load(signed.user,version);}catch(error){if(version===generation)await client.auth.signOut({scope:'local'});throw error;}},
    async restore(){const version=clearIdentity(),data=unwrap(await client.auth.getUser());current(version);return data.user?load(data.user,version):null;},
    async reload(){if(!identity)throw Error('Entre novamente.');const version=clearIdentity(),data=unwrap(await client.auth.getUser());return load(data.user,version);},
    async signOut(){clearIdentity();const result=await client.auth.signOut({scope:'local'});if(result.error)throw result.error;},
