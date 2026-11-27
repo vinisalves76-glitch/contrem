@@ -172,7 +172,7 @@
     setTimeout(()=>URL.revokeObjectURL(url),1000);
    }catch(e){alert(e.message)}return;
   }
-  if(action==='open-manager'){window.parent.postMessage({type:'contrem:studio-open-academies'},location.origin);return;}
+  if(action==='open-manager'){window.parent.postMessage({type:'contrem:studio-open-trainings'},location.origin);return;}
   if(isReadOnly()){alert('Somente o ADM Master altera Academias publicadas.');return;}
   if(action==='add-stage'){
    if(state().stages.length>=15){alert('Limite de 15 etapas.');return;}
