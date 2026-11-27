@@ -57,7 +57,11 @@ test('Materiais privados, vídeo autorizado e atualização de PWA',async()=>{
  assert.match(ui,/service\.playback\(lesson\.videoId\)/);
  assert.match(media,/academy-materials/);
  assert.match(media,/createSignedUrl/);
- assert.match(sw,/20261122-staff-prod-v1/);
+ assert.match(sw,/20261127-mobile-responsive-v1/);
+ assert.ok(sw.includes('"/assets/device-responsive.css"'),'CSS responsivo no cache PWA');
+ const html=await read('apps/academia/src/index.html');
+ assert.ok(html.includes('href="assets/device-responsive.css"'),'CSS responsivo carregado');
+ assert.ok(await exists('apps/academia/src/assets/device-responsive.css'));
  assert.doesNotMatch(sw,/admin-preview-service\.js|assessment-demo\.js|assessment-student\.js/);
  assert.match(author,/mode==='connected'/);
 });
