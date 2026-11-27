@@ -40,7 +40,8 @@
  const isMaster=()=>session?.role==='admin';
  const isEditor=()=>isMaster()||session?.role==='content_admin';
  const mask=()=>{
-  adminBtn.hidden=!isEditor();studentBtn.hidden=isEditor()||!session;
+  adminBtn.hidden=true; // Gestão acessível via Treinamentos, sem item duplicado no menu.
+   studentBtn.hidden=isEditor()||!session;
   studentSection.hidden=isEditor()||!session;
   if(!session){adminSection.hidden=true;closePortal();}
  };
@@ -51,7 +52,8 @@
  const openEditor=async()=>{
   if(!isEditor())return;
   show('adminView');adminView.classList.add('connected-academia-focused');
-  adminSection.hidden=false;adminBtn.classList.add('active');
+  adminSection.hidden=false;
+   $('adminTab')?.classList.add('active');
   $('workspaceLabel').textContent='Academias';
   await reloadAdmin();
  };
@@ -70,10 +72,11 @@
   message('Carregando as formações…');
   try{
    const result=await api('list');programs=result.programs||[];
+    window.dispatchEvent(new CustomEvent('contrem:academy-catalog-updated',{detail:{programs}}));
    if(selected&&!programs.some(p=>p.id===selected))selected=null;
    if(selected){const current=programs.find(p=>p.id===selected);draft=copy(current.definition);}
    renderAdmin();message('');
-  }catch(error){message(error.message,true);renderAdmin();}
+  }catch(error){message(error.message,true);window.dispatchEvent(new CustomEvent('contrem:academy-catalog-error',{detail:{message:error.message}}));renderAdmin();}
  }
  async function reloadStudent(){
   if(!session||isEditor())return;
@@ -458,9 +461,21 @@
  window.addEventListener('contrem:academy-session-ended',()=>{
   session=null;programs=[];students=[];enrollments=[];myPrograms=[];selected=null;draft=null;
   closeEditor();mask();studentSection.innerHTML='';
+   window.dispatchEvent(new CustomEvent('contrem:academy-catalog-updated',{detail:{programs:[]}}));
  });
  window.addEventListener('focus',()=>{
   if(session&&!isEditor()&&overlay.hidden)void reloadStudent();
  });
- window.CONTREM_CONNECTED_PROGRAMS={refreshAdmin:reloadAdmin,refreshStudent:reloadStudent};
+ window.CONTREM_CONNECTED_PROGRAMS={
+  refreshAdmin:reloadAdmin,refreshStudent:reloadStudent,
+  openAdmin:async id=>{
+   if(!isEditor())return;
+   await openEditor();
+   if(id){
+    const found=programs.find(p=>p.id===id);
+    if(found){selected=id;draft=copy(found.definition);renderAdmin();}
+    else message('Academia não encontrada. Atualize a lista em Treinamentos.',true);
+   }
+  }
+ };
 })();

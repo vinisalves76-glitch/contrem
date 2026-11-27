@@ -1,0 +1,68 @@
+{
+  "format": "contrem-academia-v1",
+  "schemaVersion": 1,
+  "academy": {
+    "title": "Formação Técnica de Mecânicos de Máquinas Pesadas",
+    "description": "Exemplo editável de Academia com duas etapas, módulos e aulas para estruturar uma formação técnica.",
+    "heroKicker": "FORMAÇÃO PROFISSIONAL",
+    "heroTitle": "Formação de Mecânicos",
+    "heroHighlight": "Mecânicos",
+    "heroDescription": "Conhecimento técnico aplicado à manutenção de máquinas pesadas.",
+    "stageHeading": "Uma jornada de evolução técnica",
+    "audience": "Mecânicos em formação e profissionais de manutenção",
+    "objectives": "Reconhecer procedimentos de segurança, compreender sistemas e aplicar fundamentos de manutenção.",
+    "cover": "",
+    "certificateEnabled": false,
+    "stages": [
+      {
+        "title": "Fundamentos",
+        "cardTitle": "Comece pela segurança",
+        "cardDescription": "Conhecimentos essenciais antes de atuar em máquinas pesadas.",
+        "modules": [
+          {
+            "name": "Segurança e bloqueio",
+            "description": "Procedimentos de segurança em intervenções mecânicas.",
+            "hours": 2,
+            "lessons": [
+              {
+                "name": "Introdução ao bloqueio e etiquetagem",
+                "description": "Identificação de fontes de energia, isolamento e verificação.",
+                "minutes": 15
+              },
+              {
+                "name": "Análise de riscos na manutenção",
+                "description": "Reconhecimento de riscos e medidas preventivas.",
+                "minutes": 20
+              }
+            ]
+          },
+          {
+            "name": "Ferramentas e metrologia",
+            "description": "Uso adequado de ferramentas e instrumentos de medição.",
+            "hours": 3,
+            "lessons": [
+              "Ferramentas mecânicas",
+              "Medição e tolerâncias"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Sistemas da máquina",
+        "cardTitle": "Entenda como funciona",
+        "cardDescription": "Fundamentos dos sistemas essenciais.",
+        "modules": [
+          {
+            "name": "Introdução ao motor diesel",
+            "description": "Componentes e princípios do motor diesel.",
+            "hours": 4,
+            "lessons": [
+              "Ciclo do motor diesel",
+              "Lubrificação e arrefecimento"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
