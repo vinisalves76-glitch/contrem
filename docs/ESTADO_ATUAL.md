@@ -27,3 +27,7 @@ Branch `feature/studio-criacao-academias-json-20261127` derivada da `main` `0ab8
 ## Ajuste visual do Studio — 27/11/2026
 
 A página inicial do Studio deixou de exibir o painel de demonstração "TESTE O FLUXO COMPLETO" (bloqueio e etiquetagem) e os atalhos para carregar/baixar seu JSON de exemplo. A criação normal de cursos, a importação de JSON, o catálogo e as Academias permanecem inalterados. Branch `fix/studio-remover-bloco-exemplo-20261127` criada a partir da `main`; publicação somente via PR protegido após testes.
+
+## Prévia de imagens personalizáveis no Studio — 27/11/2026
+
+Branch `feature/studio-imagens-curso-card` derivada da `main` `9e18c2c`. O editor de treinamentos permite enviar JPG/PNG/WebP ou informar URL HTTPS para a capa do curso e para a imagem do card, salvando ambas no rascunho e no JSON editável. O player e o catálogo usam essas imagens após a publicação. A migration `20261127213000_academy_studio_course_images.sql` cria o bucket público com envio restrito à equipe e estende a publicação e a compatibilidade visual do progresso. Nenhum deploy de produção ou migration aplicada neste ciclo.
