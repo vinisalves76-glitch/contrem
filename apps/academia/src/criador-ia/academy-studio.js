@@ -51,7 +51,23 @@
   mode=next;
   for(const el of tabs.querySelectorAll('button')){const active=el.dataset.studioMode===mode;el.classList.toggle('selected',active);el.setAttribute('aria-pressed',String(active));}
   root.hidden=mode!=='academies';courseRoot.hidden=mode==='academies';
-  if(mode==='academies'){renderList();if(!loading)load().then(renderList).catch(e=>alert(e.message));}
+  if(mode==='academies'){
+   renderList();
+   if(!loading)load().then(()=>{
+    const params=new URLSearchParams(location.search);
+    const id=params.get('academyId')||params.get('academyCopy');
+    if(!id){if(!editing)renderList();return;}
+    const row=records.find(p=>p.id===id);
+    if(!row){alert('Academia não encontrada nesta conta. Volte a Treinamentos e atualize a lista.');return;}
+    if(params.has('academyCopy')){
+     const cloned=core.fromJSON({academy:row.definition});
+     cloned.definition.title+=' (cópia)';
+     startEditing(cloned);
+    }else startEditing(row);
+    params.delete('academyId');params.delete('academyCopy');
+    history.replaceState(null,'',location.pathname+'?'+params.toString());
+   }).catch(e=>alert(e.message));
+  }
   requestAnimationFrame(()=>root.scrollIntoView({block:'start',behavior:'smooth'}));
  }
  tabs.addEventListener('click',e=>{const b=e.target.closest('[data-studio-mode]');if(b)setMode(b.dataset.studioMode);});
@@ -60,13 +76,10 @@
  }
  function renderList(){
   editing=null;baseline='';
-  const list=records.slice().sort((a,b)=>String(a.title||a.definition?.title||'').localeCompare(String(b.title||b.definition?.title||''),'pt-BR'));
-  root.innerHTML='<div class="studio-academy-head"><div><div class="eyebrow">CONTREM STUDIO · FORMAÇÕES</div><h1>Criar Academias</h1><p>Organize formações completas com etapas, módulos e aulas, em um único editor.</p></div><div class="studio-academy-actions">'+btn('+ Nova Academia','new','primary')+btn('Importar JSON','import')+'</div></div>'+
-   '<div class="studio-academy-note">'+(localOnly?'Prévia isolada: as Academias criadas aqui ficam apenas neste navegador. Nenhuma formação real será alterada.':'Ambiente conectado: salvar envia um rascunho ao banco. Publicação e matrículas continuam sob controle do ADM Master.')+'</div>'+
-   stats()+
-   '<div class="studio-academy-section-head"><h2>Academias da biblioteca</h2><div>'+btn('Atualizar','refresh')+' <a class="studio-link" href="samples/contrem-academia-modelo.json" download>Baixar exemplo JSON</a></div></div>'+
+  root.innerHTML='<div class="studio-academy-head"><div><div class="eyebrow">CONTREM STUDIO · AUTORIA</div><h1>Criar Academia</h1><p>Construa uma formação com etapas, módulos e aulas. Para encontrar ou gerenciar Academias existentes, use Treinamentos.</p></div><div class="studio-academy-actions">'+btn('+ Nova Academia','new','primary')+btn('Importar JSON','import')+'</div></div>'+
+   '<div class="studio-academy-note">'+(localOnly?'Prévia isolada: os rascunhos são salvos somente neste navegador.':'A criação é salva como rascunho. Publicação, matrícula e liberação ficam no gerenciamento da Academia em Treinamentos.')+'</div>'+
    '<div id="studioAcademyMessage" class="studio-academy-message" role="status" hidden></div>'+
-   (list.length?'<div class="studio-academy-grid">'+list.map(p=>'<article class="studio-academy-card"><div class="studio-academy-card-top"><span class="studio-state '+(p.status==='published'?'live':'')+'">'+(p.status==='published'?'Publicada':'Rascunho')+'</span><small>'+esc(formatDate(p.updated_at))+'</small></div><h3>'+esc(p.title||p.definition?.title||'Academia sem título')+'</h3><p>'+esc(p.definition?.description||'Formação técnica da CONTREM Academia')+'</p><div class="studio-academy-card-meta">'+(p.definition?.stages?.length||0)+' etapas · '+(p.definition?.modules?.length||0)+' módulos</div><button type="button" data-academy-action="open" data-id="'+esc(p.id)+'" class="secondary">Abrir Academia →</button></article>').join('')+'</div>':'<div class="studio-academy-empty"><h3>Suas Academias começam aqui.</h3><p>Crie uma formação do zero ou importe um arquivo JSON para começar com a estrutura pronta.</p>'+btn('Criar primeira Academia','new','primary')+'</div>')+
+   '<div class="studio-academy-empty"><h3>Como deseja começar?</h3><p>Crie uma Academia do zero ou importe um projeto JSON pronto. Para editar uma Academia já cadastrada, pesquise por “Academia” na aba Treinamentos.</p><div class="studio-academy-actions">'+btn('Criar do zero','new','primary')+btn('Importar projeto JSON','import')+'</div><p><a class="studio-link" href="samples/contrem-academia-modelo.json" download>Baixar modelo JSON de Academia</a></p></div>'+
    '<input id="studioAcademyImport" type="file" accept=".json,application/json" hidden>';
  }
  function startEditing(row){
@@ -103,7 +116,7 @@
   if(!editing)return;
   const d=state(),readonly=isReadOnly();
   root.innerHTML='<div class="studio-academy-head"><div><button type="button" class="studio-academy-back" data-academy-action="back">← Voltar à biblioteca</button><div class="eyebrow">CONSTRUTOR DE ACADEMIAS</div><h1>'+esc(d.title||'Nova Academia')+'</h1><p>Defina a apresentação, organize as etapas e prepare as aulas.</p></div><div class="studio-academy-actions">'+btn('Exportar JSON','export')+'<button type="button" class="primary" data-academy-action="save" '+(readonly?'disabled':'')+'>Salvar rascunho</button></div></div>'+
-   '<div class="studio-academy-note">'+(localOnly?'Ambiente de teste: salvar cria uma cópia apenas neste navegador. Importe ou exporte JSON sem alterar o sistema em produção.':readonly?'Esta Academia está publicada. Apenas o ADM Master pode alterar o conteúdo.':'Salve a estrutura como rascunho. Somente o ADM Master publica e libera os módulos na área Academias.')+'</div>'+
+   '<div class="studio-academy-note">'+(localOnly?'Ambiente de teste: salvar cria uma cópia apenas neste navegador. Importe ou exporte JSON sem alterar o sistema em produção.':readonly?'Esta Academia está publicada. Apenas o ADM Master pode alterar o conteúdo.':'Salve a estrutura como rascunho. Somente o ADM Master publica e libera módulos pelo gerenciamento em Treinamentos.')+'</div>'+
    '<div id="studioAcademyMessage" class="studio-academy-message" role="status" hidden></div>'+
    '<div class="studio-academy-editor"><section class="studio-academy-panel"><div class="studio-academy-section-head"><h2>1. Identificação</h2><span class="studio-state">'+esc(editing.status==='published'?'Publicada':'Rascunho')+'</span></div>'+
    '<div class="studio-academy-fields">'+itemField('Nome da Academia',d.title,'root','','title',180)+itemField('Público-alvo',d.audience,'root','','audience',600)+'</div>'+
@@ -116,8 +129,8 @@
    itemField('Habilitar certificado ao final da Academia',d.certificateEnabled,'root','','certificateEnabled',0,'checkbox')+
    '</section><section class="studio-academy-panel"><div class="studio-academy-section-head"><div><h2>2. Etapas, módulos e aulas</h2><p>Todos os módulos novos começam inativos. É possível estruturar a formação sem vídeos.</p></div>'+btn('+ Nova etapa','add-stage')+'</div>'+
    d.stages.map(stageHtml).join('')+'</section>'+
-   '<aside class="studio-academy-panel studio-academy-summary"><h3>Resumo da formação</h3><p><b>'+d.stages.length+'</b> etapas</p><p><b>'+d.modules.length+'</b> módulos</p><p><b>'+d.modules.reduce((n,m)=>n+(m.lessons?.length||0),0)+'</b> aulas</p><hr><div class="studio-academy-note">Salve a estrutura e depois revise a publicação e a liberação dos módulos no painel Academias.</div>'+
-   (localOnly?'':btn('Abrir painel Academias','open-manager'))+'</aside></div>';
+   '<aside class="studio-academy-panel studio-academy-summary"><h3>Resumo da formação</h3><p><b>'+d.stages.length+'</b> etapas</p><p><b>'+d.modules.length+'</b> módulos</p><p><b>'+d.modules.reduce((n,m)=>n+(m.lessons?.length||0),0)+'</b> aulas</p><hr><div class="studio-academy-note">Salve a estrutura e use Gerenciar na aba Treinamentos para publicar ou liberar módulos.</div>'+
+   (localOnly?'':btn('Gerenciar em Treinamentos','open-manager'))+'</aside></div>';
   if(readonly)root.querySelectorAll('.studio-academy-field input,.studio-academy-field textarea,.studio-academy-check input,[data-academy-action^="add-"],[data-academy-action^="remove-"]').forEach(el=>el.disabled=true);
  }
  function fieldUpdate(el){
@@ -200,7 +213,9 @@
     }else{
      const result=await api('save',{id:editing.id,revision:editing.revision,definition:state()});
      editing.revision=result.program?.revision??editing.revision;editing.status=result.program?.status||'draft';
-     baseline=JSON.stringify(state());await load();alert('Rascunho salvo na sua conta. A publicação continua no painel Academias.');
+     baseline=JSON.stringify(state());await load();
+     window.parent.postMessage({type:'contrem:studio-academy-saved',academyId:editing.id},location.origin);
+     alert('Rascunho salvo na sua conta. Acesse Treinamentos para gerenciar a publicação.');
     }
    }catch(e){alert(e.message)}finally{loading=false;button.disabled=false;}return;
   }
