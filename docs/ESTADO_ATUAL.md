@@ -39,3 +39,7 @@ Branch `fix/treinamentos-foto-card-descricoes` derivada da `main` `27c2b81`. O S
 ## Limpeza da tela inicial do Studio — 27/11/2026
 
 A home do CONTREM Studio deixa de exibir o atalho **Recuperar edição deste navegador**. O seletor técnico de arquivo JSON permanece no DOM com `hidden` e estilo explícito para não aparecer como campo solto; a importação funciona somente pelo botão **Importar treinamento**. A lógica de recuperação local e dados existentes não são apagados. Mudança isolada na branch `fix/studio-limpar-atalho-recuperacao-20261127` a partir da main vigente, sem alterações de Supabase, backend, credenciais ou outros módulos.
+
+## Configurações gerais do treinamento — 27/11/2026
+
+Branch `feature/studio-configuracoes-treinamento` derivada da `main` `791783b`. O Studio reúne, antes dos módulos, título, público, capas, classificação (Básico/Intermediário/Avançado), carga horária decimal, nota mínima, tentativas, atividades e avaliação final. O importador converte durações antigas de JSON em horas e o editor salva `hours` e a descrição legível `duration`. A migration `20261127223000_academy_studio_course_settings.sql` publica nível e minutos reais, atualiza o catálogo e preserva progresso em alterações só de metadados. A aplicação na base e o deploy dependem da validação da branch.
