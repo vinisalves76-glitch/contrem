@@ -15,3 +15,7 @@ Academia estável mantém Mux, autenticação existente e dados no mesmo backend
 Nenhum SQL, conta, permissão de banco ou dado real foi alterado na organização. Os endereços anteriores continuam preservados até transição validada.
 
 O registro da publicação central e os commits remotos devem ser consultados em `CONTINUIDADE_CENTRAL.md`. Arquivos de configuração preparados não são, sozinhos, evidência de deploy.
+
+## Prévia da biblioteca de treinamentos — 27/11/2026
+
+A branch `feature/academia-biblioteca-treinamentos-20261127` parte da `main` e mantém toda mudança fora da produção. A aba Treinamentos passa a ser biblioteca para busca, filtros e gerenciamento, com edição de cursos comuns em tela separada e edição/duplicação SCORM no CONTREM Studio. Build preview `dpl_A8Q7XKZQW3rj4o2H9KQwVf7Pna4c` pronto no projeto Vercel `contrem`; CI GitHub aprovado na revisão do teste de contrato (commit `09b5288`). Sem alterações em Supabase, RLS ou produção. Ver `docs/continuidade/academia-biblioteca-treinamentos.md`.
