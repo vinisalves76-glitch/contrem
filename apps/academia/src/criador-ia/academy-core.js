@@ -9,7 +9,7 @@
  const slug=value=>short(value,160).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,90)||'formacao';
  const num=(value,min,max,fallback=0)=>{const n=Number(value);return Number.isFinite(n)?Math.max(min,Math.min(max,n)):fallback};
  const stage=(title='Fundamentos')=>({id:id('stage'),title:short(title,120),cardTitle:'',cardDescription:'',moduleIds:[]});
- const module=(name='Novo módulo')=>({id:id('module'),name:short(name,180),description:'',hours:0,moduleEnabled:false,lessons:[],questions:[],passScore:80});
+ const createModule=(name='Novo módulo')=>({id:id('module'),name:short(name,180),description:'',hours:0,moduleEnabled:false,lessons:[],questions:[],passScore:80});
  const lesson=(name='Nova aula')=>({id:id('lesson'),name:short(name,180),description:'',videoId:'',minutes:0});
  const create=title=>({
   id:'academy-'+slug(title||'Nova Academia')+'-'+uuid().slice(0,8),
@@ -48,7 +48,7 @@
     if(d.modules.length>=90)throw Error('A Academia ultrapassa 90 módulos.');
     const m=object(originalModule);
     if(!short(m.name||m.title,180))throw Error('Cada módulo importado precisa de nome.');
-    const nm=module(m.name||m.title);
+    const nm=createModule(m.name||m.title);
     nm.description=short(m.description,1200);nm.hours=num(m.hours,0,1000);nm.passScore=num(m.passScore,0,100,80);
     const ls=Array.isArray(m.lessons)?m.lessons:[];
     if(ls.length>150)throw Error('Um módulo não pode ultrapassar 150 aulas.');
@@ -89,7 +89,7 @@
   return true;
  }
  const downloadObject=definition=>({format:'contrem-academia-v1',schemaVersion:1,academy:clone(definition)});
- const api={clone,slug,id,stage,module,lesson,create,fromJSON,validate,downloadObject};
+ const api={clone,slug,id,stage,module:createModule,lesson,create,fromJSON,validate,downloadObject};
  root.CONTREM_STUDIO_ACADEMY_CORE=api;
  if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);
