@@ -74,3 +74,7 @@ Validação: build central; check de 65 scripts; sete contratos release; QA DOM 
 ## Cartão do curso interativo no aluno — 27/11/2026
 
 O cartão publicado usa capa confinada à arte, texto e ação em área legível. O botão Abrir treinamento e um clique no cartão usam a sala autenticada existente; matrícula continua obrigatória no serviço. A imagem enviada mostrou sobreposição da capa e ausência de ação visível; corrigidos estilos e marcação HTML sem mudar cursos Mux ou permissões. Validação local: check, build, sete contratos e QA ADM/funcionário, QA sala SCORM e navegação de autoria. Conferência visual com conta real e matrícula fica para a prévia do proprietário.
+
+## Sala imersiva do treinamento interativo — 27/11/2026
+
+Ao entrar em curso SCORM, a Academia esconde menus, painel, cabeçalho e painel lateral de aula. A sala autenticada ocupa toda a largura e a altura útil da tela; um cabeçalho próprio mostra Tela cheia e Sair do curso. A ação Sair restaura o painel do aluno e encerra a sala carregada. A experiência de aulas Mux permanece como antes. O conteúdo SCORM aumenta até 1280px e a rolagem principal fica no treinamento; o modo tela cheia é opcional pelo botão. Validação: build, check de 66 scripts, sete contratos e QA ADM/funcionário, QA de sala SCORM e teste dedicado de entrada/saída e vídeo convencional. QA visual autenticado pendente na prévia.
