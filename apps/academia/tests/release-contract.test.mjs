@@ -8,7 +8,7 @@ const full=p=>resolve(root,p);
 const read=p=>readFile(full(p),'utf8');
 const exists=async p=>{try{await access(full(p));return true;}catch{return false;}};
 
-test('Publicação da Academia mantém construtor completo do Developer',async()=>{
+test('Publicação da Academia mantém edição legada sem exibir construtor na biblioteca',async()=>{
  const html=await read('apps/academia/src/index.html');
  for(const id of ['cloudLoginForm','cloudEmail','cloudPassword','adminView','studentView','studentRoster','lessonForm','courseForm','cloudBar']){
   assert.ok(html.includes('id="'+id+'"'),id);
@@ -17,8 +17,20 @@ test('Publicação da Academia mantém construtor completo do Developer',async()
   assert.ok(html.includes('src="assets/'+source+'"'),'script '+source);
   assert.ok(await exists('apps/academia/src/assets/'+source),'file '+source);
  }
- assert.match(await read('apps/academia/src/assets/admin-manager.js'),/CONSTRUTOR DE CURSOS/);
- assert.match(await read('apps/academia/src/assets/admin-manager.js'),/newAdminLesson/);
+ const editor=await read('apps/academia/src/assets/admin-manager.js');
+ const studio=await read('apps/academia/src/assets/scorm-entry.js');
+ const app=await read('apps/academia/src/criador-ia/app.js');
+ assert.match(editor,/BIBLIOTECA DE TREINAMENTOS/);
+ assert.match(editor,/GERENCIAMENTO DO CURSO/);
+ assert.match(editor,/id="newAdminCourse" hidden/,'Não exibir criação na biblioteca');
+ for(const id of ['adminCourseSearch','adminStatusFilter','adminCategoryFilter','adminCourseSort','adminClearFilters','adminBackToList','newAdminLesson'])
+  assert.ok(editor.includes(id),'Filtro ou editor preservado: '+id);
+ for(const action of ['data-course-edit','data-course-copy','data-course-delete'])
+  assert.ok(editor.includes(action),'Ação do treinamento: '+action);
+ assert.match(editor,/setWorkspaceMode\('library'\)/);
+ assert.match(editor,/setWorkspaceMode\('editor'\)/);
+ assert.match(studio,/openCopy/,'Duplicação de SCORM deve usar o Studio');
+ assert.match(app,/Cópia pronta!/,'Duplicação de SCORM não pode reutilizar publicação original');
 });
 
 test('Autenticação real, sem acesso demonstrativo',async()=>{

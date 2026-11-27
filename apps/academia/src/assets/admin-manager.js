@@ -7,7 +7,7 @@
  const makeId=prefix=>prefix+'-'+crypto.randomUUID();
  const externalEdits=new Map();
  window.AcademyAdminEdits={register(name,check,discard){externalEdits.set(name,{check,discard});},canLeave:()=>confirmDiscard(),changed:()=>updateEditStatus()};
- let filter='',statusFilter='all',tab='details',courseBaseline=null,lessonBaseline=null,selectedPhoto='',selectedMaterials=[],selectedLinks=[],uploading=false,attachmentGeneration=0,materialScope='lesson',courseMaterialsBaseline=null;
+ let filter='',statusFilter='all',categoryFilter='all',sortOrder='az',tab='details',courseBaseline=null,lessonBaseline=null,selectedPhoto='',selectedMaterials=[],selectedLinks=[],uploading=false,attachmentGeneration=0,materialScope='lesson',courseMaterialsBaseline=null;
  const courseFields=['courseName','courseCategory','courseDescription','courseHours','courseFormat'];
  const lessonFields=['lessonName','lessonUrl','lessonDescription','lessonMaterialTitle','lessonMaterialUrl','lessonMinutes'];
  const fingerprint=fields=>JSON.stringify({values:fields.map(id=>byId(id).value),photo:fields===courseFields?selectedPhoto:null,material:fields===lessonFields?selectedMaterials:null,links:fields===lessonFields?selectedLinks:null});
@@ -43,6 +43,9 @@
  }
  const current=()=>courses.find(c=>c.id===byId('editId').value)||null;
  const typeOf=c=>c.format==='single'?'single':'series';
+ const isScorm=c=>/^scorm-[a-f0-9-]{36}$/i.test(c?.id||'');
+ const fold=value=>String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR');
+ const setWorkspaceMode=mode=>{const view=byId('adminView');view.classList.toggle('adm-library-only',mode==='library');view.classList.toggle('adm-editor-mode',mode==='editor');};
  const notice=(text,error=false)=>{byId('adminFeedback').textContent=text;byId('adminFeedback').classList.toggle('error',error);};
  function readiness(c){
   if(!c.name.trim()||!String(c.description||'').trim())return 'Preencha o nome e a descrição do curso.';
@@ -58,12 +61,19 @@
  assessment.innerHTML='<summary>Avaliação do curso <small>Opcional · demonstrativa</small></summary><p class="muted">Selecione um curso para organizar sua avaliação.</p>';
  ['passScore','questionForm','questionAdminList'].forEach(id=>{const el=byId(id);assessment.append(id==='passScore'?el.parentElement:el);});
  grid.className='admin adm-workspace';
- grid.innerHTML='<aside class="panel adm-library"><div class="row"><h2>Seus cursos</h2><button class="primary" id="newAdminCourse" type="button">+ Novo curso</button></div><label class="sr-only" for="adminCourseSearch">Buscar curso</label><input id="adminCourseSearch" type="search" placeholder="Buscar por curso ou categoria"><label class="sr-only" for="adminStatusFilter">Filtrar cursos</label><select id="adminStatusFilter"><option value="all">Todos os cursos</option><option value="draft">Rascunhos</option><option value="published">Publicados na prévia</option></select><div id="adminCourses"></div></aside><section class="panel adm-editor"><div class="adm-editor-head"><div><small class="tag">CONSTRUTOR DE CURSOS</small><h2 id="formTitle">Novo curso</h2></div><span id="editingStatus" class="adm-badge">Novo rascunho</span></div><div class="adm-steps" role="tablist" aria-label="Etapas do curso"><button type="button" data-admin-tab="details" role="tab">1. Informações</button><button type="button" data-admin-tab="lessons" role="tab">2. Aulas e materiais</button><button type="button" data-admin-tab="review" role="tab">3. Revisão</button></div><div id="admDetails" role="tabpanel"></div><div id="admLessons" role="tabpanel" hidden><div class="row"><div><h3>Conteúdo do curso</h3><p id="lessonHint" class="muted">Salve o curso para adicionar aulas.</p></div><button type="button" id="newAdminLesson" class="outline">+ Adicionar aula</button></div><ol id="adminLessonOrder" class="adm-lesson-order"></ol></div><div id="admReview" role="tabpanel" hidden><div id="adminReviewContent"></div><div class="adm-review-actions"><button type="button" id="adminPublish" class="primary">Publicar na prévia</button><button type="button" id="adminUnpublish" class="outline">Voltar a rascunho</button></div></div><p id="adminFeedback" role="status" aria-live="polite"></p></section>';
+ grid.innerHTML=`<section class="panel adm-library" aria-label="Biblioteca de treinamentos">
+ <header class="adm-library-heading"><div><div class="tag">BIBLIOTECA DE TREINAMENTOS</div><h2>Treinamentos cadastrados</h2><p>Encontre e gerencie os treinamentos da Academia em um só lugar.</p></div><span id="adminLibraryTotal" class="adm-library-total" aria-live="polite">0 treinamentos</span></header>
+ <div class="adm-filter-toolbar"><div class="adm-filter-search"><label for="adminCourseSearch">Buscar treinamento</label><input id="adminCourseSearch" type="search" autocomplete="off" placeholder="Nome, categoria ou descrição…" aria-label="Buscar treinamentos"></div><div class="adm-filter-field"><label for="adminStatusFilter">Situação</label><select id="adminStatusFilter"><option value="all">Todos</option><option value="published">Publicados</option><option value="draft">Rascunhos</option></select></div><div class="adm-filter-field"><label for="adminCategoryFilter">Categoria</label><select id="adminCategoryFilter"><option value="all">Todas as categorias</option></select></div><div class="adm-filter-field"><label for="adminCourseSort">Ordenar</label><select id="adminCourseSort"><option value="az">Nome A–Z</option><option value="za">Nome Z–A</option></select></div></div>
+ <div class="adm-library-results"><span id="adminResultCount" role="status" aria-live="polite">Carregando treinamentos…</span><button type="button" id="adminClearFilters" class="outline" hidden>Limpar filtros</button></div>
+ <div id="adminCourses" class="adm-library-cards"></div><button type="button" id="newAdminCourse" hidden aria-hidden="true" tabindex="-1">Novo curso</button>
+ </section><section class="panel adm-editor"><div class="adm-editor-head"><div><button type="button" id="adminBackToList" class="adm-back-list">← Voltar aos treinamentos</button><small class="tag">GERENCIAMENTO DO CURSO</small><h2 id="formTitle">Editar curso</h2></div><span id="editingStatus" class="adm-badge">Rascunho</span></div><div class="adm-steps" role="tablist" aria-label="Etapas do curso"><button type="button" data-admin-tab="details" role="tab">1. Informações</button><button type="button" data-admin-tab="lessons" role="tab">2. Aulas e materiais</button><button type="button" data-admin-tab="review" role="tab">3. Revisão</button></div><div id="admDetails" role="tabpanel"></div><div id="admLessons" role="tabpanel" hidden><div class="row"><div><h3>Conteúdo do curso</h3><p id="lessonHint" class="muted">Selecione um curso.</p></div><button type="button" id="newAdminLesson" class="outline">+ Adicionar aula</button></div><ol id="adminLessonOrder" class="adm-lesson-order"></ol></div><div id="admReview" role="tabpanel" hidden><div id="adminReviewContent"></div><div class="adm-review-actions"><button type="button" id="adminPublish" class="primary">Publicar na prévia</button><button type="button" id="adminUnpublish" class="outline">Voltar a rascunho</button></div></div><p id="adminFeedback" role="status" aria-live="polite"></p></section>`;
+ setWorkspaceMode('library');
  byId('admDetails').append(courseForm);
  const testSetup=document.createElement('details');
  testSetup.className='panel';
  testSetup.innerHTML='<summary>Criar aulas e provas de teste</summary><p>Cria dois cursos publicados nesta prévia: uma aula única e uma série com três aulas, com avaliações de quatro questões e nota mínima de 75%. O mesmo vídeo será usado nas quatro aulas.</p><label for="testMuxUrl">Link ou Playback ID público do Mux para o teste</label><input id="testMuxUrl" placeholder="https://player.mux.com/SEU_PLAYBACK_ID"><button type="button" class="outline" id="createTestCourses">Criar cursos de teste</button><p>Depois, em Alunos, crie um login fictício e libere os dois cursos. Os dados ficam neste navegador.</p>';
  grid.before(testSetup);
+ testSetup.hidden=true; // A criação de treinamentos agora acontece exclusivamente no CONTREM Studio.
  if(window.CONTREM_ACADEMY_CONFIG?.mode==='connected'){
   testSetup.hidden=true;
   byId('adminPublish').textContent='Publicar curso';
@@ -173,8 +183,25 @@
  }
  function renderLibrary(){
   byId('admStats').innerHTML=[['Cursos',courses.length],['Rascunhos',courses.filter(c=>c.status!=='published').length],['Publicados na prévia',courses.filter(c=>c.status==='published').length],['Aulas',courses.reduce((n,c)=>n+c.lessons.length,0)]].map(([label,n])=>'<div><small>'+label+'</small><strong>'+n+'</strong></div>').join('');
-  const list=courses.filter(c=>(statusFilter==='all'||(c.status||'draft')===statusFilter)&&(c.name+' '+(c.category||'')).toLocaleLowerCase('pt-BR').includes(filter));
-  byId('adminCourses').innerHTML=list.length?list.map(c=>'<article class="adm-course-card '+(current()?.id===c.id?'editing':'')+'">'+(c.photo?'<img class="adm-course-thumb" src="'+esc(c.photo)+'" alt="">':'')+'<div class="row"><span class="adm-badge '+(c.status==='published'?'published':'')+'">'+(c.status==='published'?'Publicado':'Rascunho')+'</span><small>'+ (typeOf(c)==='single'?'Aula única':'Série de aulas')+'</small></div><h3>'+esc(c.name)+'</h3><p>'+esc(c.category||'Sem categoria')+' · '+c.lessons.length+' aula(s) · '+Number(c.hours||8)+'h</p><div class="adm-card-actions"><button type="button" class="outline" data-course-edit="'+esc(c.id)+'">Gerenciar curso →</button><button type="button" class="outline" data-course-copy="'+esc(c.id)+'" aria-label="Duplicar '+esc(c.name)+'">Duplicar</button><button type="button" class="danger" data-course-delete="'+esc(c.id)+'">Excluir</button></div></article>').join(''):'<div class="adm-empty"><b>'+ (courses.length?'Nenhum resultado.':'Seu primeiro curso começa aqui.')+'</b><span>'+ (courses.length?'Ajuste a busca ou o filtro.':'Clique em Novo curso e organize seu treinamento.')+'</span></div>';
+  const categories=[...new Set(courses.map(c=>String(c.category||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  const categorySelect=byId('adminCategoryFilter');
+  categorySelect.innerHTML='<option value="all">Todas as categorias</option>'+categories.map((name,index)=>'<option value="'+index+'">'+esc(name)+'</option>').join('');
+  const selectedIndex=categories.findIndex(name=>name===categoryFilter);
+  if(categoryFilter!=='all'&&selectedIndex<0)categoryFilter='all';
+  categorySelect.value=categoryFilter==='all'?'all':String(categories.indexOf(categoryFilter));
+  const list=courses.filter(c=>{
+   const published=c.status==='published';
+   return (statusFilter==='all'||(statusFilter==='published'?published:!published)) &&
+    (categoryFilter==='all'||c.category===categoryFilter) &&
+    fold([c.name,c.category,c.description].join(' ')).includes(filter);
+  }).sort((a,b)=>sortOrder==='za'?String(b.name||'').localeCompare(String(a.name||''),'pt-BR'):String(a.name||'').localeCompare(String(b.name||''),'pt-BR'));
+  byId('adminLibraryTotal').textContent=courses.length+' treinamento'+(courses.length===1?'':'s');
+  byId('adminResultCount').textContent=list.length+' de '+courses.length+' treinamento'+(courses.length===1?'':'s');
+  byId('adminClearFilters').hidden=!(filter||statusFilter!=='all'||categoryFilter!=='all'||sortOrder!=='az');
+  byId('adminCourses').innerHTML=list.length?list.map(c=>{
+   const scorm=isScorm(c),published=c.status==='published',kind=scorm?'Interativo':typeOf(c)==='single'?'Aula única':'Série de aulas';
+   return '<article class="adm-course-card"><div class="adm-card-top"><span class="adm-badge '+(published?'published':'')+'">'+(published?'Publicado':'Rascunho')+'</span><small>'+kind+'</small></div><h3>'+esc(c.name)+'</h3><p class="adm-course-meta">'+esc(c.category||'Sem categoria')+' <span aria-hidden="true">·</span> '+(c.lessons?.length||0)+' aula(s) <span aria-hidden="true">·</span> '+Number(c.hours||8)+'h</p><div class="adm-card-actions"><button type="button" class="outline" data-course-edit="'+esc(c.id)+'" aria-label="Editar '+esc(c.name)+'">Editar <span aria-hidden="true">→</span></button><button type="button" class="outline" data-course-copy="'+esc(c.id)+'" aria-label="Duplicar '+esc(c.name)+'">Duplicar</button><button type="button" class="danger" data-course-delete="'+esc(c.id)+'" aria-label="Excluir '+esc(c.name)+'">Excluir</button></div></article>';
+  }).join(''):'<div class="adm-empty"><b>'+(courses.length?'Nenhum treinamento encontrado.':'Nenhum treinamento publicado ainda.')+'</b><span>'+(courses.length?'Experimente limpar os filtros ou buscar outro termo.':'Crie e publique um treinamento pelo CONTREM Studio para aparecer aqui.')+'</span></div>';
   renderEditor();
  }
  const oldRefresh=refresh;refresh=function(){
@@ -189,6 +216,7 @@
   if(!isAdmin())return;
   const c=courses.find(c=>c.id===id);if(!c)return;
   if(!discardChecked&&!confirmDiscard())return false;
+  setWorkspaceMode('editor');
   selectedCourse=c;byId('editId').value=c.id;byId('courseName').value=c.name;byId('courseCategory').value=c.category||'';
   byId('courseDescription').value=c.description||'';byId('courseHours').value=c.hours||8;
   selectedPhoto=c.photo||'';showCoverPreview(selectedPhoto);byId('coursePhotoFile').value='';byId('courseIcon').value=c.icon||'⚙️';byId('courseFormat').value=typeOf(c);
@@ -201,6 +229,7 @@
  };
  function newCourse(){if(isAdmin()&&confirmDiscard()){resetForm();byId('courseName').focus();}}
  byId('resetForm').onclick=newCourse;byId('newAdminCourse').onclick=newCourse;
+ byId('adminBackToList').onclick=()=>{if(!confirmDiscard())return;resetForm();setWorkspaceMode('library');refresh();window.scrollTo({top:0,behavior:'instant'});};
  courseForm.onsubmit=event=>{
   event.preventDefault();if(!isAdmin())return;
   if(uploading||pendingEdits().lesson||pendingEdits().courseMaterials){notice('Salve a aula em edição ou cancele suas alterações antes de salvar as informações do curso.',true);chooseTab('lessons');return;}
@@ -337,8 +366,23 @@
  };
  byId('adminCourses').addEventListener('click',event=>{
   if(!isAdmin())return;const b=event.target.closest('button');if(!b)return;
-  if(b.dataset.courseEdit)openEditor(b.dataset.courseEdit);
-  if(b.dataset.courseCopy){if(!confirmDiscard())return;const original=courses.find(c=>c.id===b.dataset.courseCopy);if(!original)return;const c=JSON.parse(JSON.stringify(original));c.id=makeId('course');c.name+=' (cópia)';c.status='draft';c.lessons.forEach(l=>{l.id=makeId('lesson');});courses.push(c);save();openEditor(c.id,'details',true);refresh();notice('Cópia criada como rascunho.');}
+  if(b.dataset.courseEdit){
+   const target=courses.find(c=>c.id===b.dataset.courseEdit);if(!target)return;
+   if(isScorm(target)){
+    if(window.CONTREM_AUTHORING_NAV?.openDraft)window.CONTREM_AUTHORING_NAV.openDraft(target.id.slice(6));
+    else notice('Não foi possível abrir o CONTREM Studio. Atualize a página e tente novamente.',true);
+   }else openEditor(target.id);
+  }
+  if(b.dataset.courseCopy){
+   const original=courses.find(c=>c.id===b.dataset.courseCopy);if(!original||!confirmDiscard())return;
+   if(isScorm(original)){
+    if(window.CONTREM_AUTHORING_NAV?.openCopy)window.CONTREM_AUTHORING_NAV.openCopy(original.id.slice(6));
+    else notice('Não foi possível duplicar no CONTREM Studio. Atualize a página e tente novamente.',true);
+    return;
+   }
+   const c=JSON.parse(JSON.stringify(original));c.id=makeId('course');c.name+=' (cópia)';c.status='draft';c.lessons.forEach(l=>{l.id=makeId('lesson');});
+   courses.push(c);save();openEditor(c.id,'details',true);refresh();notice('Cópia criada como rascunho. Revise antes de publicar.');
+  }
   if(b.dataset.courseDelete){if(!isMaster()){notice('Somente o ADM Master pode excluir cursos.',true);return;}const id=b.dataset.courseDelete,wasCurrent=current()?.id===id;if(wasCurrent&&!confirmDiscard())return;deleteCourse(id);if(wasCurrent&&!courses.some(c=>c.id===id))resetForm();refresh();}
  });
  byId('adminLessonOrder').addEventListener('click',event=>{
@@ -367,10 +411,13 @@
     catch(e){c.status='published';save();refresh();notice(e.message||'Não foi possível retirar a publicação.',true);}
    }else notice('Curso voltou a rascunho e não será listado na próxima entrada do aluno.');
   };
- byId('adminCourseSearch').oninput=e=>{filter=e.target.value.trim().toLocaleLowerCase('pt-BR');renderLibrary();};
+ byId('adminCourseSearch').oninput=e=>{filter=fold(e.target.value.trim());renderLibrary();};
  byId('adminStatusFilter').onchange=e=>{statusFilter=e.target.value;renderLibrary();};
+ byId('adminCategoryFilter').onchange=e=>{const categories=[...new Set(courses.map(c=>String(c.category||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));categoryFilter=e.target.value==='all'?'all':categories[Number(e.target.value)]||'all';renderLibrary();};
+ byId('adminCourseSort').onchange=e=>{sortOrder=e.target.value==='za'?'za':'az';renderLibrary();};
+ byId('adminClearFilters').onclick=()=>{filter='';statusFilter='all';categoryFilter='all';sortOrder='az';byId('adminCourseSearch').value='';byId('adminStatusFilter').value='all';byId('adminCourseSort').value='az';renderLibrary();};
  document.querySelectorAll('[data-admin-tab]').forEach(b=>b.onclick=()=>chooseTab(b.dataset.adminTab));
- const oldShow=show;show=function(id){oldShow(id);if(id==='adminView'&&isAdmin())renderLibrary();};
+ const oldShow=show;show=function(id){oldShow(id);if(id==='adminView'&&isAdmin()){setWorkspaceMode('library');renderLibrary();}};
  [courseForm,lessonForm].forEach(form=>{form.addEventListener('input',updateEditStatus);form.addEventListener('change',updateEditStatus);});
  ['exit','reloadCloud'].forEach(id=>{const button=byId(id),previous=button.onclick;button.onclick=event=>{if(!confirmDiscard()){event?.preventDefault?.();return;}return previous?.call(button,event);};});
  window.addEventListener('beforeunload',event=>{if(hasPendingEdits()){event.preventDefault();event.returnValue='';}});
