@@ -122,3 +122,8 @@ Projetos com cartões agora usam presentation=cards-v1: prévia e player publica
 
 - Removido o painel demonstrativo de certificados no rodapé de `apps/academia/src/index.html`, mantendo o fluxo de aula e avaliação.
 - Terceira correção agrupada à branch de vídeo e aviso de publicação para preview. `npm run check`: 68 scripts verificados.
+
+## Apresentação só em Minha aprendizagem — 27/11/2026
+
+- `apps/academia/src/assets/contrem.js`: oculta o banner institucional em Meus cursos, Meu desempenho, Meu perfil, Certificados, ADM e sala de aula; volta a exibir no botão Minha aprendizagem.
+- `node --check` e `npm run check` passaram (68 scripts). A prévia mantém o fluxo de apresentação ao entrar pela demonstração.
