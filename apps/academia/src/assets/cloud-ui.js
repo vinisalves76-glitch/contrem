@@ -317,7 +317,7 @@
   view.classList.toggle('show-students',students);
   view.classList.toggle('show-staff',staff);
   document.getElementById('adminHeading').textContent=students?'Alunos':staff?'Funcionários':'Treinamentos';
-  document.querySelector('#adminView > .muted').textContent=students?'Consulte alunos e libere Cursos Avulsos e Academias em um só lugar.':staff?'Gerencie as contas e os acessos dos funcionários.':mode==='cloud'?'Crie cursos e aulas. Somente o ADM Master publica treinamentos.':'Demonstração: alterações salvas neste navegador.';
+  document.querySelector('#adminView > .muted').textContent=students?'Consulte alunos e libere Cursos Avulsos e Academias em um só lugar.':staff?'Gerencie as contas e os acessos dos funcionários.':mode==='cloud'?'Consulte e gerencie os treinamentos. Crie novos conteúdos pelo CONTREM Studio.':'Consulte e gerencie os treinamentos desta prévia.';
   document.getElementById('adminTab').classList.toggle('active',section==='courses');
   document.getElementById('studentsTab').classList.toggle('active',students);
   document.getElementById('staffTab').classList.toggle('active',staff);
