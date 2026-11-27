@@ -28,7 +28,7 @@
 #adminView .adm-library-heading h2{margin:6px 0 6px;font-size:27px}
 #adminView .adm-library-heading p{font-size:13px;color:#607486;margin:0}
 #adminView .adm-library-total{border:1px solid #dce3e9;border-radius:999px;background:#f7f9fb;color:#102a43;font-size:12px;font-weight:700;padding:8px 13px;white-space:nowrap}
-#adminView .adm-filter-toolbar{display:grid;grid-template-columns:minmax(220px,2fr) repeat(3,minmax(130px,1fr));gap:12px;align-items:end;background:#f7f9fb;border:1px solid #e3eaf0;border-radius:10px;padding:16px}
+#adminView .adm-filter-toolbar{display:grid;grid-template-columns:minmax(220px,2fr) repeat(4,minmax(130px,1fr));gap:12px;align-items:end;background:#f7f9fb;border:1px solid #e3eaf0;border-radius:10px;padding:16px}
 #adminView .adm-filter-toolbar label{display:block;margin:0 0 7px;font-size:12px;font-weight:600;color:#304f67}
 #adminView .adm-filter-toolbar input,
 #adminView .adm-filter-toolbar select{width:100%;margin:0;min-height:45px;background:#fff}
