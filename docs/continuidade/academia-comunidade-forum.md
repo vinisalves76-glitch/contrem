@@ -11,3 +11,7 @@ Os arquivos em `apps/academia/preview-social/` montam a prévia usando o HTML at
 Validação local: `npm run check`, `npm test` e o contrato de saída de `npm run test:central` nos builds Preview e Production. O fluxo no Chromium passou em 390, 820 e 1440 px, incluindo foto, curtida, comentário, busca, resposta, resolução de tópico, persistência após recarregar e exclusões pelo ADM. Para abrir localmente, execute `VERCEL_ENV=preview npm run build` e sirva `dist/`.
 
 Uma publicação para contas reais requer persistência compartilhada, autorização de aluno e ADM no servidor e armazenamento restrito de fotos.
+
+## Deployment de teste
+
+Vercel `dpl_HYECCk94mf9A1y32mfZWVTSnctzF`, estado `READY`, commit de código `c7fe3b93ece7fe6044a241a6a3ef93825623339d`. A página e o script de interface retornaram HTTP 200. [Abrir pela Vercel](https://contrem-428sldfwt-vinicius-alves-projects-fdea38e8.vercel.app/academia/preview-social/index.html).
