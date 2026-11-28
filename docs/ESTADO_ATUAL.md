@@ -43,3 +43,7 @@ A home do CONTREM Studio deixa de exibir o atalho **Recuperar edição deste nav
 ## Configurações gerais do treinamento — 27/11/2026
 
 Branch `feature/studio-configuracoes-treinamento` derivada da `main` `791783b`. O Studio reúne, antes dos módulos, título, público, capas, classificação (Básico/Intermediário/Avançado), carga horária decimal, nota mínima, tentativas, atividades e avaliação final. O importador converte durações antigas de JSON em horas e o editor salva `hours` e a descrição legível `duration`. A migration `20261127223000_academy_studio_course_settings.sql` publica nível e minutos reais, atualiza o catálogo e preserva progresso em alterações só de metadados. Migration aplicada e verificada no Supabase compartilhado após CI da branch; o frontend aguarda integração do PR e deploy.
+
+## Padrão de treinamentos interativos e SCORM — 28/11/2026
+
+`docs/PADRAO_SCORM_CONTREM.md` é o padrão canônico para planejar, gerar JSON, revisar e publicar treinamentos interativos da Academia. As instruções da raiz, da Academia e o guia inicial exigem sua leitura antes de iniciar o conteúdo. O documento distingue o que o Studio e o player publicam do que o exportador SCORM 1.2 demonstrativo transporta. Mudanças neste padrão devem ser revisadas no mesmo PR que alterar o fluxo. Entrega apenas documental, sem mudanças de aplicação, banco ou cursos publicados.

@@ -29,6 +29,10 @@ O pedido do proprietário em 15/11/2026 autoriza um único código-fonte CONTREM
 - Em `develop`: `npm ci --prefix apps/academia`, `npm test`, `npm run build:tec`, `npm run build:guia`.
 - Consulte `docs/VERCEL.md` antes de alterar o vínculo ou publicar. Não publicar a raiz inteira do repositório.
 
+## Treinamentos interativos e SCORM
+
+Sempre que a tarefa envolver planejar, roteirizar, gerar JSON/HTML/ZIP, editar, importar, revisar ou publicar um treinamento interativo/SCORM da Academia, leia **`docs/PADRAO_SCORM_CONTREM.md` antes de começar o conteúdo**. Use esse documento como padrão vigente para estrutura pedagógica, identidade, campos do Studio, avaliação e limites do player. Confirme no código os recursos efetivamente suportados; não trate uma interação presente só na prévia como recurso publicado. Se uma mudança aprovada pelo proprietário alterar o padrão para os próximos cursos, atualize o documento no mesmo PR.
+
 ## Publicação central
 
 O único projeto principal da Vercel é `contrem`. Root Directory vazio, `npm run build`, saída `dist`. Não configurar raiz por aplicativo nem publicar fontes internas. Leia docs/VERCEL.md.
