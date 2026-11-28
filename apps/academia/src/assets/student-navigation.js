@@ -64,6 +64,11 @@
    '<button class="student-home-shortcut" type="button" data-student-area="performance"><span class="student-shortcut-icon" aria-hidden="true">▥</span><span><strong>Meu desempenho</strong><small>Acompanhe seu desenvolvimento</small></span><span aria-hidden="true">→</span></button>';
   areas.home.append(quick);
   for(const area of Object.values(areas))view.append(area);
+  for(const area of view.querySelectorAll(':scope > [data-student-section]')){
+   const key=area.dataset.studentSection;
+   labels[key]=area.dataset.label;
+   areas[key]=area;
+  }
   ready=true;
   view.dataset.studentNavigation='ready';
   // Os links antigos eram âncoras sem controlador. Agora mudam áreas de fato.
@@ -79,6 +84,10 @@
    });
   }
   $('studentTab').addEventListener('click',()=>{if(connected)go('home');});
+  $('studentNav').addEventListener('click',event=>{
+   const button=event.target.closest('button[data-student-area]');
+   if(button&&connected)go(button.dataset.studentArea);
+  });
   view.addEventListener('click',event=>{
    const button=event.target.closest('[data-student-area]');
    if(button&&connected)go(button.dataset.studentArea);
@@ -94,12 +103,13 @@
    area.classList.toggle('current',name===target);
   }
   current=target;
+  if(areas[target].hasAttribute('data-student-section')&&$('contremIntro'))$('contremIntro').hidden=true;
   const nav=$('studentNav');
   const menuTargets={
    studentTab:'home',myAcademiesConnectedTab:'academies'
   };
   for(const button of nav.querySelectorAll('button')){
-   const area=menuTargets[button.id]||{
+   const area=menuTargets[button.id]||button.dataset.studentArea||{
     'my-courses':'courses','my-performance':'performance',
     'my-profile':'profile','my-certificates':'certificates'
    }[button.dataset.jump];

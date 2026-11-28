@@ -47,3 +47,7 @@ Branch `feature/studio-configuracoes-treinamento` derivada da `main` `791783b`. 
 ## Padrão de treinamentos interativos e SCORM — 28/11/2026
 
 `docs/PADRAO_SCORM_CONTREM.md` é o padrão canônico para planejar, gerar JSON, revisar e publicar treinamentos interativos da Academia. As instruções da raiz, da Academia e o guia inicial exigem sua leitura antes de iniciar o conteúdo. O documento distingue o que o Studio e o player publicam do que o exportador SCORM 1.2 demonstrativo transporta. Mudanças neste padrão devem ser revisadas no mesmo PR que alterar o fluxo. Entrega apenas documental, sem mudanças de aplicação, banco ou cursos publicados.
+
+## Prévia de Comunidade e Fórum — 28/11/2026
+
+A branch `feature/academia-comunidade-forum`, derivada da `main`, integra **Comunidade** e **Fórum** ao menu do aluno e **Moderação** ao painel ADM de teste. A rota `/academia/preview-social/index.html` existe no build de Preview e usa dados fictícios armazenados no navegador. Ver `docs/continuidade/academia-comunidade-forum.md`.

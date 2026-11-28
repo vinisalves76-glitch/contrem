@@ -9,6 +9,19 @@ test('Publicação central monta as aplicações e não inclui fontes internas',
  for(const p of ['AGENTS.md','docs','server','academia/server','contremtec/server','contremtec/database'])assert.equal(await exists('dist/'+p),false,p);
  const home=await readFile('dist/index.html','utf8');assert(home.includes('href="/academia/"'));assert(home.includes('href="/contremtec/"'));
 });
+test('A prévia social fica restrita ao build de Preview',async()=>{
+ const path='dist/academia/preview-social/index.html';
+ assert.equal(await exists(path),process.env.VERCEL_ENV==='preview');
+ if(process.env.VERCEL_ENV==='preview'){
+  const html=await readFile(path,'utf8');
+  assert.match(html,/data-social-role="student"/);
+  assert.match(html,/data-social-role="admin"/);
+  assert(html.includes('<base href="/academia/">')&&html.indexOf('<base ')<html.indexOf('<link '));
+  assert.doesNotMatch(html,/<script[^>]*src="[^"]*(?:cloud-config|cloud-service|supabase|pwa\.js)/);
+ }
+ const connected=await readFile('dist/academia/index.html','utf8');
+ assert.doesNotMatch(connected,/data-social-role|preview-social\/social-/);
+});
 for(const app of ['academia','contremtec']){
  test(`${app}: manifest, assets locais e service worker ficam no caminho do módulo`,async()=>{
   if(!await exists(`dist/${app}/manifest.webmanifest`))return;

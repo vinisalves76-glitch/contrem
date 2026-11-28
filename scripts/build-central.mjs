@@ -12,6 +12,10 @@ await rm('dist',{recursive:true,force:true});await mkdir('dist',{recursive:true}
 const sourceFilter=path=>!path.endsWith('.md')&&!path.includes('/docs/')&&!path.endsWith('/docs');
 await cp('apps/institucional/src','dist',{recursive:true,filter:sourceFilter});
 await cp('apps/academia/src','dist/academia',{recursive:true,filter:sourceFilter});
+if(process.env.VERCEL_ENV==='preview'){
+ const {buildSocialPreview}=await import('../apps/academia/preview-social/build.mjs');
+ await buildSocialPreview(academyHtml);
+}
 const tec=await exists('apps/tec/index.html'),guide=await exists('apps/guia/src/index.html');
 const placeholder=title=>`<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#102A43"><title>${title} | CONTREM</title><link rel="stylesheet" href="/styles.css"><body><main class="container section"><a class="brand" href="/"><img src="/assets/logo.svg" width="49" height="49" alt=""><strong>CONTREM</strong></a><p class="eyebrow" style="margin-top:60px">TECNOLOGIA DE MANUTENÇÃO</p><h1 style="color:#102A43;font-size:60px">${title}</h1><p style="margin:28px 0;max-width:560px">Estamos preparando este ambiente. Em breve, mais recursos para conectar conhecimento técnico e manutenção.</p><a class="button" href="/">Voltar à CONTREM <span>→</span></a> <a class="text-link dark" href="/academia/">Conhecer a Academia →</a></main></body></html>`;
 if(tec){
